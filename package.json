@@ -1,0 +1,25 @@
+{
+  "name": "sombras-de-gotham",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "build:portable": "npm run build && node scripts/package-portable.mjs",
+    "preview": "vite preview --host 0.0.0.0",
+    "test": "node --test tests/*.test.js",
+    "test:smoke": "node tests/smoke.mjs",
+    "build:share": "npm run build:portable && python3 scripts/package-share.py"
+  },
+  "dependencies": {
+    "three": "0.181.1"
+  },
+  "devDependencies": {
+    "vite": "7.2.2",
+    "playwright": "1.56.1"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  }
+}
