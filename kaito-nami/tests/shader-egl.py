@@ -15,10 +15,12 @@ def f(name,result,*args):
  return C.CFUNCTYPE(result,*args)(address)
 create=f('glCreateShader',U,U);source=f('glShaderSource',None,U,I,C.POINTER(C.c_char_p),ptr);compile=f('glCompileShader',None,U);status=f('glGetShaderiv',None,U,U,C.POINTER(I));log=f('glGetShaderInfoLog',None,U,I,ptr,ptr)
 newprogram=f('glCreateProgram',U);attach=f('glAttachShader',None,U,U);link=f('glLinkProgram',None,U);programstatus=f('glGetProgramiv',None,U,U,C.POINTER(I));programlog=f('glGetProgramInfoLog',None,U,I,ptr,ptr)
-s=Path(sys.argv[1] if len(sys.argv)>1 else str(Path(__file__).resolve().parents[1]/'src'/'game.js')).read_text()
-for variant in ['', '#define INSTANCED\n']:
+args=[a for a in sys.argv[1:] if not a.startswith('--')];safe='--safe' in sys.argv
+s=Path(args[0] if args else str(Path(__file__).resolve().parents[1]/'src'/'game.js')).read_text()
+for variant in ([''] if safe else ['', '#define INSTANCED\n']):
  program=newprogram()
  for name,kind in [('vertex',0x8B31),('fragment',0x8B30)]:
-  text=((variant if name=='vertex' else '')+re.search(r'const '+name+r'=`([^`]+)`',s).group(1)).encode();shader=create(kind);raw=C.c_char_p(text);source(shader,1,C.byref(raw),None);compile(shader);ok=I();status(shader,0x8B81,C.byref(ok));buf=C.create_string_buffer(4096);log(shader,4096,None,buf);print('INSTANCED' if variant else 'FALLBACK',name,'COMPILE',bool(ok.value),buf.value.decode());assert ok.value
+  source_name='safeFragment' if safe and name=='fragment' else name
+  text=((variant if name=='vertex' else '')+re.search(r'const '+source_name+r'=`([^`]+)`',s).group(1)).encode();shader=create(kind);raw=C.c_char_p(text);source(shader,1,C.byref(raw),None);compile(shader);ok=I();status(shader,0x8B81,C.byref(ok));buf=C.create_string_buffer(4096);log(shader,4096,None,buf);print('INSTANCED' if variant else 'FALLBACK',name,'COMPILE',bool(ok.value),buf.value.decode());assert ok.value
   attach(program,shader)
  link(program);ok=I();programstatus(program,0x8B82,C.byref(ok));buf=C.create_string_buffer(4096);programlog(program,4096,None,buf);print('PROGRAM LINK',bool(ok.value),buf.value.decode());assert ok.value

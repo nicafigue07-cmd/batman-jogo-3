@@ -64,7 +64,7 @@
       const y=target[1]+(desired[1]-target[1])*t;
       if (obstacles.some(o => (o.height===undefined||y<o.height+.35)&&overlaps(target[0] + dx * t, target[2] + dz * t, o, .22))) {
         const safe = Math.max(.02 / Math.max(length,.02), (i - 1) / samples);
-        result[0] = target[0] + dx * safe; result[2] = target[2] + dz * safe;
+        result[0] = target[0] + dx * safe; result[1] = target[1]+(desired[1]-target[1])*safe; result[2] = target[2] + dz * safe;
         break;
       }
     }
@@ -93,6 +93,7 @@
     const s=raw&&typeof raw==='object'&&!Array.isArray(raw)?raw:{};
     const number=(name,fallback,min,max)=>Number.isFinite(Number(s[name]))?clamp(Number(s[name]),min,max):fallback;
     const result={quality:['1','1.5','2'].includes(String(s.quality))?String(s.quality):'1.5',
+      fpsCap:Number(s.fpsCap)===30?30:60,compatibility:!!s.compatibility,
       difficulty:['easy','normal','hard'].includes(s.difficulty)?s.difficulty:'normal',
       volume:number('volume',35,0,100),music:number('music',0,0,100),distance:number('distance',95,40,140),
       sensitivity:number('sensitivity',1,.5,2),map:s.map!==false,shadows:s.shadows!==false,weather:s.weather!==false,

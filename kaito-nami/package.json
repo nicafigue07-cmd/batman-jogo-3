@@ -1,10 +1,10 @@
 {
   "name": "kaito-nami",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "test": "node tests/smoke.cjs && node tests/improvements.cjs && node tests/campaign-walk.cjs",
+    "test": "node tests/startup.cjs && node tests/smoke.cjs && node tests/improvements.cjs && node tests/campaign-walk.cjs",
     "build": "node build.mjs",
     "test:graphics": "python3 tests/shader-egl.py"
   }

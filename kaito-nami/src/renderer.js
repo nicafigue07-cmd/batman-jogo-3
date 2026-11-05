@@ -4,6 +4,7 @@ class KaitoBatch {
   constructor(gl, vertex, fragment, fallbackProgram) {
     this.gl=gl;this.fallback=fallbackProgram;this.groups=new Map();
     this.stats={drawCalls:0,instances:0};this.enabled=false;
+    if(root.KaitoBoot?.compatibility){this.reason='Modo de compatibilidade';return;}
     this.extension=gl.getExtension?.('ANGLE_instanced_arrays');
     if(!this.extension)return;
     let program;
@@ -19,12 +20,12 @@ class KaitoBatch {
       this.program=program;this.uniforms={};
       for(const name of ['vp','eye','time','water','daylight','horizon','quality','fogDistance'])this.uniforms[name]=gl.getUniformLocation(program,name);
       this.enabled=true;
-    }catch(error){if(program)gl.deleteProgram(program);this.reason=String(error.message||error);}
+    }catch(error){if(program)gl.deleteProgram(program);this.reason=String(error.message||error);root.KaitoBoot?.note('INSTANCING_FALLBACK',this.reason);}
   }
   begin(){this.stats.drawCalls=0;this.stats.instances=0;for(const group of this.groups.values())group.count=0;}
   submit(mesh,position,size,color,rotation,pitch,water){
     let group=this.groups.get(mesh);
-    if(!group){group={mesh,water,count:0,capacity:128,data:new Float32Array(128*12),buffer:this.gl.createBuffer(),allocated:0};this.groups.set(mesh,group);}
+    if(!group){group={mesh,water,count:0,capacity:128,data:new Float32Array(128*12),buffer:this.gl.createBuffer(),allocated:0};if(!group.buffer)throw Error('Memória gráfica insuficiente para agrupar objetos. Use o modo leve.');this.groups.set(mesh,group);}
     if(group.count===group.capacity){group.capacity*=2;const expanded=new Float32Array(group.capacity*12);expanded.set(group.data);group.data=expanded;}
     const i=group.count++*12,a=group.data;
     a[i]=position[0];a[i+1]=position[1];a[i+2]=position[2];

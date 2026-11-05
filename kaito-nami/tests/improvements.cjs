@@ -57,3 +57,17 @@ test('surf-school lessons require surfing through all rings and award a point on
 });
 
 test('cinematic power effects advance without advancing combat or energy',()=>{const g=new Game({mission:18});g.power(9);const hp=g.hp,energy=g.energy,time=g.time,enemy=g.enemies[0].hp;g.tickVisual(.05);assert.equal(g.pulses[0].age,.05);assert(g.powerTime<.6);assert.equal(g.hp,hp);assert.equal(g.energy,energy);assert.equal(g.time,time);assert.equal(g.enemies[0].hp,enemy);for(let i=0;i<25;i++)g.tickVisual(.05);assert.equal(g.pulses.length,0);});
+test('acceleration and braking are smooth and approximately frame-rate independent',()=>{
+ const run=dt=>{const g=new Game();for(let t=0;t<1-dt/2;t+=dt)g.tick(dt,{x:1});return g;};const a=run(1/60),b=run(1/30);assert(a.vx>4.4&&a.vx<=4.5);assert(Math.abs(a.x-b.x)<.06);const x=a.x;for(let i=0;i<20;i++)a.tick(.016,{});assert(Math.abs(a.vx)<.02);assert(a.x-x<.3);
+ const first=new Game();first.tick(.016,{x:1});assert(first.vx>0&&first.vx<4.5);const second=first.vx;first.tick(.016,{x:1});assert(first.vx>second);
+});
+test('jump buffering accepts a press just before landing without auto-bouncing',()=>{
+ const g=new Game();g.y=.015;g.vy=-1;g.tick(.016,{jump:true});for(let i=0;i<3;i++)g.tick(.016,{jump:true});assert(g.y>0&&g.vy>0);for(let i=0;i<80;i++)g.tick(.016,{jump:true});assert.equal(g.y,0);
+});
+test('dodge uses its chosen direction and transit clears carried velocity',()=>{
+ const g=new Game({mission:9});g.facing=Math.PI;g.dodge({x:1,z:0});g.tick(.05,{x:-1});assert(g.x> -14);assert(g.vx>0);g.x=22;g.z=-8;g.interact();for(let i=0;i<61;i++)g.tick(.05,{});assert.equal(g.city,'Hikaru');assert.equal(g.vx,0);assert.equal(g.vz,0);
+});
+test('camera zoom follows the whole ray and interior walls have real heights',()=>{
+ const target=[0,1,0],desired=[0,6,10],wall={x:0,z:3,hx:4,hz:.1,height:7};const camera=S.cameraPosition(target,desired,[wall]);assert(camera[2]<3);assert(camera[1]<3);assert(Math.abs((camera[1]-1)/(camera[2]||1)-.5)<1e-8);
+ const g=new Game({mission:12,city:'Hikaru',interior:'hikari',floor:1});assert(g.cameraColliders().every(w=>w.height>=8));
+});
