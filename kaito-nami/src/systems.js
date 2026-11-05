@@ -62,7 +62,7 @@
     for (let i = 1; i <= samples; i++) {
       const t = i / samples;
       const y=target[1]+(desired[1]-target[1])*t;
-      if (obstacles.some(o => (o.height===undefined||y<o.height+.35)&&overlaps(target[0] + dx * t, target[2] + dz * t, o, .22))) {
+      if (obstacles.some(o => (o.height===undefined||y<o.height+.35)&&(o.minHeight===undefined||y>o.minHeight-.15)&&overlaps(target[0] + dx * t, target[2] + dz * t, o, .22))) {
         const safe = Math.max(.02 / Math.max(length,.02), (i - 1) / samples);
         result[0] = target[0] + dx * safe; result[1] = target[1]+(desired[1]-target[1])*safe; result[2] = target[2] + dz * safe;
         break;
@@ -100,7 +100,7 @@
       reducedMotion:!!s.reducedMotion,contrast:!!s.contrast,largeText:!!s.largeText,cinematics:s.cinematics!==false,
       tutorials:s.tutorials!==false,performance:!!s.performance,bindings:{}};
     const defaults={forward:'KeyW',back:'KeyS',left:'KeyA',right:'KeyD',jump:'Space',power:'KeyQ',interact:'KeyE',dodge:'KeyR',attack:'KeyF'};
-    const reserved=new Set(['KeyK','KeyJ','KeyI','KeyM','Escape','ShiftLeft','ShiftRight']);
+    const reserved=new Set(['KeyK','KeyJ','KeyI','KeyM','KeyC','Escape','ShiftLeft','ShiftRight']);
     const taken=new Set();
     for(const name of Object.keys(defaults)){
       const value=s.bindings?.[name];
@@ -110,7 +110,14 @@
     return result;
   }
 
-  const api = {preferences, finite, clamp, overlaps, pushOut, move, cameraPosition, stick, gamepad};
+  function combatFraming(player,target,angle,dt,reduced,out={}){
+    out.angle=angle;out.x=player.x;out.z=player.z;out.distance=0;out.fov=0;
+    if(!target||reduced)return out;
+    const dx=player.x-target.x,dz=player.z-target.z,length=Math.hypot(dx,dz),desired=Math.atan2(dx,dz);
+    out.angle=angle+Math.atan2(Math.sin(desired-angle),Math.cos(desired-angle))*(1-Math.exp(-clamp(finite(dt),0,.05)*4));
+    const blend=Math.min(.22,3/Math.max(1,length));out.x=player.x-dx*blend;out.z=player.z-dz*blend;out.distance=target.boss?2:1;out.fov=target.boss?4:2;return out;
+  }
+  const api = {combatFraming,preferences, finite, clamp, overlaps, pushOut, move, cameraPosition, stick, gamepad};
   root.KaitoSystems = api;
   if (typeof module !== 'undefined') module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

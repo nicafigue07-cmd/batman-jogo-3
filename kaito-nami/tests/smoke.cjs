@@ -86,6 +86,15 @@ let reloads=0;ctx.location={reload:()=>reloads++};ctx.KaitoFail('Erro de teste c
  frame(16);lists['[data-tab]'].find(b=>b.dataset.tab==='inventory').onclick();lists['[data-outfit]'][2].onclick();assert.equal(JSON.parse(savedValue).outfit,'guardian');assert(el('inventoryPanel').innerHTML.includes('Guardião Azul ✓'));
  console.log('PASS: real F attack and wardrobe menu handlers damage robots and persist the equipped outfit.');
 
+
+ const beforeFocusSave=savedValue;savedValue=JSON.stringify({mission:8,city:'Aonami',x:6,z:8});
+ for(const helper of ['runtime','renderer','systems','content','core','game'])vm.runInContext(fs.readFileSync(path.join(src,helper+'.js'),'utf8'),ctx);
+ frame(16);el('start').onclick();listeners.keydown(key('KeyC'));listeners.keyup(key('KeyC'));assert(el('targetText').textContent.includes('ROBÔ MARCADO'));listeners.keydown(key('KeyF'));listeners.keyup(key('KeyF'));el('pause').onclick();assert(JSON.parse(savedValue).enemyState.some(e=>e.hp<(e.id===2?75:50)));
+ el('pause').onclick();el('focusTarget').onclick();assert.equal(el('targetText').textContent,'');const focusPad={connected:true,mapping:'standard',axes:[0,0,0,0],buttons:Array.from({length:16},(_,i)=>({pressed:i===11,value:i===11?1:0}))};ctx.navigator.getGamepads=()=>[focusPad];frame(66);assert(el('targetText').textContent.includes('ROBÔ MARCADO'));ctx.navigator.getGamepads=()=>[];
+ savedValue=JSON.stringify({mission:3,city:'Aonami',x:-12,z:17});
+ for(const helper of ['runtime','renderer','systems','content','core','game'])vm.runInContext(fs.readFileSync(path.join(src,helper+'.js'),'utf8'),ctx);
+ frame(16);el('start').onclick();el('interact').onclick();assert(el('counter').textContent.includes('CORRENTE AZUL'));assert(el('navigation').textContent.includes('anel 1'));assert(el('speech').textContent.includes('cinco anéis'));el('closeDialog').onclick();frame(66);savedValue=beforeFocusSave;
+ console.log('PASS: C, touch focus and gamepad R3 handlers mark targets; course interaction activates real HUD, objective and dialogue.');
  gl.getError=()=>1282;ctx.URL=URL;let safeReload='';ctx.location={href:'https://example.test/kaito/?v=0.7',replace:url=>safeReload=url,reload(){}};
  for(const helper of ['runtime','renderer','systems','content','core','game'])vm.runInContext(fs.readFileSync(path.join(src,helper+'.js'),'utf8'),ctx);
  frame(16);assert(safeReload.includes('mode=light'));assert(!ctx.KaitoBoot.ready);assert(ctx.KaitoBoot.history.some(x=>x.code==='FIRST_FRAME_RETRY'));assert.equal(JSON.parse(savedValue).mission,20);
