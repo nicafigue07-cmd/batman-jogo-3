@@ -1,0 +1,23 @@
+name: Validar Kaito Nami
+on:
+  push:
+    branches: [kaito-nami-jogavel]
+    paths: ['kaito-nami/**', 'index.html', 'jogar/Kaito-Nami.html', '.github/workflows/validar-kaito.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  campanha-e-pacote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Testar campanha, controles e regressões
+        run: npm --prefix kaito-nami test
+      - name: Gerar e verificar arquivos publicados
+        run: |
+          npm --prefix kaito-nami run build
+          cmp output/Kaito-Nami.html index.html
+          cmp output/Kaito-Nami.html jogar/Kaito-Nami.html

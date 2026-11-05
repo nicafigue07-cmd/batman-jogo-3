@@ -1,0 +1,498 @@
+{
+  "basis": "origin/main 4346fe960df2a09779c733ee0586070d9edb2329; live branch entrypoint reviewed separately",
+  "files": [
+    {
+      "path": ".github/workflows/publicar-jogo.yml",
+      "bytes": 978,
+      "sha256": "7780380da65d0bb3f771fbd76131a6940b8d7024afa5c3391fcc1a2ed82b15ff",
+      "classification": "legacy-preserved",
+      "imports": []
+    },
+    {
+      "path": ".gitignore",
+      "bytes": 48,
+      "sha256": "8220954d3cb758ce585f243cbb547d7df01936456edf2bfba60dced029f47bb5",
+      "classification": "legacy-preserved",
+      "imports": []
+    },
+    {
+      "path": "PUBLICAR.md",
+      "bytes": 2649,
+      "sha256": "b06147d6ab83fc9f1a6a0b8166de998d08b9c4479f1276a4d9f1fb53d9c0104b",
+      "classification": "legacy-preserved",
+      "imports": []
+    },
+    {
+      "path": "README.md",
+      "bytes": 13490,
+      "sha256": "bb38dfa7a96ce1b8d70b91941695f7cef04ada64b71e6811d37c0623d2e7ba4c",
+      "classification": "legacy-preserved",
+      "imports": []
+    },
+    {
+      "path": "docs/REFERENCIAS-E-VARIEDADE.md",
+      "bytes": 5862,
+      "sha256": "c0212a7d54208edd94023f04c2f095a44ebb8154bbff393f182ee7d749f5f902",
+      "classification": "legacy-preserved",
+      "imports": []
+    },
+    {
+      "path": "index.html",
+      "bytes": 23668,
+      "sha256": "5f3b6df5be2e0d55cd6fdfb13e38c32789d7e1799eb3db9b8988b977e090a9f7",
+      "classification": "legacy-preserved",
+      "imports": []
+    },
+    {
+      "path": "jogar.zip",
+      "bytes": 255022,
+      "sha256": "eb669f0eff0b3ca5ef1d64699b605e039c0e17de74c841f481cbc448cb24bbfd",
+      "classification": "legacy-preserved",
+      "archive_files": [
+        "jogar.html",
+        "COMO-JOGAR.txt"
+      ]
+    },
+    {
+      "path": "package-lock.json",
+      "bytes": 37284,
+      "sha256": "2059e5909c71d69cab1061028d324fda1abc8af0b9f52da72d76258bc35687b9",
+      "classification": "legacy-preserved",
+      "imports": []
+    },
+    {
+      "path": "package.json",
+      "bytes": 631,
+      "sha256": "b3e761d155c42cad38ce44c711e824e475e16e2796eabe83ac899d96affc1e75",
+      "classification": "legacy-preserved",
+      "imports": []
+    },
+    {
+      "path": "scripts/package-portable.mjs",
+      "bytes": 1782,
+      "sha256": "0b29337364856d46eef1c26e21c948457705aec0880e3646a53fbc73f9fca5f7",
+      "classification": "legacy-preserved",
+      "imports": [
+        "node:fs/promises",
+        "node:path"
+      ],
+      "syntax": "pass"
+    },
+    {
+      "path": "scripts/package-share.py",
+      "bytes": 1593,
+      "sha256": "e341695b1de3b73e316a3d1e49f91cee71eb4f3765a9f94e83924a859c8977a6",
+      "classification": "legacy-preserved",
+      "imports": []
+    },
+    {
+      "path": "src/activities.js",
+      "bytes": 1418,
+      "sha256": "7298e0ee7d64e476f202dffac5c9e6e8f4b1cfb2b154d8789b7072197c8baec9",
+      "classification": "legacy-preserved",
+      "imports": [],
+      "syntax": "pass"
+    },
+    {
+      "path": "src/combat.js",
+      "bytes": 2902,
+      "sha256": "42c3068dea6e632b8e4be5449bbffbe14bd43ede9a360a78e31ee943a9427e57",
+      "classification": "legacy-preserved",
+      "imports": [],
+      "syntax": "pass"
+    },
+    {
+      "path": "src/flight.js",
+      "bytes": 1147,
+      "sha256": "081443da626c0407b93df948c5613d95c132340d38bf7849c9a6858fb1ea6c9a",
+      "classification": "legacy-preserved",
+      "imports": [],
+      "syntax": "pass"
+    },
+    {
+      "path": "src/gamepad.js",
+      "bytes": 2514,
+      "sha256": "88d353fac219a7675d67a3470ed427833bd7a82926396cb350a46fae6dd2241b",
+      "classification": "legacy-preserved",
+      "imports": [],
+      "syntax": "pass"
+    },
+    {
+      "path": "src/graphics.js",
+      "bytes": 3111,
+      "sha256": "08360b1efa2f65d4203c925523728a17ef96c6cf798ed0ff4ddc3a289a11448d",
+      "classification": "legacy-preserved",
+      "imports": [
+        "three",
+        "three/addons/postprocessing/EffectComposer.js",
+        "three/addons/postprocessing/RenderPass.js",
+        "three/addons/postprocessing/UnrealBloomPass.js",
+        "three/addons/postprocessing/OutputPass.js"
+      ],
+      "syntax": "pass"
+    },
+    {
+      "path": "src/grapple.js",
+      "bytes": 8052,
+      "sha256": "d1b5bc8f7373fbaef6df726c9e4fd79e8652ea11cd5d77add15ad16dc9d577d6",
+      "classification": "legacy-preserved",
+      "imports": [],
+      "syntax": "pass"
+    },
+    {
+      "path": "src/main.js",
+      "bytes": 84664,
+      "sha256": "79a77e87806b82c0d7ea2b5e87b738af7866889d229512a8986fbc36712ac385",
+      "classification": "legacy-preserved",
+      "imports": [
+        "three",
+        "./style.css",
+        "./world.js",
+        "./physics.js",
+        "./missions.js",
+        "./objectives.js",
+        "./progression.js",
+        "./activities.js",
+        "./combat.js",
+        "./grapple.js",
+        "./graphics.js",
+        "./villains.js",
+        "./gamepad.js",
+        "./flight.js",
+        "./patrol.js",
+        "./stealth.js",
+        "./wind.js"
+      ],
+      "syntax": "pass"
+    },
+    {
+      "path": "src/missions.js",
+      "bytes": 7404,
+      "sha256": "edba5af8bedbeb0ccfac5d5ae89ab03268941b671d59d8617c6d201467559308",
+      "classification": "legacy-preserved",
+      "imports": [],
+      "syntax": "pass"
+    },
+    {
+      "path": "src/objectives.js",
+      "bytes": 12672,
+      "sha256": "4f8b435e0097ed1557213829976446ddb321c06c0af09cfdebbd99063f5bd0be",
+      "classification": "legacy-preserved",
+      "imports": [],
+      "syntax": "pass"
+    },
+    {
+      "path": "src/patrol.js",
+      "bytes": 5666,
+      "sha256": "49403533b26e5bcb6e14a928dbbcfe9e07d2ef74b89d554426bb2b2464d97589",
+      "classification": "legacy-preserved",
+      "imports": [],
+      "syntax": "pass"
+    },
+    {
+      "path": "src/physics.js",
+      "bytes": 3950,
+      "sha256": "854d42226f05d255cb91297deb6251638a05feb4a1b6654d6c289628b1cefd6a",
+      "classification": "legacy-preserved",
+      "imports": [],
+      "syntax": "pass"
+    },
+    {
+      "path": "src/progression.js",
+      "bytes": 6201,
+      "sha256": "b5ea263e9f4d8441814d4cbb1a34acc121e41856fcaa0a44bb0d334043d427ae",
+      "classification": "legacy-preserved",
+      "imports": [],
+      "syntax": "pass"
+    },
+    {
+      "path": "src/stealth.js",
+      "bytes": 1991,
+      "sha256": "312f2949e30cd744904db87570e2186e21232b9b35ee07659e85540f4f8f3b1c",
+      "classification": "legacy-preserved",
+      "imports": [],
+      "syntax": "pass"
+    },
+    {
+      "path": "src/style.css",
+      "bytes": 55815,
+      "sha256": "2e22468ce4aafe94d78a6a2279338abf973b255fabb6e81aee661972ffd53ba8",
+      "classification": "legacy-preserved",
+      "imports": []
+    },
+    {
+      "path": "src/villains.js",
+      "bytes": 16543,
+      "sha256": "44da7fdcb2ed4777e413f63904f96e96c05024f1896c95d01703aa6a2eb3f84d",
+      "classification": "legacy-preserved",
+      "imports": [],
+      "syntax": "pass"
+    },
+    {
+      "path": "src/wind.js",
+      "bytes": 3879,
+      "sha256": "24834ff26e4b66344c203d75bf9e9ccd465a1b1c2d8db0948007e831aff02c71",
+      "classification": "legacy-preserved",
+      "imports": [],
+      "syntax": "pass"
+    },
+    {
+      "path": "src/world.js",
+      "bytes": 51098,
+      "sha256": "cc3cb1570a7e139d15f1d5d6c3db52902f07e867b067de636e059be23cad8433",
+      "classification": "legacy-preserved",
+      "imports": [],
+      "syntax": "pass"
+    },
+    {
+      "path": "tests/activities.test.js",
+      "bytes": 6529,
+      "sha256": "8d33974bf959b6c6e8cf8ebaf4fe483f25c75ad2123c314c5f66bb119a84c448",
+      "classification": "legacy-preserved",
+      "imports": [
+        "node:test",
+        "node:assert/strict",
+        "../src/activities.js"
+      ],
+      "syntax": "pass"
+    },
+    {
+      "path": "tests/combat.test.js",
+      "bytes": 5945,
+      "sha256": "3c80979e13bea25adad1203d1d82e84a3ab5d0eaeb168c7126920a03eb1a0cef",
+      "classification": "legacy-preserved",
+      "imports": [
+        "node:test",
+        "node:assert/strict",
+        "../src/combat.js"
+      ],
+      "syntax": "pass"
+    },
+    {
+      "path": "tests/flight.test.js",
+      "bytes": 5568,
+      "sha256": "04f61cad6903708f02dcedf2e388dfc41d117dedc662d5483e083bc4dc78ff4f",
+      "classification": "legacy-preserved",
+      "imports": [
+        "node:test",
+        "node:assert/strict",
+        "../src/flight.js"
+      ],
+      "syntax": "pass"
+    },
+    {
+      "path": "tests/gamepad.test.js",
+      "bytes": 6502,
+      "sha256": "0fba37831bbb506e7966eb26a8f4347817da58f91445d6d458147dbd008f931c",
+      "classification": "legacy-preserved",
+      "imports": [
+        "node:test",
+        "node:assert/strict",
+        "../src/gamepad.js"
+      ],
+      "syntax": "pass"
+    },
+    {
+      "path": "tests/grapple.test.js",
+      "bytes": 11837,
+      "sha256": "7d3ddb17baf56e2d991a52aad29ebbc2199030cb123cee7b587d3bfdd8ecf408",
+      "classification": "legacy-preserved",
+      "imports": [
+        "node:test",
+        "node:assert/strict",
+        "../src/grapple.js"
+      ],
+      "syntax": "pass"
+    },
+    {
+      "path": "tests/missions.test.js",
+      "bytes": 10660,
+      "sha256": "f37e75574f131eab5a1fccd45a3a3329119f80d5518387159cd8c7ac0a9876f6",
+      "classification": "legacy-preserved",
+      "imports": [
+        "node:test",
+        "node:assert/strict",
+        "../src/missions.js"
+      ],
+      "syntax": "pass"
+    },
+    {
+      "path": "tests/objectives.test.js",
+      "bytes": 2209,
+      "sha256": "3fba56054bd90e7d68f7a412a952bf88654f73549ce5f8e818358903c95b93a5",
+      "classification": "legacy-preserved",
+      "imports": [
+        "node:test",
+        "node:assert/strict",
+        "three",
+        "../src/objectives.js"
+      ],
+      "syntax": "pass"
+    },
+    {
+      "path": "tests/patrol-playthrough.mjs",
+      "bytes": 7939,
+      "sha256": "ff35a0d076b413eb47b4a25d196b680b526e59764013d78e29984d2f34edd1ce",
+      "classification": "legacy-preserved",
+      "imports": [
+        "node:assert/strict",
+        "node:fs/promises",
+        "playwright"
+      ],
+      "syntax": "pass"
+    },
+    {
+      "path": "tests/patrol.test.js",
+      "bytes": 5430,
+      "sha256": "963b336a6eca34c86710f7e779f783f57009d03f2421e4493c1659c0d5f6611d",
+      "classification": "legacy-preserved",
+      "imports": [
+        "node:test",
+        "node:assert/strict",
+        "../src/patrol.js"
+      ],
+      "syntax": "pass"
+    },
+    {
+      "path": "tests/physics.test.js",
+      "bytes": 3066,
+      "sha256": "59aee856195095a688ae07cf694b6f7778e2b649a4a58b9ca7cc7ccd3d647eb2",
+      "classification": "legacy-preserved",
+      "imports": [
+        "node:test",
+        "node:assert/strict",
+        "../src/physics.js"
+      ],
+      "syntax": "pass"
+    },
+    {
+      "path": "tests/platform-smoke.mjs",
+      "bytes": 12226,
+      "sha256": "916b44010ac1489a7cec3e3e19d3ab1362a5174d22f8bf62e8706673888c4af9",
+      "classification": "legacy-preserved",
+      "imports": [
+        "node:assert/strict",
+        "node:fs/promises",
+        "playwright"
+      ],
+      "syntax": "pass"
+    },
+    {
+      "path": "tests/progression.test.js",
+      "bytes": 13270,
+      "sha256": "d68ceba2cc3c7ab1c2906f3bf00a08452037beea1352bd2144efc903a026ae99",
+      "classification": "legacy-preserved",
+      "imports": [
+        "node:test",
+        "node:assert/strict"
+      ],
+      "syntax": "pass"
+    },
+    {
+      "path": "tests/smoke.mjs",
+      "bytes": 512,
+      "sha256": "938e0aabff0ea5c94ea7572ca9e2a2995df8ad2fbc0d0d475089d2a8403264c4",
+      "classification": "legacy-preserved",
+      "imports": [
+        "node:child_process",
+        "node:url"
+      ],
+      "syntax": "pass"
+    },
+    {
+      "path": "tests/stealth.test.js",
+      "bytes": 4123,
+      "sha256": "67927b30c294982a1751d91025ac68c9927134930165de966ec657791d6a2d87",
+      "classification": "legacy-preserved",
+      "imports": [
+        "node:test",
+        "node:assert/strict",
+        "../src/stealth.js"
+      ],
+      "syntax": "pass"
+    },
+    {
+      "path": "tests/terrain-smoke.mjs",
+      "bytes": 8920,
+      "sha256": "fa43000d08620229fbc1ea037d99fce3343611b126cad96e9fe77b83fdb571c7",
+      "classification": "legacy-preserved",
+      "imports": [
+        "node:assert/strict",
+        "node:fs/promises",
+        "playwright"
+      ],
+      "syntax": "pass"
+    },
+    {
+      "path": "tests/variety-smoke.mjs",
+      "bytes": 8037,
+      "sha256": "c02e7c016ec35c641f6e7e1292da758a4326b73fbab1fb8ddb1bd58f76f1ad56",
+      "classification": "legacy-preserved",
+      "imports": [
+        "node:assert/strict",
+        "node:fs/promises",
+        "playwright"
+      ],
+      "syntax": "pass"
+    },
+    {
+      "path": "tests/villains.test.js",
+      "bytes": 6893,
+      "sha256": "28eb49e1b07bb21185e028598130c9f5bbc89dce9064e597e77750b0e356cbe6",
+      "classification": "legacy-preserved",
+      "imports": [
+        "node:test",
+        "node:assert/strict",
+        "three",
+        "../src/villains.js"
+      ],
+      "syntax": "pass"
+    },
+    {
+      "path": "tests/wind.test.js",
+      "bytes": 3359,
+      "sha256": "7b80432b5c67a1dad9c4294709b107084fb70bf8fc7e287b8ad3d525b559ca69",
+      "classification": "legacy-preserved",
+      "imports": [
+        "node:test",
+        "node:assert/strict",
+        "three",
+        "../src/wind.js"
+      ],
+      "syntax": "pass"
+    },
+    {
+      "path": "tests/world.test.js",
+      "bytes": 6813,
+      "sha256": "1b7ef96571d62e3e4b1a274f2a54bb5007c5017561fb1275cbf5f3e13f979362",
+      "classification": "legacy-preserved",
+      "imports": [
+        "node:test",
+        "node:assert/strict",
+        "three",
+        "../src/world.js",
+        "../src/physics.js",
+        "../src/grapple.js"
+      ],
+      "syntax": "pass"
+    }
+  ],
+  "legacy_tests": {
+    "passed_files": 10,
+    "blocked_files": [
+      "objectives.test.js",
+      "villains.test.js",
+      "wind.test.js",
+      "world.test.js"
+    ],
+    "reason": "three package unavailable in execution workspace"
+  },
+  "active_runtime": [
+    "runtime.js",
+    "renderer.js",
+    "systems.js",
+    "content.js",
+    "core.js",
+    "game.js"
+  ]
+}
