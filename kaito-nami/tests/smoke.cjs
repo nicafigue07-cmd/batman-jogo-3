@@ -77,4 +77,20 @@ let reloads=0;ctx.location={reload:()=>reloads++};ctx.KaitoFail('Erro de teste c
  assert(ctx.KaitoBoot.ready&&!ctx.KaitoBoot.failed);assert(ctx.KaitoBoot.compatibility);assert(ctx.KaitoBoot.history.some(e=>e.code==='PRIMARY_SHADER_FAILURE'));assert.equal(el('fpsCap').value,'30');
  console.log('PASS: injected fragment compile failure automatically falls back to the safe shader and completes startup.');
 
+
+ savedValue=JSON.stringify({mission:8,city:'Aonami',x:6,z:8,facing:Math.PI});
+ for(const helper of ['runtime','renderer','systems','content','core','game'])vm.runInContext(fs.readFileSync(path.join(src,helper+'.js'),'utf8'),ctx);
+ frame(16);el('start').onclick();listeners.keydown(key('KeyF'));listeners.keyup(key('KeyF'));el('pause').onclick();assert(JSON.parse(savedValue).enemyState[0].hp<50,'keyboard F damages a real robot');
+ savedValue=JSON.stringify({mission:20,city:'Aonami'});lists['[data-outfit]']=['classic','coast','guardian'].map(outfit=>({dataset:{outfit}}));
+ for(const helper of ['runtime','renderer','systems','content','core','game'])vm.runInContext(fs.readFileSync(path.join(src,helper+'.js'),'utf8'),ctx);
+ frame(16);lists['[data-tab]'].find(b=>b.dataset.tab==='inventory').onclick();lists['[data-outfit]'][2].onclick();assert.equal(JSON.parse(savedValue).outfit,'guardian');assert(el('inventoryPanel').innerHTML.includes('Guardião Azul ✓'));
+ console.log('PASS: real F attack and wardrobe menu handlers damage robots and persist the equipped outfit.');
+
+ gl.getError=()=>1282;ctx.URL=URL;let safeReload='';ctx.location={href:'https://example.test/kaito/?v=0.7',replace:url=>safeReload=url,reload(){}};
+ for(const helper of ['runtime','renderer','systems','content','core','game'])vm.runInContext(fs.readFileSync(path.join(src,helper+'.js'),'utf8'),ctx);
+ frame(16);assert(safeReload.includes('mode=light'));assert(!ctx.KaitoBoot.ready);assert(ctx.KaitoBoot.history.some(x=>x.code==='FIRST_FRAME_RETRY'));assert.equal(JSON.parse(savedValue).mission,20);
+ ctx.location.href=safeReload;safeReload='';
+ for(const helper of ['runtime','renderer','systems','content','core','game'])vm.runInContext(fs.readFileSync(path.join(src,helper+'.js'),'utf8'),ctx);
+ frame(16);assert.equal(safeReload,'');assert(ctx.KaitoBoot.failed);assert.equal(ctx.KaitoBoot.lastError.code,'FIRST_FRAME_GPU_ERROR');assert.equal(JSON.parse(savedValue).mission,20);
+ gl.getError=()=>0;console.log('PASS: first-frame GPU failure retries in lightweight mode once, then shows a diagnostic without losing campaign progress.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

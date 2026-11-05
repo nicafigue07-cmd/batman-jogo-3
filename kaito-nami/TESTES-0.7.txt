@@ -1,0 +1,113 @@
+
+> kaito-nami@0.7.0 test
+> node tests/startup.cjs && node tests/smoke.cjs && node tests/improvements.cjs && node tests/traversal-combat.cjs && node tests/campaign-walk.cjs && node tests/bundle.cjs
+
+✔ light mode requests a genuinely different context and does not erase progress (4.269172ms)
+✔ normal context keeps antialias and reports actual creation errors (2.891411ms)
+✔ unavailable WebGL produces a classified, copyable local diagnostic (1.5967ms)
+✔ context loss calls save, stops rendering and restores at most once per session (2.036446ms)
+✔ watchdog distinguishes an unfinished boot from an already rendered game (2.99345ms)
+✔ safe mode still works when storage is blocked because it is encoded in the link (4.7271ms)
+✔ compatibility mode skips instancing rather than compiling the same GPU path again (1.887076ms)
+✔ loading counts only completed unique milestones and stops after a module failure (1.769853ms)
+✔ queued modules run in order on separate tasks and report their completed work (2.21319ms)
+✔ a driver refusing the normal context is retried without antialias before giving up (1.591756ms)
+✔ a background tab defers its watchdog and a denied clipboard opens the manual diagnostic (1.422539ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 36.900966
+PASS: all 20 campaign triggers, city transitions, ending and save roundtrips.
+PASS: 10 powers, energy, cooldowns, unlock gates, defense, dodge, jump edge, limits, collision, diagonal speed, race retry, optional return trip, shells and side quest.
+PASS: HTML IDs, UI initialization, frames, menus, power, interact, selection, save, pause; 20031 mocked draw calls.
+PASS: mocked rendering/controller smoke for all 21 campaign states, including both cities, robots, storm, boss and ending.
+PASS: collision-grid reachability of campaign destinations, collectibles, clues and race rings in both city layouts.
+PASS: bridge support/expiry, swimming, surf and counterattack window.
+PASS: optional surf challenge after ending, record persistence and refreshment shop.
+PASS: simulated keyboard navigation, NPC interaction and postgame side-race rendering through real controller handlers.
+PASS: tower entry/elevator/terminal/exit, interior saves, climbing, position/resource saves, cross-city mission and enemy isolation, travel input lock.
+PASS: both tower interior floors initialize and render with the real controller under mocked WebGL.
+PASS: all 12 regional objectives, discovery, fast-travel gates, XP/save continuity and expanded-world boundaries.
+PASS: expanded collision-grid paths connect all 12 regional destinations.
+PASS: regional scene and atlas controller smoke in both cities at every extended district.
+PASS: shared GLSL uniforms and varyings have matching types and precision (WebGL link regression).
+PASS: real scene batches 1047 mesh instances into 8 draw calls with ANGLE instancing; fallback scenes tested above.
+PASS: touch movement, all quality presets/pixel budgets, accessibility persistence, actual skill selection/upgrade handlers, reset cancellation and gamepad menu confirmation.
+[Kaito RUNTIME_ERROR] Erro de teste controlado
+PASS: visible recovery error and lightweight retry preserve campaign progress.
+PASS: real save-export handler and import validation/restore callbacks, including invalid JSON without progress loss.
+PASS: injected fragment compile failure automatically falls back to the safe shader and completes startup.
+PASS: real F attack and wardrobe menu handlers damage robots and persist the equipped outfit.
+[Kaito FIRST_FRAME_GPU_ERROR] O driver não conseguiu desenhar a primeira cena (WebGL 1282). Copie os detalhes e tente outro navegador.
+PASS: first-frame GPU failure retries in lightweight mode once, then shows a diagnostic without losing campaign progress.
+✔ swept movement stops at thin walls and slides along rectangular corners (1.956401ms)
+✔ initial penetration and school-building corners are repaired (1.813888ms)
+✔ camera clipping and transitions remain outside walls (0.360016ms)
+✔ gamepad look has the same speed at 30 and 60 FPS and malformed inputs stay neutral (1.029888ms)
+✔ damaged preferences cannot create a zero-sized canvas or conflicting bindings (1.720561ms)
+✔ an old save containing all three clues no longer softlocks mission eight (0.329711ms)
+✔ mid-combat saves preserve disabled robots and boss energy (0.756239ms)
+✔ power upgrades spend earned points, persist and improve actual costs/recarga (0.894368ms)
+✔ enemy windups lock their area, respect collisions and expose three boss phases (1.917705ms)
+✔ hurt grace prevents simultaneous hits without erasing subsequent attacks (0.761565ms)
+✔ the terminal nearest the player wins over an overlapping elevator interaction (0.450155ms)
+✔ traffic yields to Kaito and citizens actually move and can be spoken to (0.657308ms)
+✔ surf-school lessons require surfing through all rings and award a point only once (0.667558ms)
+✔ cinematic power effects advance without advancing combat or energy (0.314956ms)
+✔ acceleration and braking are smooth and approximately frame-rate independent (2.449189ms)
+✔ jump buffering accepts a press just before landing without auto-bouncing (1.262951ms)
+✔ dodge uses its chosen direction and transit clears carried velocity (0.574002ms)
+✔ camera zoom follows the whole ray and interior walls have real heights (0.505944ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 27.665395
+✔ Surf de Maré acceleration, steering, boosted speed and obstacles use the simulation (10.248163ms)
+✔ Deslize de Névoa is gated by story and bounded by air time, with no infinite flight (15.914261ms)
+✔ basic combo is free, timed, directional and short range; shields enable a consumed counter (8.582001ms)
+✔ melee can complete the actual combat mission, persists robot progress, and rejects transit (12.527109ms)
+✔ training dummy resets without granting campaign or infinite rewards (11.982507ms)
+✔ outfits unlock through campaign, render selection persists, and unearned saves are rejected (0.664632ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 66.906835
+PASS WALK 1 O primeiro dia na praia t=0s hp=100
+PASS WALK 2 A onda misteriosa t=4s hp=100
+PASS WALK 3 O despertar dos poderes t=9s hp=100
+PASS WALK 4 Protegendo o litoral t=11s hp=100
+PASS WALK 5 O segredo do porto t=12s hp=100
+PASS WALK 6 Investigação no Bairro Sakura t=25s hp=100
+PASS WALK 7 A caverna escondida t=34s hp=100
+PASS WALK 8 O mistério da Maré Zero t=62s hp=100
+PASS WALK 9 O primeiro grande confronto t=67s hp=100
+PASS WALK 10 Viagem para Hikaru City t=73s hp=100
+PASS WALK 11 As luzes da metrópole t=76s hp=100
+PASS WALK 12 Investigação tecnológica t=88s hp=100
+PASS WALK 13 O segredo da Torre Hikari t=105s hp=100
+PASS WALK 14 Perseguição no distrito futurista t=131s hp=100
+PASS WALK 15 Uma pista no Porto Futurista t=146s hp=100
+PASS WALK 16 O plano do Diretor Kuroda t=170s hp=100
+PASS WALK 17 Retorno a Aonami t=191s hp=100
+PASS WALK 18 A tempestade t=193s hp=100
+PASS WALK 19 O confronto final t=211s hp=100
+PASS WALK 20 Guardião das Marés t=219s hp=100
+PASS: all 20 missions walked without teleporting or editing resources; simulated time 219s, recoveries 0.
+Built output/Kaito-Nami.html — self-contained, no network dependencies.
+Captured 1053 fallback draw commands and 6 geometry buffers.
+Captured 438 fallback draw commands and 6 geometry buffers.
+PASS: generated standalone HTML initializes through its real task queue, restores state, and draws the first scene in normal and light modes (mocked WebGL).
+
+Validação nativa Mesa/EGL: shaders normal, instanciado e seguro compilam/ligam. Quadros normal/leve/surf sem erro GL. Quadros normal/instanciado idênticos pixel a pixel. Não foram testados navegadores ou aparelhos físicos.

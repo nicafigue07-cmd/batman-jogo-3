@@ -31,3 +31,16 @@ test('safe mode still works when storage is blocked because it is encoded in the
 test('compatibility mode skips instancing rather than compiling the same GPU path again',()=>{
  const e=environment({stored:{'kaito-options':'{"compatibility":true}'}});vm.runInContext(fs.readFileSync(path.join(__dirname,'../src/renderer.js'),'utf8'),e.context);const renderer=new e.context.KaitoBatch({getExtension(){throw Error('must not request extension');}},'','',{});assert.equal(renderer.enabled,false);assert.equal(renderer.reason,'Modo de compatibilidade');
 });
+test('loading counts only completed unique milestones and stops after a module failure',()=>{
+ const e=environment();assert.equal(e.el('loadingProgress').value,1);e.boot.mark('geometry');assert.equal(e.el('loadingProgress').value,1);e.boot.finish('geometry');e.boot.finish('geometry');assert.equal(e.el('loadingProgress').value,2);
+ let nextRan=false;e.boot.enqueue('systems',()=>{throw Error('injected module failure');});e.boot.enqueue('core',()=>nextRan=true);e.timers[1]();assert.equal(e.boot.lastError.code,'MODULE_INITIALIZATION');assert.equal(e.boot.lastError.stage,'systems');assert.equal(nextRan,false);assert.equal(e.el('loadingProgress').value,2);e.boot.complete();assert(!e.boot.ready);
+});
+test('queued modules run in order on separate tasks and report their completed work',()=>{
+ const e=environment(),order=[];e.boot.enqueue('renderer',()=>order.push('renderer'));e.boot.enqueue('systems',()=>order.push('systems'));assert.deepEqual(order,[]);e.timers[1]();assert.deepEqual(order,['renderer']);assert.equal(e.el('loadingProgress').value,2);e.timers[2]();assert.deepEqual(order,['renderer','systems']);assert.equal(e.el('loadingProgress').value,3);
+});
+test('a driver refusing the normal context is retried without antialias before giving up',()=>{
+ const e=environment();e.canvas.getContext=(name,options)=>{e.contexts.push({name,options});return options.antialias?null:{getContextAttributes:()=>options};};const gl=e.boot.context(e.canvas);assert(gl);assert(e.boot.compatibility);assert(!e.boot.failed);assert.equal(e.contexts.length,3);assert.equal(e.boot.graphics.antialias,false);assert(e.boot.history.some(x=>x.code==='CONTEXT_RETRY'));
+});
+test('a background tab defers its watchdog and a denied clipboard opens the manual diagnostic',async()=>{
+ const e=environment();e.context.document.hidden=true;e.timers[0]();assert(!e.boot.failed);e.context.document.hidden=false;e.timers[1]();assert.equal(e.boot.lastError.code,'BOOT_TIMEOUT');e.context.navigator.clipboard.writeText=async()=>{throw Error('denied');};await e.el('copyError').onclick();assert.equal(e.el('diagnosticPanel').open,true);assert(e.el('errorSummary').textContent.includes('BOOT_TIMEOUT'));
+});

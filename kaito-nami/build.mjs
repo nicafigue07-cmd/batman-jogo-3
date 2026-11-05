@@ -4,7 +4,7 @@ import {fileURLToPath} from 'node:url';
 const base=dirname(fileURLToPath(import.meta.url)),out=join(base,'..','output');
 mkdirSync(out,{recursive:true});
 let html=readFileSync(join(base,'src','index.html'),'utf8');
-for(const name of ['runtime','renderer','systems','content','core','game'])html=html.replace(`<script src="${name}.js"></script>`,`<script>\n${readFileSync(join(base,'src',name+'.js'),'utf8')}\n</script>`);
+for(const name of ['runtime','renderer','systems','content','core','game'])html=html.replace(`<script src="${name}.js"></script>`,`<script>\n${name==='runtime'?readFileSync(join(base,'src',name+'.js'),'utf8'):`KaitoBoot.enqueue('${name}',function(){\n${readFileSync(join(base,'src',name+'.js'),'utf8')}\n});`}\n</script>`);
 html=html.replace('<html lang="pt-BR">','<html lang="pt-BR">\n<!--\n'+readFileSync(join(base,'LICENSE'),'utf8')+'\n-->');
 if(/<script src=/.test(html))throw Error('An external script remains in the standalone artifact.');
 writeFileSync(join(out,'Kaito-Nami.html'),html);

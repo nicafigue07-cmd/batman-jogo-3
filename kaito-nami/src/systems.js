@@ -99,7 +99,7 @@
       sensitivity:number('sensitivity',1,.5,2),map:s.map!==false,shadows:s.shadows!==false,weather:s.weather!==false,
       reducedMotion:!!s.reducedMotion,contrast:!!s.contrast,largeText:!!s.largeText,cinematics:s.cinematics!==false,
       tutorials:s.tutorials!==false,performance:!!s.performance,bindings:{}};
-    const defaults={forward:'KeyW',back:'KeyS',left:'KeyA',right:'KeyD',jump:'Space',power:'KeyQ',interact:'KeyE',dodge:'KeyR'};
+    const defaults={forward:'KeyW',back:'KeyS',left:'KeyA',right:'KeyD',jump:'Space',power:'KeyQ',interact:'KeyE',dodge:'KeyR',attack:'KeyF'};
     const reserved=new Set(['KeyK','KeyJ','KeyI','KeyM','Escape','ShiftLeft','ShiftRight']);
     const taken=new Set();
     for(const name of Object.keys(defaults)){
