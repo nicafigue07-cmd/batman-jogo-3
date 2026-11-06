@@ -5,28 +5,28 @@ export const MISSION_REWARDS = Object.freeze({ signals: 120, rescue: 140, eviden
 
 export const ARMORS = Object.freeze([
   Object.freeze({
-    id: 'vigilante', title: 'Vigilante', unlockedBy: null,
-    description: 'Defesa padrão. Dano corpo a corpo: 1. Gancho a 48 m/s.',
+    id: 'vigilante', title: 'Aventureiro', unlockedBy: null,
+    description: 'Mochila padrão de Kaito. Defesa padrão, dano corpo a corpo 1 e gancho a 48 m/s.',
     defense: 1, meleeDamage: 1, grappleSpeed: 48, scanBonus: 0,
   }),
   Object.freeze({
-    id: 'tactical', title: 'Tática', unlockedBy: 'signals',
-    description: 'Receba 15% menos dano. Dano corpo a corpo: 1. Gancho a 62 m/s.',
+    id: 'tactical', title: 'Kit de exploração', unlockedBy: 'signals',
+    description: 'Mochila de exploração com gancho a 62 m/s. Receba 15% menos dano; dano corpo a corpo 1.',
     defense: 0.85, meleeDamage: 1, grappleSpeed: 62, scanBonus: 0,
   }),
   Object.freeze({
-    id: 'rescue', title: 'Resgate', unlockedBy: 'rescue',
-    description: 'Receba 25% menos dano. Dano corpo a corpo: 1. Gancho a 48 m/s.',
+    id: 'rescue', title: 'Kit de resgate', unlockedBy: 'rescue',
+    description: 'Kit de resgate na mochila. Receba 25% menos dano; dano corpo a corpo 1 e gancho a 48 m/s.',
     defense: 0.75, meleeDamage: 1, grappleSpeed: 48, scanBonus: 0,
   }),
   Object.freeze({
-    id: 'detective', title: 'Detetive', unlockedBy: 'evidence',
-    description: 'Bônus de +1 no scanner. Defesa padrão, dano corpo a corpo 1 e gancho a 48 m/s.',
+    id: 'detective', title: 'Kit de investigação', unlockedBy: 'evidence',
+    description: 'Scanner aprimorado na mochila: bônus de +1. Defesa padrão, dano corpo a corpo 1 e gancho a 48 m/s.',
     defense: 1, meleeDamage: 1, grappleSpeed: 48, scanBonus: 1,
   }),
   Object.freeze({
-    id: 'armored', title: 'Blindada', unlockedBy: 'finale',
-    description: 'Receba 40% menos dano. Dano corpo a corpo: 2. Gancho a 44 m/s.',
+    id: 'armored', title: 'Kit reforçado', unlockedBy: 'finale',
+    description: 'Proteções reforçadas no equipamento. Receba 40% menos dano; dano corpo a corpo 2 e gancho a 44 m/s.',
     defense: 0.6, meleeDamage: 2, grappleSpeed: 44, scanBonus: 0,
   }),
 ]);

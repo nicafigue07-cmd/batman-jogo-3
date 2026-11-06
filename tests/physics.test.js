@@ -73,3 +73,50 @@ test('grapple returns null without a reachable forward anchor', () => {
 test('distance helper includes elevation', () => {
   assert.equal(distance3({ x: 0, y: 0, z: 0 }, { x: 3, y: 4, z: 12 }), 13);
 });
+
+test('the child body fits a narrow alley that still blocks the default adult body', () => {
+  const alley = [
+    { x: -2.5, z: 0, w: 4, d: 6, h: 10 },
+    { x: 2.5, z: 0, w: 4, d: 6, h: 10 },
+  ];
+  const child = { x: 0, y: 0, z: -5 };
+  const adult = { ...child };
+  const childVelocity = { x: 0, y: 0, z: 20 };
+  const adultVelocity = { ...childVelocity };
+  moveAndCollide(child, childVelocity, .5, alley, true, { radius: .42, height: 2.05 });
+  moveAndCollide(adult, adultVelocity, .5, alley, true);
+  assert.ok(Math.abs(child.z - 5) < .001, 'Kaito walks through the one-unit alley');
+  assert.equal(childVelocity.z, 20);
+  assert.ok(adult.z <= -3.55 + .001, 'adult NPC collision size is unchanged');
+  assert.equal(adultVelocity.z, 0);
+});
+
+test('a child body moving quickly cannot tunnel through a thin wall', () => {
+  const position = { x: -20, y: 1, z: 0 };
+  const velocity = { x: 100, y: 0, z: 0 };
+  moveAndCollide(position, velocity, .5, [{ x: 0, z: 0, w: .02, d: 5, h: 10 }], false, { radius: .42, height: 2.05 });
+  assert.ok(Math.abs(position.x + .43) < .00001);
+  assert.equal(velocity.x, 0);
+});
+
+test('roof support uses the selected body radius rather than the adult footprint', () => {
+  const child = { x: 6.5, y: 21, z: 0 };
+  const adult = { ...child };
+  const childResult = moveAndCollide(child, { x: 0, y: -20, z: 0 }, .1, [building], false, { radius: .42, height: 2.05 });
+  const adultResult = moveAndCollide(adult, { x: 0, y: -20, z: 0 }, .1, [building]);
+  assert.equal(childResult.grounded, false, 'the smaller body has cleared the roof edge');
+  assert.ok(child.y < 20);
+  assert.equal(adultResult.grounded, true);
+  assert.equal(adult.y, 20);
+});
+
+test('invalid optional body dimensions retain the original collision defaults', () => {
+  for (const body of [null, { radius: 0, height: 0 }, { radius: -1, height: -1 },
+    { radius: NaN, height: Infinity }, { radius: '.42', height: '2.05' }]) {
+    const position = { x: -20, y: 2, z: 0 };
+    const velocity = { x: 100, y: 0, z: 0 };
+    moveAndCollide(position, velocity, .3, [building], false, body);
+    assert.equal(position.x, -6.55);
+    assert.equal(velocity.x, 0);
+  }
+});

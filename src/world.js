@@ -1,3 +1,5 @@
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+
 /** Procedural Gotham. All scenery and character meshes are generated locally. */
 export function createWorld(THREE, scene) {
   let seed = 8307;
@@ -446,7 +448,7 @@ export function createWorld(THREE, scene) {
         batch('metal', x, h + 2.5, z, w * .72, 5, d * .72);
         batch('concrete', x, h + 6.5, z, w * .5, 3, d * .5);
         batch('gold', x, h + 16, z, .55, 18, .55);
-        billboard('WAYNE', '#d7b77a', x, h - 5.5, z + d / 2 + .12, 19, 4.6);
+        billboard('NAMI', '#d7b77a', x, h - 5.5, z + d / 2 + .12, 19, 4.6);
       }
       if (index === 30) billboard('GOTHAM GAZETTE', '#80c5c9', x, h - 6, z + data.d / 2 + .12, data.w * .9, 4);
       if (index === 19) billboard('MONARCH', '#d3a76a', x, h - 5, z + data.d / 2 + .12, data.w * .8, 5);
@@ -648,13 +650,14 @@ export function createWorld(THREE, scene) {
   signalContext.fillRect(0,0,256,256);
   signalContext.fillStyle='rgba(12,25,32,.87)';
   signalContext.beginPath();
-  [[.0,.3],[-.15,.05],[-.32,.13],[-.38,-.02],[-.64,.05],[-.57,-.28],[-.38,-.14],[-.16,-.12],[-.09,-.28],[0,-.17],[.09,-.28],[.16,-.12],[.38,-.14],[.57,-.28],[.64,.05],[.38,-.02],[.32,.13],[.15,.05]].forEach(([x,y],i)=>{
+  // A curling wave replaces the old bat-shaped projection.
+  [[-.66,.18],[-.51,-.05],[-.3,-.24],[-.07,-.35],[.17,-.34],[.37,-.22],[.45,-.04],[.41,.12],[.29,.2],[.16,.18],[.09,.08],[.12,-.02],[.2,-.05],[.29,-.01],[.23,-.13],[.1,-.17],[-.04,-.12],[-.16,.01],[-.26,.18],[-.41,.29],[-.59,.3],[.66,.3],[.66,.4],[-.66,.4]].forEach(([x,y],i)=>{
     if(i===0) signalContext.moveTo(128+x*128,128+y*128);
     else signalContext.lineTo(128+x*128,128+y*128);
   });
   signalContext.closePath(); signalContext.fill();
   const batSignal = new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(signalCanvas),transparent:true,opacity:.8,depthWrite:false,fog:false}));
-  batSignal.name='Bat signal in the clouds';
+  batSignal.name='Sinal das ondas nas nuvens';
   batSignal.position.set(98,124,-224);
   batSignal.scale.set(56,48,1);
   ambientDetails.add(batSignal);
@@ -667,6 +670,7 @@ export function createWorld(THREE, scene) {
 
   // Traffic is decorative and lives on the road grid. It is updated only on
   // high quality; there are no physics objects, extra point lights or passes.
+  let trafficEnabled=true;
   const traffic=[];
   for(let i=0;i<36;i++) traffic.push({road:(i%7-3)*56+28,lane:i%2?3.8:-3.8,phase:detailRandom()*448,speed:7+detailRandom()*8,direction:i%2?1:-1});
   const trafficBody=new THREE.InstancedMesh(new THREE.BoxGeometry(1.8,.8,3.8),new THREE.MeshStandardMaterial({color:0x253842,metalness:.65,roughness:.4}),traffic.length);
@@ -743,6 +747,10 @@ export function createWorld(THREE, scene) {
   setQuality();
   return {
     buildings, rooftops, collisionBuildings, buildingStyles, anchors, missionSites, spawn, group, setQuality,
+    setTrafficEnabled(enabled=true) {
+      trafficEnabled=!!enabled;
+      for(const mesh of trafficMeshes)mesh.visible=trafficEnabled;
+    },
     update(time) {
       beams.forEach((beam, i) => {
         beam.rotation.z = Math.sin(time * .13 + i * 2) * .34;
@@ -754,9 +762,51 @@ export function createWorld(THREE, scene) {
         });
         batSignal.material.opacity=.74+Math.sin(time*.3)*.06;
       }
-      if (quality==='high') updateTraffic(time);
+      if (quality==='high'&&trafficEnabled) updateTraffic(time);
     },
   };
+}
+
+// Merge rigid pieces only within their existing animation pivots. Limbs and
+// armor groups remain separate, so their transforms and visibility still work.
+function batchRigidParts(THREE, parent, excluded = new Set()) {
+  const byMaterial = new Map();
+  for (const child of [...parent.children]) {
+    if (child.isGroup) batchRigidParts(THREE, child, excluded);
+    if (!child.isMesh || child.isInstancedMesh || excluded.has(child) ||
+        Array.isArray(child.material) || child.geometry.morphAttributes.position) continue;
+    const pieces = byMaterial.get(child.material) || [];
+    pieces.push(child);
+    byMaterial.set(child.material, pieces);
+  }
+  for (const [material, pieces] of byMaterial) {
+    if (pieces.length < 2) continue;
+    const copies = pieces.map(piece => {
+      piece.updateMatrix();
+      const geometry = piece.geometry.index ? piece.geometry.toNonIndexed() : piece.geometry.clone();
+      geometry.applyMatrix4(piece.matrix);
+      geometry.clearGroups();
+      return geometry;
+    });
+    const geometry = mergeGeometries(copies, false);
+    for (const copy of copies) copy.dispose();
+    if (!geometry) continue;
+    geometry.computeBoundingSphere();
+    const merged = new THREE.Mesh(geometry, material);
+    merged.name = 'Batched rigid character parts';
+    merged.userData.parts = pieces.map(piece => piece.name).filter(Boolean);
+    merged.castShadow = pieces.some(piece => piece.castShadow);
+    merged.receiveShadow = pieces.some(piece => piece.receiveShadow);
+    merged.matrixAutoUpdate = false;
+    for (const piece of pieces) parent.remove(piece);
+    parent.add(merged);
+  }
+}
+
+function visibleMeshCount(model) {
+  let count=0;
+  model.traverseVisible(part=>{if(part.isMesh)count++;});
+  return count;
 }
 
 function batShape(THREE) {
@@ -855,11 +905,14 @@ export function createBatman(THREE) {
   }
   const capeGeometry = new THREE.BufferGeometry();
   capeGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions,3));
+  capeGeometry.attributes.position.setUsage(THREE.DynamicDrawUsage);
   capeGeometry.setIndex(indices);
   const capeMaterial = new THREE.MeshStandardMaterial({ color: 0x080e18, roughness: .75, metalness: .16, side: THREE.DoubleSide });
   const cape = new THREE.Mesh(capeGeometry, capeMaterial);
   cape.name = 'Cape';
   cape.castShadow = true;
+  // Cloth changes its bounds when opening; the hero stays close to the camera.
+  cape.frustumCulled = false;
   hero.add(cape);
 
   // Construct accessories once. Switching armor only changes colors and group
@@ -937,12 +990,24 @@ export function createBatman(THREE) {
   pose.name = 'Batman pose';
   for (const part of [...hero.children]) pose.add(part);
   hero.add(pose);
-  hero.userData.update = ({ time=0, moving=false, gliding=false, attacking=false, grappling=false, attackType=null, attackPhase=0 }={}) => {
+  const beforeBatch=visibleMeshCount(hero);
+  batchRigidParts(THREE,pose,new Set([emblem,cape]));
+  hero.userData.renderStats={beforeMeshes:beforeBatch,afterMeshes:visibleMeshCount(hero)};
+  const capeCoordinates=[];
+  for(let row=0;row<=rows;row++)for(let col=0;col<=cols;col++) {
+    const u=col/cols*2-1,v=row/rows;
+    capeCoordinates.push({u,v,scallop:row===rows?Math.abs(Math.sin((u+1)*Math.PI*3)):0,wavePhase:u*7+v*5});
+  }
+  hero.userData.update = ({ time=0, moving=false, gliding=false, attacking=false, grappling=false, defending=false, finisher=false, attackType=null, attackPhase=0 }={}) => {
     const phase = Number.isFinite(attackPhase) ? THREE.MathUtils.clamp(attackPhase,0,1) : 0;
     const strike = Math.sin(phase*Math.PI);
     pose.position.y=0;
     pose.rotation.set(0,0,0);
-    for (const limb of [...arms,...legs]) {
+    for (const limb of arms) {
+      limb.rotation.y=0;
+      limb.rotation.z=0;
+    }
+    for (const limb of legs) {
       limb.rotation.y=0;
       limb.rotation.z=0;
     }
@@ -954,7 +1019,22 @@ export function createBatman(THREE) {
     arms[0].rotation.z = gliding ? -1.15 : .12;
     arms[1].rotation.z = gliding ? 1.15 : -.12;
     let capeFlare=0;
-    if (!gliding && !grappling && attackType==='punch') {
+    if (!gliding && !grappling && (defending || attackType==='parry')) {
+      arms[0].rotation.x=-1.45;
+      arms[1].rotation.x=-1.45;
+      arms[0].rotation.y=-.55;
+      arms[1].rotation.y=.55;
+      pose.rotation.x=.08;
+      pose.position.y=-.08;
+      capeFlare=.15;
+    } else if (!gliding && !grappling && (finisher || attackType==='finisher')) {
+      arms[0].rotation.x=-1.95*strike;
+      arms[1].rotation.x=-1.4*strike;
+      legs[1].rotation.x=-1.5*strike;
+      pose.rotation.y=Math.sin(phase*Math.PI*2)*.75;
+      pose.position.y=-.12*strike;
+      capeFlare=strike*.8;
+    } else if (!gliding && !grappling && attackType==='punch') {
       arms[0].rotation.x=-1.85*strike;
       arms[0].rotation.y=-.3*strike;
       arms[1].rotation.x=-.45*strike;
@@ -984,17 +1064,13 @@ export function createBatman(THREE) {
       capeFlare=strike;
     }
     const attribute = capeGeometry.attributes.position;
-    for (let row=0;row<=rows;row++) {
-      const v=row/rows;
-      for (let col=0;col<=cols;col++) {
-        const u=col/cols*2-1;
+    for(let i=0;i<capeCoordinates.length;i++) {
+        const {u,v,scallop,wavePhase}=capeCoordinates[i];
         const width=gliding ? .45+v*2.15 : .43+v*(.45+capeFlare*.8);
-        const scallop=Math.abs(Math.sin((u+1)*Math.PI*3));
         const x=u*width;
-        const y=gliding ? 1.96-v*.65-(row===rows?scallop*.2:0) : 1.97-v*1.85+(row===rows?scallop*.16:0);
-        const z=-.28-v*(gliding?1.15:(moving?.58:.14)+capeFlare*.55)+Math.sin(time*5+u*7+v*5)*v*.075;
-        attribute.setXYZ(row*(cols+1)+col,x,y,z);
-      }
+        const y=gliding ? 1.96-v*.65-scallop*.2 : 1.97-v*1.85+scallop*.16;
+        const z=-.28-v*(gliding?1.15:(moving?.58:.14)+capeFlare*.55)+Math.sin(time*5+wavePhase)*v*.075;
+        attribute.setXYZ(i,x,y,z);
     }
     attribute.needsUpdate=true;
     capeGeometry.computeVertexNormals();
@@ -1025,6 +1101,9 @@ export function createEnemy(THREE) {
   const legs=[add(dark,.25,.78,.29,-.19,.45,0),add(dark,.25,.78,.29,.19,.45,0)];
   add(dark,.29,.17,.4,-.19,.09,.055);
   add(dark,.29,.17,.4,.19,.09,.055);
+  const beforeBatch=visibleMeshCount(enemy);
+  batchRigidParts(THREE,enemy,new Set([...arms,...legs]));
+  enemy.userData.renderStats={beforeMeshes:beforeBatch,afterMeshes:visibleMeshCount(enemy)};
   enemy.userData.update=({time=0,moving=false,attacking=false}={})=>{
     const stride=moving?Math.sin(time*9)*.35:0;
     legs[0].rotation.x=stride;

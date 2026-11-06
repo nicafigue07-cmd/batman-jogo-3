@@ -7,8 +7,8 @@ export const MISSIONS = [
     villainId: 'firefly',
     title: 'Silêncio na frequência',
     description: 'Persiga o Vagalume pelos telhados, neutralize seus guardas e sincronize três transmissores antes de encerrar a sabotagem.',
-    briefing: 'Alfred: o Vagalume está sabotando as antenas nos telhados. Libere os transmissores e use F para invadi-los. Sincronize três vezes com Espaço na faixa dourada e enfrente o sabotador.',
-    completeMessage: 'Rede restaurada. O Vagalume foi detido e os três transmissores estão desligados. Gotham voltou a se comunicar.',
+    briefing: 'Rádio da equipe: Kaito, o Vagalume está sabotando as antenas nos telhados. Libere os transmissores e use F para invadi-los. Sincronize três vezes com Espaço na faixa dourada e enfrente o sabotador.',
+    completeMessage: 'Rede restaurada! Kaito ajudou a equipe a deter o Vagalume e desligar os três transmissores. Gotham voltou a se comunicar.',
     objectives: [
       { id: 'signals-financial', name: 'Distrito financeiro', x: 56, y: 35, z: 56, kind: 'signal', guardCount: 2, guardHealth: 3, interaction: 'Desativar transmissor' },
       { id: 'signals-old-gotham', name: 'Old Gotham', x: -112, y: 47, z: -56, kind: 'signal', guardCount: 2, guardHealth: 3, interaction: 'Desativar transmissor' },
@@ -22,8 +22,8 @@ export const MISSIONS = [
     villainId: 'penguin',
     title: 'Resgate na Rua do Mercado',
     description: 'Desça às ruas, enfrente o Pinguim e seus capangas e escolte o refém até a área de extração.',
-    briefing: 'Alfred: o Pinguim mantém um refém na Rua do Mercado. Vença os criminosos no chão, liberte o civil com F e acompanhe-o até o círculo de extração. Confirme a evacuação com F.',
-    completeMessage: 'Refém a salvo. O Pinguim perdeu o controle da Rua do Mercado e a equipe de emergência assumiu o resgate.',
+    briefing: 'Rádio da equipe: Kaito, o Pinguim mantém um refém na Rua do Mercado. Vença os criminosos no chão, liberte o civil com F e acompanhe-o até o círculo de extração. Confirme a evacuação com F.',
+    completeMessage: 'Civil a salvo! Kaito acompanhou a evacuação, o Pinguim perdeu o controle da rua e a equipe de emergência assumiu o resgate.',
     objectives: [
       { id: 'rescue-civilian', name: 'Rua do Mercado', x: -28, y: 0, z: 112, kind: 'rescue', guardCount: 2, guardHealth: 3, interaction: 'Resgatar civil' },
     ],
@@ -35,7 +35,7 @@ export const MISSIONS = [
     villainId: 'riddler',
     title: 'Rastros na noite',
     description: 'Investigue os enigmas do Charada nas ruas com o visor detetive e decifre duas sequências para desmontar sua armadilha.',
-    briefing: 'Alfred: o Charada deixou pistas nas ruas. Ative R nas áreas de busca, use F e reproduza a sequência A/B/C de cada prova. A última pista levará ao criminoso.',
+    briefing: 'Rádio da equipe: Kaito, o Charada deixou pistas nas ruas. Ative R nas áreas de busca, use F e reproduza a sequência A/B/C de cada prova. A última pista levará ao criminoso.',
     completeMessage: 'Enigmas resolvidos. O Charada foi encontrado e suas provas revelaram a operação na Torre de controle.',
     objectives: [
       { id: 'evidence-route', name: 'Beco dos enigmas', x: -28, y: 0, z: 56, kind: 'evidence', guardCount: 0, guardHealth: 3, interaction: 'Recolher pista' },
@@ -49,7 +49,7 @@ export const MISSIONS = [
     villainId: 'bane',
     title: 'Último sinal',
     description: 'Enfrente Bane na Torre de controle: esquive dos golpes pesados e ataque durante a abertura antes de desligar o terminal.',
-    briefing: 'Alfred: Bane protege o terminal no telhado. Aproxime-se para atrair o golpe pesado, esquive com Shift e contra-ataque quando sua defesa baixar. Depois desligue o terminal com F.',
+    briefing: 'Rádio da equipe: Kaito, Bane protege o terminal no telhado. Aproxime-se para atrair o golpe pesado, esquive com Shift e contra-ataque quando sua defesa baixar. Depois desligue o terminal com F.',
     completeMessage: 'Operação encerrada. Bane foi neutralizado e o último terminal está desligado. Uma nova ameaça ainda cruza o céu de Gotham.',
     objectives: [
       { id: 'finale-terminal', name: 'Torre de controle', x: 112, y: 28.638754334766418, z: -112, kind: 'finale', guardCount: 0, guardHealth: 10, interaction: 'Desligar terminal final' },
@@ -60,9 +60,9 @@ export const MISSIONS = [
     type: 'flight',
     terrain: 'air',
     villainId: 'man-bat',
-    title: 'Asas contra o medo',
-    description: 'Plane por três anéis sobre as avenidas para seguir o Morcego-Humano e enfrente-o no telhado ao fim da perseguição.',
-    briefing: 'Alfred: salte da Torre Wayne e segure Espaço para planar. Atravesse os três anéis dourados em ordem, sem usar o gancho dentro deles. Depois pouse no telhado marcado e detenha o Morcego-Humano.',
+    title: 'Prancha contra o medo',
+    description: 'Plane com a prancha por três anéis sobre as avenidas, siga o Morcego-Humano e enfrente-o no telhado final.',
+    briefing: 'Rádio da equipe: Kaito, salte da torre central e segure Espaço para planar com sua prancha. Atravesse os três anéis dourados em ordem, sem usar o gancho dentro deles. Depois pouse no telhado marcado e detenha o Morcego-Humano.',
     completeMessage: 'Céu seguro. O Morcego-Humano foi detido após a perseguição aérea e Gotham pode respirar por esta noite.',
     launch: { x: 6, y: 84, z: -168 },
     objectives: [

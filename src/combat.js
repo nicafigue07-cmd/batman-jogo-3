@@ -8,6 +8,12 @@ export const ATTACKS = Object.freeze({
 
 const COMBO_WINDOW = 1.6;
 const EPSILON = 1e-8;
+export const FOCUS_MAX = 100;
+export const PARRY_WINDOW = 0.32;
+export const PERFECT_PARRY_WINDOW = 0.12;
+export const PARRY_COOLDOWN = 0.75;
+const currentFocus = state => Number.isFinite(state.focus) ? Math.max(0, Math.min(FOCUS_MAX, state.focus)) : 0;
+const noDefense = () => ({ parried: false, perfect: false, counterDamage: 0, stun: 0, focusGained: 0 });
 
 export function createCombatState() {
   return {
@@ -18,6 +24,10 @@ export function createCombatState() {
     animationTime: 0,
     animationDuration: 0,
     lastAttack: null,
+    focus: 0,
+    defenseWindow: 0,
+    defenseCooldown: 0,
+    defenseElapsed: 0,
   };
 }
 
@@ -29,6 +39,9 @@ export function tickCombat(state, dt) {
   for (const type of Object.keys(ATTACKS)) {
     state.cooldowns[type] = decrease(state.cooldowns[type]);
   }
+  state.defenseCooldown = decrease(state.defenseCooldown);
+  if (state.defenseWindow > 0) state.defenseElapsed += Math.min(elapsed, state.defenseWindow);
+  state.defenseWindow = decrease(state.defenseWindow);
   state.comboTimer = decrease(state.comboTimer);
   if (state.comboTimer === 0) state.comboStep = 0;
   state.animationTime = decrease(state.animationTime);
@@ -40,6 +53,7 @@ export function tickCombat(state, dt) {
 export function beginAttack(state, type, { grounded = true, grappling = false, armorDamage = 1 } = {}) {
   if (!Object.hasOwn(ATTACKS, type)) return { ok: false, reason: 'unknown' };
   const attack = ATTACKS[type];
+  if (state.animation === 'finisher') return { ok: false, reason: 'finishing' };
   if (grappling) return { ok: false, reason: 'grappling' };
   if (attack.needsGrounded && !grounded) return { ok: false, reason: 'airborne' };
   if (attack.needsAirborne && grounded) return { ok: false, reason: 'grounded' };
@@ -68,4 +82,61 @@ export function beginAttack(state, type, { grounded = true, grappling = false, a
     comboStep,
     duration: attack.duration,
   };
+}
+
+
+/** A short, deliberate defense. A failed attempt never spends its cooldown. */
+export function beginParry(state, { grounded = true, grappling = false } = {}) {
+  if (grappling) return { ok: false, reason: 'grappling' };
+  if (!grounded) return { ok: false, reason: 'airborne' };
+  if (state.animation === 'finisher') return { ok: false, reason: 'finishing' };
+  if (state.defenseCooldown > EPSILON) return { ok: false, reason: 'cooldown' };
+  state.defenseWindow = PARRY_WINDOW;
+  state.defenseCooldown = PARRY_COOLDOWN;
+  state.defenseElapsed = 0;
+  state.animation = 'parry';
+  state.animationTime = PARRY_WINDOW;
+  state.animationDuration = PARRY_WINDOW;
+  state.lastAttack = 'parry';
+  return { ok: true, duration: PARRY_WINDOW, cooldown: PARRY_COOLDOWN };
+}
+
+/** Resolve one incoming hit; the same window cannot counter multiple enemies. */
+export function resolveDefense(state, { parryable = true } = {}) {
+  if (parryable !== true || !(state.defenseWindow > EPSILON)) return noDefense();
+  const perfect = state.defenseElapsed <= PERFECT_PARRY_WINDOW + EPSILON;
+  const oldFocus = currentFocus(state);
+  state.focus = Math.min(FOCUS_MAX, oldFocus + 20);
+  state.defenseWindow = 0;
+  return {
+    parried: true, perfect,
+    counterDamage: perfect ? 3 : 1,
+    stun: perfect ? 1.8 : 0.9,
+    focusGained: state.focus - oldFocus,
+  };
+}
+
+/** Called only after a confirmed hit or silent takedown, never on an attack whiff. */
+export function registerHit(state, { silent = false } = {}) {
+  const oldFocus = currentFocus(state);
+  state.focus = Math.min(FOCUS_MAX, oldFocus + (silent === true ? 15 : 8));
+  return { focus: state.focus, focusGained: state.focus - oldFocus, ready: state.focus === FOCUS_MAX };
+}
+
+/** A full focus bar pays for one valid target. Damage is independent of armor. */
+export function beginFinisher(state, { grounded = true, grappling = false, hasTarget = false } = {}) {
+  if (grappling) return { ok: false, reason: 'grappling' };
+  if (!grounded) return { ok: false, reason: 'airborne' };
+  if (state.animation === 'finisher') return { ok: false, reason: 'finishing' };
+  if (hasTarget !== true) return { ok: false, reason: 'target' };
+  if (currentFocus(state) < FOCUS_MAX) return { ok: false, reason: 'focus' };
+  state.focus = 0;
+  state.defenseWindow = 0;
+  state.comboStep = 0;
+  state.comboTimer = 0;
+  state.animation = 'finisher';
+  state.animationTime = 0.85;
+  state.animationDuration = 0.85;
+  state.lastAttack = 'finisher';
+  return { ok: true, type: 'finisher', damage: 8, range: 6, stun: 2, duration: 0.85 };
 }

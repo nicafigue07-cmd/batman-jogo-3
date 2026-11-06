@@ -116,7 +116,7 @@ async function checkDesktopAndTablet() {
     console.error(issues.at(-1));
   }
   const client = await context.newCDPSession(page);
-  const expected = ['grapple', 'attack', 'heavy', 'jump', 'slam', 'dodge', 'interact', 'batarang', 'smoke', 'crouch', 'takedown'];
+  const expected = ['grapple', 'attack', 'heavy', 'jump', 'slam', 'dodge', 'interact', 'batarang', 'smoke', 'crouch', 'takedown', 'parry', 'finisher'];
   assert.deepEqual(await page.locator('.touch-actions [data-action]').evaluateAll(buttons => buttons.map(button => button.dataset.action)), expected);
 
   for (const viewport of [{ width: 1280, height: 800 }, { width: 800, height: 1280 }]) {

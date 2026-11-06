@@ -20,12 +20,12 @@ const stylesheetContent = await asset(href[1]);
 if (/<\/script/i.test(javascript)) throw new Error('Script requires HTML-safe escaping');
 html = html.replace(script[0], () => `<script type="module">\n${javascript}\n</script>`);
 html = html.replace(stylesheet[0], () => `<style>\n${stylesheetContent}\n</style>`);
-const output = resolve(root, 'Batman-Sombras-de-Gotham.html');
+const output = resolve(root, 'Kaito-Nami.html');
 await writeFile(output, html);
 console.log(`Jogo portátil: ${output}`);
 for (const [edition, platform] of Object.entries({PC:'pc',Tablet:'tablet','Controle-PlayStation':'gamepad'})) {
   const content=html.replace('<head>',`<head>\n<script>document.documentElement.dataset.platform=${JSON.stringify(platform)};</script>`);
-  const path=resolve(root,`Batman-Sombras-de-Gotham-${edition}.html`);
+  const path=resolve(root,`Kaito-Nami-${edition}.html`);
   await writeFile(path,content);
   console.log(`Edição ${edition}: ${path}`);
 }

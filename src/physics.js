@@ -8,27 +8,37 @@ export function distance3(a, b) {
   return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
 }
 
-function overlapsFootprint(position, building) {
-  return position.x + RADIUS > building.x - building.w / 2 + EPSILON &&
-    position.x - RADIUS < building.x + building.w / 2 - EPSILON &&
-    position.z + RADIUS > building.z - building.d / 2 + EPSILON &&
-    position.z - RADIUS < building.z + building.d / 2 - EPSILON;
+function overlapsFootprint(position, building, radius) {
+  return position.x + radius > building.x - building.w / 2 + EPSILON &&
+    position.x - radius < building.x + building.w / 2 - EPSILON &&
+    position.z + radius > building.z - building.d / 2 + EPSILON &&
+    position.z - radius < building.z + building.d / 2 - EPSILON;
 }
 
-function intersectsHeight(position, building) {
-  return position.y < building.h - EPSILON && position.y + HEIGHT > EPSILON;
+function intersectsHeight(position, building, height) {
+  return position.y < building.h - EPSILON && position.y + height > EPSILON;
 }
+
+const bodyDimension = (value, fallback) => typeof value === 'number' &&
+  Number.isFinite(value) && value > EPSILON ? value : fallback;
 
 /**
  * Integrate one movement step against solid, ground-based buildings.
  * Apply gravity to velocity.y before calling this function. Both arguments are
  * mutated so callers may use THREE.Vector3 or ordinary coordinate objects.
+ * Optional body dimensions allow the child protagonist and adult NPCs to use
+ * the same solver. Invalid dimensions keep the original adult defaults.
  */
-export function moveAndCollide(position, velocity, dt, buildings, grounded = false) {
+export function moveAndCollide(position, velocity, dt, buildings, grounded = false, body = {}) {
   if (!Number.isFinite(dt) || dt <= 0) return { grounded, landed: false };
+  const radius = bodyDimension(body?.radius, RADIUS);
+  const height = bodyDimension(body?.height, HEIGHT);
+  // Keep movement steps shorter than the body diameter, including smaller
+  // actors, so a fast crossing cannot skip a thin wall.
+  const maximumStep = Math.min(0.4, radius);
   const steps = Math.max(1, Math.ceil(Math.max(
     Math.abs(velocity.x), Math.abs(velocity.y), Math.abs(velocity.z),
-  ) * dt / 0.4));
+  ) * dt / maximumStep));
   const step = dt / steps;
   let onGround = false;
 
@@ -39,9 +49,9 @@ export function moveAndCollide(position, velocity, dt, buildings, grounded = fal
       position[axis] += movement;
       if (movement !== 0) {
         for (const building of buildings) {
-          if (!intersectsHeight(position, building) || !overlapsFootprint(position, building)) continue;
+          if (!intersectsHeight(position, building, height) || !overlapsFootprint(position, building, radius)) continue;
           const halfSize = (axis === 'x' ? building.w : building.d) / 2;
-          position[axis] = building[axis] + (movement > 0 ? -1 : 1) * (halfSize + RADIUS);
+          position[axis] = building[axis] + (movement > 0 ? -1 : 1) * (halfSize + radius);
           velocity[axis] = 0;
         }
       }
@@ -58,7 +68,7 @@ export function moveAndCollide(position, velocity, dt, buildings, grounded = fal
       // Choose the highest roof crossed in this step, independent of list order.
       let surface = 0;
       for (const building of buildings) {
-        if (overlapsFootprint(position, building) &&
+        if (overlapsFootprint(position, building, radius) &&
             previousY >= building.h - EPSILON && position.y <= building.h + EPSILON) {
           surface = Math.max(surface, building.h);
         }

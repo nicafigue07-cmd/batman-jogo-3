@@ -28,11 +28,11 @@ test('a new profile starts at level one with only the Vigilante armor', () => {
 
 test('armor definitions expose the promised gameplay benefits and mission unlocks', () => {
   const expected = {
-    vigilante: { title: 'Vigilante', unlockedBy: null, defense: 1, meleeDamage: 1, grappleSpeed: 48, scanBonus: 0 },
-    tactical: { title: 'Tática', unlockedBy: 'signals', defense: .85, meleeDamage: 1, grappleSpeed: 62, scanBonus: 0 },
-    rescue: { title: 'Resgate', unlockedBy: 'rescue', defense: .75, meleeDamage: 1, grappleSpeed: 48, scanBonus: 0 },
-    detective: { title: 'Detetive', unlockedBy: 'evidence', defense: 1, meleeDamage: 1, grappleSpeed: 48, scanBonus: 1 },
-    armored: { title: 'Blindada', unlockedBy: 'finale', defense: .6, meleeDamage: 2, grappleSpeed: 44, scanBonus: 0 },
+    vigilante: { title: 'Aventureiro', unlockedBy: null, defense: 1, meleeDamage: 1, grappleSpeed: 48, scanBonus: 0 },
+    tactical: { title: 'Kit de exploração', unlockedBy: 'signals', defense: .85, meleeDamage: 1, grappleSpeed: 62, scanBonus: 0 },
+    rescue: { title: 'Kit de resgate', unlockedBy: 'rescue', defense: .75, meleeDamage: 1, grappleSpeed: 48, scanBonus: 0 },
+    detective: { title: 'Kit de investigação', unlockedBy: 'evidence', defense: 1, meleeDamage: 1, grappleSpeed: 48, scanBonus: 1 },
+    armored: { title: 'Kit reforçado', unlockedBy: 'finale', defense: .6, meleeDamage: 2, grappleSpeed: 44, scanBonus: 0 },
   };
   assert.equal(ARMORS.length, 5);
   assert.equal(new Set(ARMORS.map(armor => armor.id)).size, 5);

@@ -5,8 +5,8 @@
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  --gold: #dcc58b;
-  --gold-dim: #a18f68;
+  --gold: #75ded3;
+  --gold-dim: #67a9ab;
   --ink: #080e13;
   --muted: #819295;
   --line: rgba(190,200,193,.19);
@@ -154,7 +154,7 @@ button:disabled {
   height: 4px;
   background: var(--gold);
   border-radius: 50%;
-  box-shadow: 0 0 9px #dcc58b60;
+  box-shadow: 0 0 9px #75ded360;
   flex: none;
 }
 
@@ -217,7 +217,7 @@ button:disabled {
   width: 100%;
   height: 100%;
   background: var(--gold);
-  box-shadow: 0 0 10px #dcc58b55;
+  box-shadow: 0 0 10px #75ded355;
   transition: width .25s,background .25s;
 }
 
@@ -238,7 +238,7 @@ button:disabled {
   top: 115px;
   right: 40px;
   width: 300px;
-  border-top: 1px solid #dcc58b65;
+  border-top: 1px solid #75ded365;
   border-bottom: 1px solid var(--line);
   background: linear-gradient(90deg,rgba(8,15,19,.7),rgba(8,15,19,.2));
   padding: 14px 0 0;
@@ -279,7 +279,7 @@ button:disabled {
   margin-top: 6px;
   border: 1px solid var(--gold);
   transform: rotate(45deg);
-  box-shadow: 0 0 10px #dcc58b20;
+  box-shadow: 0 0 10px #75ded320;
 }
 
 .objective-main h2 {
@@ -392,8 +392,8 @@ button:disabled {
   transform: translate(-50%,0);
   padding: 13px 24px;
   background: linear-gradient(90deg,#101c1ddd,#142322ee);
-  border-top: 1px solid #dcc58b80;
-  border-bottom: 1px solid #dcc58b40;
+  border-top: 1px solid #75ded380;
+  border-bottom: 1px solid #75ded340;
   font-size: 11px;
   letter-spacing: 1px;
   text-align: center;
@@ -632,7 +632,7 @@ kbd {
 
 .icon-button:hover {
   background: #23302bcc;
-  border-color: #dcc58b80;
+  border-color: #75ded380;
   color: var(--gold);
 }
 
@@ -713,7 +713,7 @@ kbd {
 
 .intro-subtitle>span {
   height: 1px;
-  background: #dcc58b50;
+  background: #75ded350;
   flex: 1;
 }
 
@@ -764,7 +764,7 @@ kbd {
 
 .primary-button:hover {
   background: #ebd6a3;
-  box-shadow: 0 0 35px #dcc58b18;
+  box-shadow: 0 0 35px #75ded318;
   transform: translateY(-2px);
 }
 
@@ -1063,7 +1063,7 @@ body:has(#intro:not([hidden])) .touch-controls {
 }
 
 .touch-controls button:active {
-  background: #dcc58b75;
+  background: #75ded375;
 }
 
 .touch-direction {
@@ -1739,7 +1739,7 @@ body:has(#intro:not([hidden])) .touch-controls {
 }
 
 .secondary-button:hover {
-  border-color: #dcc58b80;
+  border-color: #75ded380;
   background: #202c25bb;
   color: var(--gold);
 }
@@ -1889,7 +1889,7 @@ body:has(#intro:not([hidden])) .touch-controls {
 
 .mission-card.is-complete,
 .mission-card[data-completed="true"] {
-  border-color: #dcc58b60;
+  border-color: #75ded360;
 }
 
 .mission-card.is-complete .mission-card-status,
@@ -2281,8 +2281,8 @@ body:has(#intro:not([hidden])) .touch-controls {
   bottom: 0;
   border-left: 1px solid var(--gold);
   border-right: 1px solid var(--gold);
-  background: #dcc58b45;
-  box-shadow: 0 0 20px #dcc58b10;
+  background: #75ded345;
+  box-shadow: 0 0 20px #75ded310;
 }
 
 .timing-cursor {
@@ -2855,7 +2855,7 @@ body.detective-mode .reticle,
 .platform-gamepad select:focus {
   outline: 3px solid #f0dc9b;
   outline-offset: 4px;
-  box-shadow: 0 0 20px #dcc58b45;
+  box-shadow: 0 0 20px #75ded345;
 }
 
 .controls-heading {
@@ -3307,3 +3307,764 @@ body.platform-tablet:has(#intro:not([hidden])) .utility-panel {
     font-size: 6px;
   }
 }
+
+/* Combat information stays next to the suit; warnings remain near the action. */
+.focus-meter {
+  margin-top: 9px;
+  padding-top: 8px;
+  border-top: 1px solid #7aaba73b;
+}
+
+.focus-caption {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  color: #9cc7be;
+  font-size: 7px;
+  letter-spacing: .6px;
+}
+
+.focus-caption strong {
+  margin-left: 5px;
+  color: #d5e8d6;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+#defense-status {
+  color: #b4d9d2;
+  font-size: 6px;
+  text-align: right;
+}
+
+.focus-track {
+  height: 4px;
+  margin-top: 5px;
+  overflow: hidden;
+  background: #35514d55;
+}
+
+#focus-fill {
+  width: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #70b9ac, #dfca8d);
+  box-shadow: 0 0 9px #96cdbb66;
+  transition: width .16s ease-out;
+}
+
+.focus-tip {
+  display: block;
+  margin-top: 4px;
+  color: #9bad98;
+  font-size: 6px;
+  letter-spacing: .6px;
+}
+
+.focus-meter.is-ready .focus-caption,
+.focus-meter.is-ready .focus-tip {
+  color: #f5dca0;
+}
+
+.threat-status {
+  position: absolute;
+  top: 89px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(360px, 52vw);
+  padding: 7px 12px;
+  border: 1px solid #dbb25f88;
+  background: #1e1b12d9;
+  color: #f3d99f;
+  box-shadow: 0 3px 24px #0004;
+  font-size: 9px;
+  line-height: 1.5;
+  letter-spacing: .7px;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.threat-status:empty {
+  display: none;
+}
+
+.patrol-readout {
+  top: 365px;
+}
+
+.difficulty-setting {
+  margin-top: 17px;
+}
+
+.pause-difficulty-setting {
+  margin: 12px auto 0;
+}
+
+.continue-entry {
+  height: 64px;
+  margin-bottom: 10px;
+}
+
+.continue-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  text-align: left;
+}
+
+.continue-copy small {
+  max-width: 215px;
+  color: #f5eed5;
+  font-size: 8px;
+  line-height: 1.5;
+  font-weight: 400;
+  letter-spacing: .3px;
+}
+
+.continue-copy small:empty {
+  display: none;
+}
+
+.arsenal-section-title {
+  margin: 25px 0 11px;
+  color: #b8c5a8;
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 1.8px;
+}
+
+.skills-panel {
+  margin-top: 29px;
+  padding-top: 25px;
+  border-top: 1px solid #b9c8a936;
+}
+
+.skills-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+}
+
+.skills-heading .eyebrow {
+  margin-bottom: 9px;
+  color: #86b8ab;
+  font-size: 7px;
+  letter-spacing: 1.6px;
+}
+
+.skills-heading h3 {
+  margin: 0;
+  color: #dee7d7;
+  font-family: var(--display);
+  font-size: 27px;
+  font-weight: 400;
+  letter-spacing: 1px;
+}
+
+.skill-points {
+  max-width: 170px;
+  padding: 8px 10px;
+  border: 1px solid #89baa555;
+  background: #28514833;
+  color: #b2dfc7;
+  font-size: 9px;
+  line-height: 1.6;
+  letter-spacing: .8px;
+  text-align: right;
+}
+
+.skills-description {
+  max-width: 580px;
+  margin: 13px 0 20px;
+  color: #a3b5a8;
+  font-size: 11px;
+  line-height: 1.8;
+}
+
+.skills-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.skill-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-height: 166px;
+  padding: 16px;
+  border: 1px solid #8ba29742;
+  background: linear-gradient(135deg, #1835306e, #111e2399);
+  color: #d5dfd0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .18s, background .18s;
+}
+
+.skill-card:hover:not(:disabled),
+.skill-card:focus-visible {
+  outline: 1px solid #b0dac4;
+  outline-offset: 2px;
+  border-color: #b0dac4;
+  background: #294d4077;
+}
+
+.skill-card:disabled {
+  cursor: default;
+}
+
+.skill-card.is-locked {
+  background: #111b2066;
+  border-color: #8ba29727;
+}
+
+.skill-card.is-unlocked {
+  border-color: #8dc7a577;
+  background: #214a3a55;
+}
+
+.skill-card-branch {
+  color: #8fbfae;
+  font-size: 7px;
+  line-height: 1.5;
+  letter-spacing: 1.4px;
+}
+
+.skill-card-title {
+  color: #e3e8d7;
+  font-size: 12px;
+  line-height: 1.5;
+  letter-spacing: .3px;
+}
+
+.skill-card-description {
+  color: #b4c0b2;
+  font-size: 10px;
+  line-height: 1.7;
+}
+
+.skill-card-status {
+  margin-top: auto;
+  padding-top: 4px;
+  color: #d9c68f;
+  font-size: 8px;
+  line-height: 1.6;
+  letter-spacing: .5px;
+}
+
+.skill-card.is-unlocked .skill-card-status {
+  color: #a4d7b6;
+}
+
+.skill-card.is-locked .skill-card-status {
+  color: #9ba99b;
+}
+
+.touch-actions [data-action="parry"] {
+  color: #bfe9df;
+  border-color: #7fb7af80;
+}
+
+.touch-actions [data-action="finisher"] {
+  color: #f2d89c;
+  border-color: #c6ab6677;
+}
+
+.platform-tablet .touch-actions {
+  width: min(340px, 57vw);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (min-width: 761px) and (max-height: 900px) {
+  .platform-tablet .combat-readout {
+    top: 235px;
+  }
+  .platform-tablet .patrol-readout {
+    top: 350px;
+    width: 320px;
+    padding-top: 7px;
+    font-size: 6px;
+    line-height: 1.7;
+  }
+  .platform-tablet #patrol-timer {
+    font-size: 8px;
+    letter-spacing: .2px;
+  }
+  .platform-tablet #wind-status {
+    display: none;
+  }
+}
+
+@media (max-width: 1050px) {
+  .patrol-readout {
+    top: 351px;
+  }
+}
+
+@media (max-width: 760px) {
+  .focus-meter {
+    margin-top: 6px;
+    padding-top: 6px;
+  }
+  .focus-caption {
+    font-size: 6px;
+    letter-spacing: .2px;
+  }
+  #defense-status {
+    font-size: 5px;
+  }
+  .focus-tip {
+    font-size: 5px;
+    letter-spacing: .2px;
+  }
+  .patrol-readout {
+    top: 304px;
+    width: 180px;
+  }
+  .threat-status {
+    top: 76px;
+    max-width: min(290px, 64vw);
+    font-size: 7px;
+    padding: 5px 8px;
+  }
+  .difficulty-setting {
+    width: 280px;
+    font-size: 6px;
+  }
+  .skills-heading {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .skills-heading h3 {
+    font-size: 24px;
+  }
+  .skill-points {
+    max-width: none;
+    font-size: 8px;
+    text-align: left;
+  }
+  .skills-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .skill-card {
+    min-height: 160px;
+    padding: 12px;
+  }
+  .skill-card-title {
+    font-size: 11px;
+  }
+  .platform-tablet .touch-actions {
+    width: min(340px, 57vw);
+  }
+}
+
+@media (max-width: 440px) {
+  .skills-list {
+    grid-template-columns: 1fr;
+  }
+  .skill-card {
+    min-height: 140px;
+  }
+  .platform-tablet .touch-actions {
+    width: calc(100vw - 166px);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-height: 520px) {
+  .intro-content {
+    scroll-padding: 12px;
+  }
+  .intro-content .intro-description {
+    margin-top: 14px;
+    margin-bottom: 10px;
+    font-size: 17px;
+    line-height: 1.4;
+  }
+  .intro-content .intro-detail {
+    margin-bottom: 17px;
+    font-size: 10px;
+  }
+  .intro-content .intro-eyebrow {
+    margin-bottom: 12px;
+  }
+  .intro-content .intro-controls,
+  .intro-content .intro-mouse {
+    display: none;
+  }
+  .patrol-readout {
+    top: 289px;
+    font-size: 6px;
+  }
+  .platform-tablet .combat-readout {
+    display: block;
+    top: 181px;
+    width: 150px;
+  }
+  .platform-tablet .patrol-readout {
+    top: 288px;
+    width: 180px;
+    padding-top: 6px;
+  }
+  .platform-tablet #wind-status {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #focus-fill,
+  .skill-card {
+    transition: none;
+  }
+}
+
+.platform-tablet .minimap-panel {
+  bottom: 210px;
+}
+
+.platform-tablet #wind-status {
+  display: block;
+}
+
+.touch-actions [data-action="finisher"] {
+  grid-column: 1 / -1;
+  background: #332b15d9;
+}
+
+.skill-card:disabled {
+  opacity: 1;
+}
+
+.skills-jump {
+  display: inline-flex;
+  align-items: center;
+  gap: 15px;
+  min-height: 40px;
+  padding: 10px 13px;
+  border: 1px solid #89baa555;
+  background: #28514833;
+  color: #c6dfc9;
+  font-size: 8px;
+  letter-spacing: 1px;
+  text-decoration: none;
+}
+
+.skills-jump:hover {
+  border-color: #b3d4ac;
+  background: #28514866;
+}
+
+@media (max-width: 760px) {
+  .threat-status {
+    max-width: 220px;
+  }
+}
+
+
+/* Kaito's sea-glass accents keep the city readable while giving his adventure
+   its own identity. Existing gameplay layout and control IDs are unchanged. */
+:root {
+  --coral: #f09287;
+  --sea: #75ded3;
+}
+
+.intro-overlay {
+  background: linear-gradient(90deg,rgba(6,24,31,.97) 0%,rgba(8,31,39,.87) 24%,rgba(7,27,36,.36) 49%,transparent 73%);
+}
+
+.intro-content h1 {
+  font-size: min(80px,15vw);
+  font-size: 15.5cqw;
+  letter-spacing: .35cqw;
+  white-space: nowrap;
+  color: #eff9f3;
+}
+
+.intro-subtitle {
+  letter-spacing: clamp(1px,.6cqw,3px);
+  color: var(--sea);
+}
+
+.intro-description {
+  color: #e2efea;
+}
+
+.intro-detail {
+  color: #abc8c8;
+}
+
+.intro-eyebrow {
+  color: #b8d5cf;
+}
+
+.brand-copy {
+  letter-spacing: 2.1px;
+}
+
+.brand-copy span {
+  letter-spacing: 1px;
+  color: #9ebfbc;
+}
+
+.brand-bat {
+  color: var(--sea);
+}
+
+.primary-button {
+  color: #0c3036;
+}
+
+.primary-button:hover {
+  background: #a0eee0;
+  box-shadow: 0 0 35px #75ded326;
+}
+
+.secondary-button:hover {
+  background: #173e43c9;
+}
+
+.character-entry .button-note {
+  color: #dfaca2;
+}
+
+.touch-actions [data-action="finisher"] {
+  background: #543632dc;
+  border-color: #ef948666;
+  color: #f8dfd7;
+}
+
+.focus-track #focus-fill {
+  background: linear-gradient(90deg,#69cfc7,#c2eddf);
+}
+
+.character-overlay {
+  padding: 22px;
+}
+
+.character-card {
+  width: min(690px,100%);
+  max-width: 690px;
+  max-height: calc(100dvh - 44px);
+  overflow-y: auto;
+  padding: 33px 38px 28px;
+  background: radial-gradient(ellipse at 50% 0,#22535d66,transparent 65%),linear-gradient(145deg,#142f38f5,#0b1c27fa);
+  border-color: #75ded344;
+  scrollbar-width: thin;
+  scrollbar-color: #67a9ab transparent;
+}
+
+.character-profile-mark {
+  position: relative;
+  width: 92px;
+  height: 67px;
+  margin: 0 auto 19px;
+  color: var(--sea);
+}
+
+.character-profile-mark svg {
+  position: absolute;
+  inset: 0;
+  width: 92px;
+  height: 47px;
+}
+
+.character-profile-mark span {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  padding: 4px 7px;
+  border-radius: 3px;
+  background: var(--coral);
+  color: #2c2530;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.character-card h2 {
+  font-size: clamp(38px,8vw,59px);
+  margin-bottom: 8px;
+  color: #f0f8f4;
+}
+
+.character-card .character-origin {
+  color: var(--coral);
+  font-size: 11px;
+  letter-spacing: 1px;
+  margin-bottom: 17px;
+}
+
+.character-card .character-personality {
+  max-width: 500px;
+  color: #b5d0cf;
+  font-size: 12px;
+  margin-bottom: 22px;
+}
+
+.character-facts {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 12px;
+  margin-bottom: 26px;
+  text-align: left;
+}
+
+.character-facts > div {
+  padding: 15px 13px;
+  border: 1px solid #75ded32e;
+  background: #102b3580;
+}
+
+.character-facts h3 {
+  margin: 0 0 10px;
+  color: #cbe8dd;
+  font-size: 8px;
+  line-height: 1.6;
+  letter-spacing: 1.1px;
+}
+
+.character-facts p {
+  margin: 0;
+  color: #aac7c8;
+  font-size: 11px;
+  line-height: 1.8;
+}
+
+.character-profile-note {
+  display: block;
+  margin-top: 17px;
+  color: #8eafaf;
+  font-size: 9px;
+  line-height: 1.6;
+}
+
+@media(max-width:760px) {
+  .brand-copy {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+  }
+  .brand-copy span {
+    font-size: 6px;
+    letter-spacing: .5px;
+  }
+  .character-card {
+    padding: 30px 24px 24px;
+  }
+  .character-facts {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .character-facts > div {
+    padding: 12px 14px;
+  }
+  .character-facts h3 {
+    margin-bottom: 5px;
+  }
+}
+
+@media(max-height:520px) {
+  .character-card {
+    padding: 23px 26px;
+  }
+  .character-profile-mark {
+    display: none;
+  }
+}
+
+
+/* The game canvas renders a dedicated character scene behind this panel. */
+.character-overlay {
+  justify-content: flex-end;
+  align-items: center;
+  padding: 22px max(24px,4vw);
+  background: transparent;
+  backdrop-filter: none;
+}
+
+.character-card {
+  width: min(560px,45vw);
+  max-width: 560px;
+  background: linear-gradient(145deg,#143c47f7,#0b2330fa);
+  box-shadow: 0 24px 75px #06283842;
+}
+
+.character-card .character-profile-mark {
+  margin-bottom: 12px;
+}
+
+.character-card h2 {
+  font-size: clamp(35px,4.6vw,53px);
+}
+
+.character-card .primary-button {
+  width: min(305px,100%);
+  padding-right: 18px;
+  padding-left: 18px;
+  gap: 14px;
+}
+
+@media(max-width:760px) and (orientation:landscape) {
+  .character-overlay {
+    padding: 16px;
+  }
+  .character-card {
+    width: 47vw;
+    max-height: calc(100dvh - 32px);
+    padding: 28px 18px 20px;
+  }
+  .character-card h2 {
+    font-size: 34px;
+  }
+  .character-card .eyebrow {
+    max-width: 210px;
+    font-size: 6px;
+    letter-spacing: 1.7px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .character-card .character-origin {
+    font-size: 9px;
+  }
+  .character-card .character-personality {
+    font-size: 10px;
+  }
+  .character-card .primary-button {
+    font-size: 8px;
+    letter-spacing: 1px;
+  }
+}
+
+@media(orientation:portrait) {
+  .character-overlay {
+    justify-content: center;
+    align-items: flex-end;
+    padding: 16px;
+  }
+  .character-card {
+    width: 100%;
+    max-width: 700px;
+    max-height: 45dvh;
+    padding: 24px 28px;
+    border-radius: 14px 14px 0 0;
+  }
+  .character-card .character-profile-mark {
+    display: none;
+  }
+  .character-card h2 {
+    font-size: 40px;
+  }
+  .character-card .character-personality {
+    margin-bottom: 16px;
+  }
+}
+
+/* Let the character inspection scene show its true materials and colors. */
+.viewing-character .hud,
+.viewing-character .screen-grain,
+.viewing-character .screen-vignette { visibility: hidden; }

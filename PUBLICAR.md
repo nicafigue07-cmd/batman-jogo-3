@@ -40,7 +40,7 @@ node scripts/package-portable.mjs
 ```
 
 Publique **o conteúdo de `dist/`** em um serviço de hospedagem estática. O arquivo
-`index.html` é a entrada do site. Os arquivos `Batman-Sombras-de-Gotham-*.html`
+`index.html` é a entrada do site. Os arquivos `Kaito-Nami-*.html`
 também podem ser enviados diretamente aos amigos para jogar sem hospedagem.
 
 ## Situação verificada neste ambiente

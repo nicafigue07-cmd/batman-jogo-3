@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ATTACKS, beginAttack, createCombatState, tickCombat } from '../src/combat.js';
+import { ATTACKS, beginAttack, createCombatState, tickCombat, beginParry, resolveDefense, registerHit, beginFinisher, FOCUS_MAX, PARRY_WINDOW } from '../src/combat.js';
 
 function advance(state, seconds) {
   for (let remaining = seconds; remaining > 1e-8; remaining -= 0.1) {
@@ -141,4 +141,107 @@ test('separate combat states do not share cooldowns or combos', () => {
   assert.equal(beginAttack(second, 'light').comboStep, 1);
   advance(first, 0.36);
   assert.equal(second.cooldowns.light, 0.36);
+});
+
+
+test('parry must meet an incoming hit inside its short active window', () => {
+  const early = createCombatState();
+  assert.equal(resolveDefense(early).parried, false);
+  assert.equal(beginParry(early).ok, true);
+  const perfect = resolveDefense(early);
+  assert.equal(perfect.parried, true);
+  assert.equal(perfect.perfect, true);
+  assert.equal(perfect.counterDamage, 3);
+  assert.equal(perfect.stun, 1.8);
+  assert.equal(early.focus, 20);
+  assert.equal(resolveDefense(early).parried, false, 'one input counters at most one incoming hit');
+  assert.equal(early.focus, 20);
+
+  const late = createCombatState();
+  beginParry(late);
+  advance(late, 0.2);
+  const normal = resolveDefense(late);
+  assert.equal(normal.parried, true);
+  assert.equal(normal.perfect, false);
+  assert.equal(normal.counterDamage, 1);
+  assert.equal(normal.stun, 0.9);
+
+  const expired = createCombatState();
+  beginParry(expired);
+  advance(expired, PARRY_WINDOW);
+  assert.equal(resolveDefense(expired).parried, false);
+  assert.equal(expired.focus, 0, 'an empty parry earns no focus');
+});
+
+test('invalid parries and cooldown retries preserve combat state', () => {
+  const state = createCombatState();
+  for (const options of [{ grounded: false }, { grappling: true }]) {
+    const before = structuredClone(state);
+    assert.equal(beginParry(state, options).ok, false);
+    assert.deepEqual(state, before);
+  }
+  beginParry(state);
+  let before = structuredClone(state);
+  assert.equal(beginParry(state).reason, 'cooldown');
+  assert.deepEqual(state, before);
+  assert.equal(resolveDefense(state, { parryable: false }).parried, false);
+  assert.deepEqual(state, before, 'an unblockable attack does not spend the pending window');
+  advance(state, 0.75);
+  assert.equal(beginParry(state).ok, true);
+});
+
+test('focus is earned from confirmed hits and caps without overflow', () => {
+  const state = createCombatState();
+  assert.equal(registerHit(state).focusGained, 8);
+  assert.equal(registerHit(state, { silent: true }).focusGained, 15);
+  assert.equal(state.focus, 23);
+  for (let i = 0; i < 20; i++) registerHit(state);
+  assert.equal(state.focus, FOCUS_MAX);
+  assert.deepEqual(registerHit(state), { focus: 100, focusGained: 0, ready: true });
+  beginParry(state);
+  assert.equal(resolveDefense(state).focusGained, 0, 'counter does not overflow a full bar');
+  assert.equal(state.focus, 100);
+  assert.equal(createCombatState().focus, 0, 'new fights have independent focus');
+});
+
+test('finisher spends focus only when its target, movement and bar are valid', () => {
+  const state = createCombatState();
+  assert.equal(beginFinisher(state, { hasTarget: true }).reason, 'focus');
+  state.focus = 100;
+  for (const [options, reason] of [
+    [{ hasTarget: false }, 'target'],
+    [{ hasTarget: true, grounded: false }, 'airborne'],
+    [{ hasTarget: true, grappling: true }, 'grappling'],
+  ]) {
+    const before = structuredClone(state);
+    assert.equal(beginFinisher(state, options).reason, reason);
+    assert.deepEqual(state, before, 'rejected finishers never consume the full bar');
+  }
+  beginAttack(state, 'light');
+  const result = beginFinisher(state, { hasTarget: true });
+  assert.deepEqual(result, { ok: true, type: 'finisher', damage: 8, range: 6, stun: 2, duration: 0.85 });
+  assert.equal(state.focus, 0);
+  assert.equal(state.comboStep, 0);
+  assert.equal(state.animation, 'finisher');
+  assert.equal(state.animationTime, 0.85);
+  const before = structuredClone(state);
+  assert.equal(beginFinisher(state, { hasTarget: true }).reason, 'finishing');
+  assert.equal(beginParry(state).reason, 'finishing');
+  assert.equal(beginAttack(state, 'light').reason, 'finishing');
+  assert.deepEqual(state, before, 'finisher animation cannot be overwritten by queued attacks');
+  advance(state, 0.85);
+  assert.equal(state.animation, null);
+  assert.equal(beginFinisher(state, { hasTarget: true }).reason, 'focus');
+});
+
+test('defense clocks pause on invalid dt and clamp long frames consistently', () => {
+  const state = createCombatState();
+  beginParry(state);
+  const before = structuredClone(state);
+  for (const dt of [0, -1, NaN, Infinity, '0.1']) tickCombat(state, dt);
+  assert.deepEqual(state, before);
+  tickCombat(state, 10);
+  assert.ok(Math.abs(state.defenseWindow - 0.22) < 1e-8);
+  assert.ok(Math.abs(state.defenseCooldown - 0.65) < 1e-8);
+  assert.ok(Math.abs(state.defenseElapsed - 0.1) < 1e-8);
 });

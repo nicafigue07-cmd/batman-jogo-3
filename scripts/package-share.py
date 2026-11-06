@@ -3,20 +3,21 @@ from pathlib import Path
 from zipfile import ZipFile, ZIP_DEFLATED
 
 root = Path(__file__).resolve().parent.parent
-source = root / 'dist' / 'Batman-Sombras-de-Gotham.html'
+source = root / 'dist' / 'Kaito-Nami.html'
 if not source.is_file():
     raise SystemExit('Execute npm run build:portable antes de criar o download.')
-instructions = '''BATMAN — SOMBRAS DE GOTHAM
+instructions = '''KAITO NAMI — ONDAS DA AVENTURA
 
 1. Extraia os dois arquivos deste ZIP para uma pasta.
 2. Abra jogar.html no Chrome, Edge, Firefox ou Safari com WebGL ativado.
 3. Escolha PC, Tablet ou Controle e clique JOGAR CAMPANHA ou PATRULHA LIVRE.
 
 O jogo funciona sem baixar modelos, imagens ou outros arquivos da internet.
-No PC: WASD move, arraste o mouse para a câmera, Espaço pula/abre a capa,
-E usa o gancho, J/K atacam, Q lança batarangue, Z usa fumaça, F interage.
+No PC: WASD move, arraste o mouse para a câmera, Espaço pula/ativa a prancha,
+E usa o gancho, J/K atacam, Q lança o disco de resgate, Z usa fumaça, F interage.
 Na patrulha livre: C agacha, V finaliza um guarda por trás sem alerta.
-H mostra a ajuda. M escolhe missões. T abre as armaduras.
+H mostra a ajuda. M escolhe missões. T abre os equipamentos e habilidades.
+X apara ataques; com 100 de foco, B executa a finalização especial.
 
 Cada pessoa tem sua própria partida e progresso local. Não há multiplayer.
 Controle PlayStation funciona em navegadores compatíveis; este HTML não é
