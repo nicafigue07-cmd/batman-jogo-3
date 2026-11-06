@@ -186,3 +186,10 @@ Entre no mar pela margem oeste; **G** alterna mergulho e superfície. WASD move,
 Esta é uma expansão procedural de navegador. Os diálogos são texto, os enquadramentos são curtos movimentos de câmera e o chefe tem padrões simples. Não inclui dublagem, expressões faciais completas, reconstruções reais das cidades, metrô com passageiros simulados, reflexos avançados ou conteúdo de um mundo AAA. Essas partes continuam como evolução futura.
 
 Validação: `npm test`, `node tests/adventure-smoke.mjs` após `npm run build:portable`. O teste de navegador usa entradas reais para escudo, gelo, mapa/foto, trem nos dois sentidos, surfe, mergulho e início da história.
+
+## Primeira rodada do plano de melhorias
+
+Veja [etapas concluídas, testes e pendências](docs/ETAPAS-DE-MELHORIA.md). Novos atalhos: **Y** prende/solta o tentáculo com balanço; **U** segurado carrega um salto; **Shift** segurado aumenta a corrida. Solte o balanço segurando **Espaço** para usar a prancha. O painel da aventura oferece esses comandos por toque. Os novos controles preservam a onda e os poderes anteriores.
+
+
+Nesta rodada, **I** lança capangas e o terceiro golpe leve pode disparar um jato, consumindo sua energia normal. O **Nami Surf Lab** em x -215, z -165 tem porta acessível; use F dentro para abrir equipamentos. Neo Tóquio ganhou um parque compacto e uma passagem coberta com colisão de teto. A opção **Reduzir movimento da câmera** fica no painel da aventura e tem preferência salva. Chefes completos, mais interiores e a ampliação do mapa permanecem no plano de etapas.

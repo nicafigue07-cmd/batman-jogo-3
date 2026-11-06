@@ -1,5 +1,8 @@
 import * as THREE from 'three';
 import './style.css';
+import { createAirborneState,tickAirborne } from './air-combat.js';
+import { createWaterTether,stepWaterTether,releaseWaterTether,jumpImpulse } from './water-tether.js';
+import { segmentSphereContact } from './collision-queries.js';
 import { createAdventure } from './adventure.js';
 import { createLosAngeles } from './los-angeles.js';
 import { createWorld, createEnemy } from './world.js';
@@ -37,6 +40,7 @@ let padButtons=[], padIndex=null, padMove={x:0,z:0}, padJumpHeld=false, controll
 try{if(platformPreset==='auto')platformMode=localStorage.getItem('gotham.platform.v1')||'auto';}catch{/* Use the edition's default. */}
 let photoZoom=0;
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let cameraMotion=!reducedMotion;try{const saved=localStorage.getItem('kaito.camera-motion.v1');if(saved!==null)cameraMotion=saved==='true';}catch{}
 let renderer;
 try {
   renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
@@ -103,8 +107,9 @@ const player = {
   position: new THREE.Vector3(), velocity: new THREE.Vector3(),
   grounded: true, health: 100, gliding: false, grapple: null,
   attacking: 0, dodge: 0, facing: Math.PI, jumpAge: 0, combo: 0, comboTimer: 0,
-  slam:null, momentumTimer:0, launchGlide:false, slowTimer:0,
+  slam:null, momentumTimer:0, launchGlide:false, slowTimer:0,landing:0,
 };
+let tether=null,jumpCharging=false,jumpCharge=0,launchCooldown=0;
 let waveCooldown=0,waveTime=0;
 const surfWave=new THREE.Group();surfWave.name="Onda de impulso";
 const curl=new THREE.Mesh(new THREE.TorusGeometry(1.7,.48,8,24,Math.PI*1.45),new THREE.MeshStandardMaterial({color:0x35c7df,transparent:true,opacity:.82,roughness:.3}));curl.rotation.z=-.7;surfWave.add(curl);
@@ -279,6 +284,10 @@ function pollGamepad(dt) {
   for(const name of frame.actions) {
     if(name==='armory'){openArmory();$('armory-list')?.querySelector('button:not(:disabled)')?.focus();}
     else if(name==='missions'){openMissions();$('missions-list')?.querySelector('button')?.focus();}
+    else if(frame.buttons[6]&&name==='scan')launchAttack();
+    else if(frame.buttons[6]&&name==='interact')adventure.dive();
+    else if(frame.buttons[6]&&name==='takedown')toggleTether();
+    else if(frame.buttons[6]&&name==='crouch'){if(jumpCharging)releaseChargedJump();else if(player.grounded){jumpCharging=true;jumpCharge=0;}}
     else if(frame.buttons[6]&&({jump:'jet',dodge:'shield',attack:'tentacle',heavy:'ice',grapple:'current',batarang:'tsunami'})[name])adventure.power(({jump:'jet',dodge:'shield',attack:'tentacle',heavy:'ice',grapple:'current',batarang:'tsunami'})[name]);
     else if(!(frame.buttons[6]&&name==='smoke'&&frame.actions.length>1))action(name);
   }
@@ -574,6 +583,7 @@ function closeMissions() {
 }
 
 function reset(missionId = null,{resume=null}={}) {
+  if(mode==='photo'||mode==='map')adventure.closeView();
   clearPatrolScene();playStyle='campaign';crouching=false;activeWind={active:false,lift:0,boost:0,id:null};
   campaign=restoreCheckpoint(resume)||createCampaign({missionId});
   selectedMissionId=campaign.missionId;
@@ -590,7 +600,7 @@ function reset(missionId = null,{resume=null}={}) {
   }
   player.position.set(spawn.x, spawn.y, spawn.z);
   player.velocity.set(0,0,0);
-  waveCooldown=0;waveTime=0;surfWave.visible=false;combat=createCombatState(); player.slam=null; player.momentumTimer=0; player.launchGlide=false; targetTimer=0; selectedAnchor=null;
+  tether=null;jumpCharging=false;jumpCharge=0;launchCooldown=0;waveCooldown=0;waveTime=0;surfWave.visible=false;combat=createCombatState(); player.slam=null; player.momentumTimer=0; player.launchGlide=false; targetTimer=0; selectedAnchor=null;
   player.health = maxHealth(); player.grounded = true; player.gliding = false; player.grapple = null;
   player.attacking = 0; player.combo = 0; player.facing = Math.PI; player.jumpAge = 0;
   player.dodge = 0; player.comboTimer = 0;
@@ -603,7 +613,7 @@ function reset(missionId = null,{resume=null}={}) {
   for (const e of enemies) {
     e.health = e.maxHealth; e.alive = true; e.hurt = 0; e.cooldown = 2; e.deadTime = 0;
     e.model.position.copy(e.home); e.model.rotation.set(0,0,0); e.model.visible = enemyIsActive(e); e.model.scale.setScalar(e.baseScale||1);
-    e.awareness=0;e.alerted=false;e.attackClock=createEnemyAttackState({cooldown:1.2});if(e.warning)e.warning.visible=false;
+    e.airborne=null;e.awareness=0;e.alerted=false;e.attackClock=createEnemyAttackState({cooldown:1.2});if(e.warning)e.warning.visible=false;
     e.elitePhase='shielded';e.phaseTime=0;e.stun=0;e.attackState='ready';e.attackTime=0; if(e.shield)e.shield.visible=true;
   }
   for (const site of objectives) {
@@ -750,7 +760,7 @@ function closeCharacter() {
 }
 function pause() {
   if (mode === 'playing') {
-    mode = 'paused'; keys.clear(); show('pause-overlay', true); show('help-overlay', false);
+    mode = 'paused';jumpCharging=false;jumpCharge=0; keys.clear(); show('pause-overlay', true); show('help-overlay', false);
   } else if (mode === 'paused') {
     mode = 'playing'; show('pause-overlay', false);
   }
@@ -772,12 +782,16 @@ function end(won) {
   show('end-overlay', true); tone(won ? 660 : 110, 0.65);
 }
 
+function releaseTether(glide=false){if(!tether)return;const velocity=releaseWaterTether(tether);player.velocity.set(velocity.x,velocity.y+(glide?3:0),velocity.z);tether=null;player.momentumTimer=.8;player.gliding=glide;player.launchGlide=glide;player.jumpAge=.3;}
+function toggleTether(){if(mode!=='playing')return;if(tether){releaseTether();return;}if(!selectedAnchor){toast('Mire um ponto alto à frente para prender o tentáculo.',2);return;}const velocity=player.velocity.clone();if(player.grounded){velocity.addScaledVector(forward(),12);velocity.y=8;}tether=createWaterTether(player.position,velocity,selectedAnchor);if(tether){player.grounded=false;player.grapple=null;player.gliding=false;player.slam=null;tone(420,.15);toast('Tentáculo preso · WASD dá impulso · Y solta · Espaço solta e plana',3);}}
+function releaseChargedJump(){if(!jumpCharging)return;const charge=jumpCharge;jumpCharging=false;jumpCharge=0;if(mode==='playing'&&player.grounded){jump();player.velocity.y=jumpImpulse(charge,Math.hypot(player.velocity.x,player.velocity.z));}}
 function jump() {
   if (mode !== 'playing') return;
+  if(tether){releaseTether(true);return;}
   if (player.grapple) { launchFromGrapple(true); return; }
   if (player.slam) return;
   if (player.grounded) {
-    player.velocity.y = 15; player.grounded = false; player.jumpAge = 0;
+    player.velocity.y = jumpImpulse(0,Math.hypot(player.velocity.x,player.velocity.z)); player.grounded = false; player.jumpAge = 0;
     tone(160, 0.15);
   } else {
     player.gliding = !player.gliding;
@@ -804,6 +818,7 @@ function launchFromGrapple(glide=false) {
 }
 function grapple() {
   if(mode!=='playing'||player.slam||waveCooldown>0)return;
+  if(tether)releaseTether();
   const direction=forward().clone();
   player.grapple=null;player.grounded=false;player.gliding=true;player.launchGlide=true;player.jumpAge=.3;
   const waveSpeed=30+skillBonuses.grappleBonus+(getArmor(profile).grappleSpeed-48)*.2;
@@ -851,7 +866,7 @@ function hitEnemy(enemy,damage,stun=0,{silent=false,focus=true}={}) {
   return true;
 }
 function nearbyEnemies(range,origin=player.position) {
-  return enemies.filter(e=>enemyIsActive(e)&&e.alive&&Math.abs(e.model.position.y-origin.y)<4&&distance3(e.model.position,origin)<range)
+  return enemies.filter(e=>enemyIsActive(e)&&e.alive&&Math.abs(e.model.position.y-origin.y)<4&&distance3(e.model.position,origin)<range&&!lineBlocked(new THREE.Vector3(origin.x,origin.y+1.2,origin.z),e.model.position.clone().add(new THREE.Vector3(0,1.2,0))))
     .sort((a,b)=>distance3(a.model.position,origin)-distance3(b.model.position,origin));
 }
 function throwBatarang() {
@@ -889,8 +904,9 @@ function useAttack(type='light') {
     hitEnemy(enemy,result.damage,result.stun);
     if(type==='heavy'||result.comboStep===3)areaPulse(enemy.model.position,0xf4c76c,2,.3);
   } else tone(130,.07,'triangle',.03);
-  if(result.comboStep===3)toast('COMBO · GOLPE FINAL',1.2);
+  if(result.comboStep===3){adventure.comboJet();toast('COMBO · GOLPE FINAL AQUÁTICO',1.2);}
 }
+function launchAttack(){if(mode!=='playing'||launchCooldown>0||player.grapple||tether)return;const enemy=nearbyEnemies(5).find(e=>!e.boss);if(!enemy){toast('Aproxime-se de um capanga para o lançamento.',2);return;}launchCooldown=2;if(hitEnemy(enemy,1,.8)&&enemy.alive)enemy.airborne=createAirborneState(enemy.model.position.y);combat.animation='light';combat.animationTime=.3;combat.animationDuration=.3;tone(310,.12);toast('LANÇAMENTO · pule e continue o combo no ar!',2);}
 function resolveSlam() {
   const attack=player.slam;if(!attack)return;
   for(const enemy of nearbyEnemies(attack.radius))hitEnemy(enemy,attack.damage,1.2);
@@ -1036,10 +1052,13 @@ addEventListener('keydown', event => {
   keys.add(event.code);
   if (event.code === 'Space') jump();
   if (event.code === 'KeyE') grapple();
+  if(event.code==='KeyY')toggleTether();
+  if(event.code==='KeyU'&&player.grounded){jumpCharging=true;jumpCharge=0;}
   if (event.code === 'KeyJ') attack();
   if (event.code === 'KeyQ') attack(true);
   if (event.code === 'KeyK') useAttack('heavy');
   if (event.code === 'KeyL') useAttack('slam');
+  if(event.code==='KeyI')launchAttack();
   if (event.code === 'KeyZ') useAttack('smoke');
   if (event.code === 'KeyF') interact();
   if (event.code === 'KeyR') toggleScanner();
@@ -1049,7 +1068,7 @@ addEventListener('keydown', event => {
   if (event.code === 'KeyB')useFinisher();
   if (event.code === 'ShiftLeft' || event.code === 'ShiftRight') dodge();
 });
-addEventListener('keyup', event => { keys.delete(event.code); if (event.code === 'Space') { player.gliding=false;player.launchGlide=false; } });
+addEventListener('keyup', event => { keys.delete(event.code);if(event.code==='KeyU')releaseChargedJump(); if (event.code === 'Space') { player.gliding=false;player.launchGlide=false; } });
 addEventListener('blur', () => { keys.clear(); if(mode === 'playing') pause(); });
 document.addEventListener('visibilitychange', () => { if(document.hidden && mode === 'playing') pause(); });
 
@@ -1126,16 +1145,27 @@ document.querySelectorAll('#touch-controls button').forEach(button => {
 function updatePlayer(dt) {
   waveCooldown=Math.max(0,waveCooldown-dt);waveTime=Math.max(0,waveTime-dt);
   surfWave.visible=waveTime>0;surfWave.position.copy(player.position);surfWave.position.y-=.3;surfWave.rotation.y=player.facing;surfWave.scale.setScalar((.7+waveTime*.25)*(player.position.x< -229?2.2:1));
-  if(adventure.movement(dt))return;
-  tickCombat(combat,dt);player.momentumTimer=Math.max(0,player.momentumTimer-dt);
+  launchCooldown=Math.max(0,launchCooldown-dt);player.landing=Math.max(0,player.landing-dt);tickCombat(combat,dt);player.momentumTimer=Math.max(0,player.momentumTimer-dt);
   attackCooldown = Math.max(0, attackCooldown-dt); batarangCooldown = Math.max(0,batarangCooldown-dt);
   player.attacking = Math.max(0,player.attacking-dt); player.dodge = Math.max(0,player.dodge-dt);
   player.comboTimer -= dt; if(player.comboTimer <= 0) player.combo = 0;
+  if(jumpCharging){if(player.grounded)jumpCharge=Math.min(1,jumpCharge+dt);else{jumpCharging=false;jumpCharge=0;}}
   if(keys.has('ArrowLeft')) yaw += dt*1.9;
   if(keys.has('ArrowRight')) yaw -= dt*1.9;
   if(keys.has('ArrowUp')) pitch = Math.max(-.12,pitch-dt*.65);
   if(keys.has('ArrowDown')) pitch = Math.min(.85,pitch+dt*.65);
-  if (player.grapple) {
+  if(!tether&&adventure.movement(dt))return;
+  if(tether){
+    tether.position={x:player.position.x,y:player.position.y,z:player.position.z};
+    const input={x:(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0)+padMove.x,z:(keys.has('KeyW')?1:0)-(keys.has('KeyS')?1:0)+padMove.z};
+    stepWaterTether(tether,dt,{x:input.x*Math.cos(yaw)-input.z*Math.sin(yaw),z:-input.x*Math.sin(yaw)-input.z*Math.cos(yaw)});
+    const wanted=tether.position;const travel={x:(wanted.x-player.position.x)/dt,y:(wanted.y-player.position.y)/dt,z:(wanted.z-player.position.z)/dt};
+    const result=moveAndCollide(player.position,travel,dt,collisionBuildings,player.grounded,heroBody);
+    player.velocity.set(tether.velocity.x,tether.velocity.y,tether.velocity.z);player.grounded=result.grounded;
+    const blocked=Math.hypot(player.position.x-wanted.x,player.position.y-wanted.y,player.position.z-wanted.z)>.1;
+    const attr=grappleLine.geometry.attributes.position;attr.setXYZ(0,player.position.x,player.position.y+1.3,player.position.z);attr.setXYZ(1,tether.anchor.x,tether.anchor.y,tether.anchor.z);attr.needsUpdate=true;
+    if(blocked||result.grounded){releaseTether();player.velocity.set(travel.x,travel.y,travel.z);}
+  } else if (player.grapple) {
     const g=player.grapple;
     g.progress=Math.min(1,g.progress+dt/g.duration);
     const point=sampleGrapple(g,g.progress);
@@ -1162,7 +1192,7 @@ function updatePlayer(dt) {
     player.gliding = glide;
     player.slowTimer=Math.max(0,player.slowTimer-dt);
     activeWind=sampleWind(player.position,{gliding:glide,grappling:false,slamming:!!player.slam});
-    const speed=(glide?22+activeWind.boost+skillBonuses.glideBonus:crouching?4.8:10)*(player.slowTimer>0?.65:1);
+    const speed=(glide?22+activeWind.boost+skillBonuses.glideBonus:crouching?4.8:(keys.has('ShiftLeft')||keys.has('ShiftRight'))?16:10)*(player.slowTimer>0?.65:1);
     const dx = (x*Math.cos(yaw)-z*Math.sin(yaw)) / Math.max(1,length);
     const dz = (-x*Math.sin(yaw)-z*Math.cos(yaw)) / Math.max(1,length);
     if (player.dodge <= .28 && player.momentumTimer<=0) {
@@ -1177,17 +1207,18 @@ function updatePlayer(dt) {
     player.velocity.y = player.slam ? Math.max(-65,player.velocity.y-dt*40) : glide ? Math.max(-3.4,player.velocity.y-dt*(activeWind.active?0:10)) : player.velocity.y-dt*29;
     if(activeWind.active){player.velocity.y=Math.min(2.8,player.velocity.y+activeWind.lift*(1+skillBonuses.windBonus)*dt);}
     const result = moveAndCollide(player.position,player.velocity,dt,collisionBuildings,player.grounded,heroBody);
+    if(result.landed)player.landing=.22;
     player.grounded = result.grounded;
     if(player.grounded) { player.gliding=false;player.launchGlide=false;player.jumpAge=0;if(player.slam)resolveSlam(); }
     else player.jumpAge += dt;
   }
   if(player.grapple||!player.gliding)activeWind={active:false,lift:0,boost:0,id:null};
-  hero.scale.y=THREE.MathUtils.lerp(hero.scale.y,crouching&&player.grounded?.76:1,1-Math.exp(-dt*12));
-  grappleLine.visible = false;
+  hero.scale.y=THREE.MathUtils.lerp(hero.scale.y,crouching&&player.grounded?.76:jumpCharging?.9:1,1-Math.exp(-dt*12));
+  grappleLine.visible = !!tether;grappleLine.material.color.setHex(0x65dce9);
   hero.position.copy(player.position);
   let angle = Math.atan2(Math.sin(player.facing-hero.rotation.y),Math.cos(player.facing-hero.rotation.y));
   hero.rotation.y += angle * (1-Math.exp(-dt*12));
-  hero.userData.update?.({ time: elapsed, moving: Math.hypot(player.velocity.x,player.velocity.z)>1 && player.grounded, gliding: player.gliding,rolling:player.dodge>.1,rollPhase:1-player.dodge/.6, defending:combat.defenseWindow>0,finisher:combat.animation==='finisher', attacking:!!combat.animation,attackType:player.slam?'slam':combat.animation==='light'?'punch':combat.animation,attackPhase:player.slam ? .4 : combat.animationDuration?1-combat.animationTime/combat.animationDuration:0,grappling:!!player.grapple });
+  hero.userData.update?.({ time: elapsed, moving: Math.hypot(player.velocity.x,player.velocity.z)>1 && player.grounded, gliding: player.gliding,landing:player.landing/.22,rolling:player.dodge>.1,rollPhase:1-player.dodge/.6, defending:combat.defenseWindow>0,finisher:combat.animation==='finisher', attacking:!!combat.animation,attackType:player.slam?'slam':combat.animation==='light'?'punch':combat.animation,attackPhase:player.slam ? .4 : combat.animationDuration?1-combat.animationTime/combat.animationDuration:0,grappling:!!player.grapple||!!tether });
   targetTimer-=dt;
   if(targetTimer<=0&&!player.grapple) {selectedAnchor=selectGrappleTarget(player.position,forward(),grappleAnchors,collisionBuildings,getArmor(profile).id==='tactical'?170:145);targetTimer=.12;}
   anchorMarker.visible = false;
@@ -1221,7 +1252,7 @@ function lineBlocked(start,end) {
   projectileRay.set(start,delta.normalize());
   const hit=new THREE.Vector3();
   for(const building of collisionBuildings) {
-    projectileBox.min.set(building.x-building.w/2,0,building.z-building.d/2);
+    projectileBox.min.set(building.x-building.w/2,Number.isFinite(building.baseY)?building.baseY:0,building.z-building.d/2);
     projectileBox.max.set(building.x+building.w/2,building.h,building.z+building.d/2);
     if(projectileRay.intersectBox(projectileBox,hit)&&hit.distanceTo(start)<length-.1)return true;
   }
@@ -1257,6 +1288,7 @@ function updateEnemies(dt) {
       if(enemy.deadTime>2.2)enemy.model.visible=false;
       continue;
     }
+    if(enemy.airborne){tickAirborne(enemy.airborne,dt,enemy.home.y);enemy.model.position.y=enemy.airborne.y;enemy.model.userData.update?.({time:elapsed,stunned:true});if(!enemy.airborne.finished)continue;enemy.airborne=null;}
     enemy.cooldown-=dt;enemy.hurt=Math.max(0,enemy.hurt-dt);enemy.stun=Math.max(0,(enemy.stun||0)-dt);
     const delta=v2.subVectors(player.position,enemy.model.position),dist=delta.length();
     const definition=enemy.definition,style=definition?.attackStyle;
@@ -1347,8 +1379,10 @@ function updateEffects(dt) {
     const shot=hostileProjectiles[i];shot.life-=dt;
     const next=shot.mesh.position.clone().addScaledVector(shot.velocity,dt);
     const center=player.position.clone().add(new THREE.Vector3(0,1.3,0));
-    const blocked=lineBlocked(shot.mesh.position,next);
-    const hit=next.distanceTo(center)<1.1;
+    const contact=segmentSphereContact(shot.mesh.position,next,center,1.1);
+    const hit=contact!==null;
+    const contactPoint=hit?shot.mesh.position.clone().lerp(next,contact):next;
+    const blocked=lineBlocked(shot.mesh.position,contactPoint);
     shot.mesh.position.copy(next);shot.mesh.rotation.z+=dt*5;
     if(hit&&!blocked){const damaged=takeDamage(shot.damage);if(damaged&&shot.style==='riddle'){player.slowTimer=1.5;toast('Enigma do Charada: movimento reduzido por um instante.',1.5);}}
     if(hit||blocked||shot.life<=0){scene.remove(shot.mesh);shot.mesh.geometry.dispose();shot.mesh.material.dispose();hostileProjectiles.splice(i,1);}
@@ -1388,16 +1422,17 @@ function updateEffects(dt) {
 }
 
 function updateCamera(dt, snap=false) {
-  const desiredFov=player.grapple?68:player.gliding?65:60;
-  const fov=THREE.MathUtils.lerp(camera.fov,reducedMotion?60:desiredFov,1-Math.exp(-dt*4));
+  const desiredFov=player.grapple||tether?68:player.gliding?65:Math.hypot(player.velocity.x,player.velocity.z)>13?63:60;
+  const fov=THREE.MathUtils.lerp(camera.fov,cameraMotion?desiredFov:60,1-Math.exp(-dt*4));
   if(Math.abs(camera.fov-fov)>.01){camera.fov=fov;camera.updateProjectionMatrix();}
   const intro=mode==='intro';
-  const angle=yaw+(intro ? Math.sin(elapsed*.065)*.1 : 0);
+  const angle=yaw+(intro&&cameraMotion ? Math.sin(elapsed*.065)*.1 : 0);
   const radius=Math.max(3,(intro ? 7.2 : player.gliding ? 12.5 : 8.8)+photoZoom);
   const target=player.position.clone().add(new THREE.Vector3(0,intro ? 1.3 : 1.2,0));
   const desired=new THREE.Vector3(player.position.x+Math.sin(angle)*radius,player.position.y+(intro ? 2.2 : 2.5+Math.sin(pitch)*radius),player.position.z+Math.cos(angle)*radius);
   const boom=clampCameraBoom(target,desired,collisionBuildings);desired.set(boom.x,boom.y,boom.z);
   if(snap) camera.position.copy(desired); else camera.position.lerp(desired,1-Math.exp(-dt*6));
+  if(!cameraMotion)shake=0;
   if(shake>0) {camera.position.x+=(Math.random()-.5)*shake;shake=Math.max(0,shake-dt*.5);}
   const safeCamera=clampCameraBoom(target,camera.position,collisionBuildings);
   camera.position.set(safeCamera.x,safeCamera.y,safeCamera.z);
@@ -1471,7 +1506,7 @@ function updateHUD() {
   setText('threat-status',threat?`${threat.definition?.name||ENEMY_ARCHETYPES[threat.archetype]?.name||'INIMIGO'} PREPARA ATAQUE · APARE OU ESQUIVE`:'');
   show('threat-status',!!threat&&mode==='playing');
   setText('ability-status',`K ${combat.cooldowns.heavy>0?Math.ceil(combat.cooldowns.heavy)+'s':'PRONTO'} · L ${combat.cooldowns.slam>0?Math.ceil(combat.cooldowns.slam)+'s':'PRONTO'} · Z ${combat.cooldowns.smoke>0?Math.ceil(combat.cooldowns.smoke)+'s':'PRONTO'}`);
-  setText('grapple-hint',waveCooldown>0?`ONDA · ${waveCooldown.toFixed(1)} s`:'E / R1 · INVOCAR ONDA');
+  setText('grapple-hint',jumpCharging?`SALTO CARREGADO · ${Math.round(jumpCharge*100)}% · SOLTE U`:tether?'Y · SOLTAR / ESPAÇO · SOLTAR E PLANAR':waveCooldown>0?`ONDA · ${waveCooldown.toFixed(1)} s`:'E · ONDA / Y · BALANÇO / U · SALTO');
   document.querySelector('[data-action="crouch"]')?.setAttribute('aria-pressed',String(crouching));
   show('patrol-readout',mode!=='intro');
   const awareness=Math.max(0,...enemies.filter(enemy=>enemyIsActive(enemy)&&enemy.alive).map(enemy=>enemy.awareness||0));
@@ -1521,10 +1556,10 @@ function updateWaypoint() {
 
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();graphics.resize();});
 const adventure=createAdventure(THREE,{
- setTime:(v,t)=>graphics.setTime(v,t),orbit:delta=>{yaw+=delta;},faceObjective:q=>{yaw=Math.atan2(player.position.x-q.x,player.position.z-q.z);},waving:()=>waveTime>0,scene,player,hero,world,coast:losAngeles,solids:collisionBuildings,light:moonlight,rain,createCharacter:createKaito,
- getMode:()=>mode,setMode:value=>{mode=value;keys.clear();},forward:()=>forward().clone(),wave:grapple,
+ setTime:(v,t)=>graphics.setTime(v,t),orbit:delta=>{if(cameraMotion)yaw+=delta;},cameraMotion:()=>cameraMotion,setCameraMotion:value=>{cameraMotion=value;try{localStorage.setItem('kaito.camera-motion.v1',String(value));}catch{}},body:heroBody,shop:openArmory,launch:launchAttack,moveInput:()=>({x:padMove.x+(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),z:padMove.z+(keys.has('KeyW')?1:0)-(keys.has('KeyS')?1:0)}),swing:toggleTether,beginCharge:()=>{if(mode==='playing'&&player.grounded){jumpCharging=true;jumpCharge=0;}},releaseCharge:releaseChargedJump,faceObjective:q=>{yaw=Math.atan2(player.position.x-q.x,player.position.z-q.z);},waving:()=>waveTime>0,scene,player,hero,world,coast:losAngeles,solids:collisionBuildings,light:moonlight,rain,createCharacter:createKaito,
+ getMode:()=>mode,setMode:value=>{if(mode==='photo'&&value==='playing')photoZoom=0;mode=value;keys.clear();},forward:()=>forward().clone(),wave:grapple,
  targets:nearbyEnemies,hit:hitEnemy,moveEnemy,roofTarget:()=>selectedAnchor,pull:startGrapple,toast,sound:tone,damage:takeDamage,
- resetCamera:()=>{yaw=Math.PI/2;updateCamera(1,true);},zoom:delta=>{photoZoom=THREE.MathUtils.clamp(photoZoom+delta,-5,12);},
+ resetCamera:()=>{tether=null;jumpCharging=false;jumpCharge=0;yaw=Math.PI/2;updateCamera(1,true);},zoom:delta=>{photoZoom=THREE.MathUtils.clamp(photoZoom+delta,-5,12);},
  save:()=>{persistProfile();if(playStyle==='campaign')persistCheckpoint();},reward:xp=>{profile=createProfile({...getProfileData(profile),xp:profile.xp+xp});persistProfile();renderArmory();}
 });
 reset();
@@ -1540,7 +1575,7 @@ function frame(now) {
       for(const step of steps) {
         if(mode!=='playing')break;
         elapsed+=step;clock.running+=step;updatePlayer(step);updateEnemies(step);
-        if(mode==='playing'){updateMissionActivity(step);updatePatrol(step);}
+        if(mode==='playing'){updateMissionActivity(step);updatePatrol(step);adventure.update(step);}
       }
     } else {elapsed+=dt;hero.userData.update?.({time:elapsed,moving:false,gliding:false,attacking:false,grappling:false});}
     world.update?.(elapsed,dt);windCurrents.update(elapsed);cityLife.update(elapsed,player.position);updateEffects(dt);updateCamera(dt);
@@ -1549,7 +1584,7 @@ function frame(now) {
   }
   hudTimer+=dt;
   if(hudTimer>.1){updateHUD();hudTimer=0;}
-  adventure.update(dt);if(mode==='photo')updateCamera(dt);
+  if(mode!=='playing')adventure.update(0);if(mode==='photo')updateCamera(dt);
   soundscape.update({speed:Math.hypot(player.velocity.x,player.velocity.z),gliding:mode==='playing'&&player.gliding,inCombat:mode==='playing'&&enemies.some(enemy=>enemyIsActive(enemy)&&enemy.alive&&distance3(enemy.model.position,player.position)<22)});
   updateWaypoint();graphics.update(player.position,rawDelta,mode==='playing');
   if(mode==='character')characterPreview.render(renderer,now/1000,innerWidth,innerHeight);else if(adventure.map())adventure.renderMap(renderer);else graphics.render();adventure.afterRender(renderer);
@@ -1560,7 +1595,7 @@ requestAnimationFrame(frame);
 window.__gotham = Object.freeze({
   snapshot: () => ({
     adventure:adventure.snapshot(),character:{...KAITO_PROFILE,id:hero.userData.characterId,appearance:{...hero.userData.features},boardMode:hero.userData.boardMode||'carried'},heroBody:{...heroBody},clockRunning:clock.running,characterPreview:{open:mode==='character',...(characterPreview?.getState()||{angle:0})},
-    wave:{active:waveTime>0,cooldown:waveCooldown},mode,playStyle,crouching,difficulty:difficulty.id,wind:{...activeWind},
+    accessibility:{cameraMotion},traversal:{swinging:!!tether,ropeLength:tether?.length??null,charge:jumpCharge,charging:jumpCharging},wave:{active:waveTime>0,cooldown:waveCooldown},mode,playStyle,crouching,difficulty:difficulty.id,wind:{...activeWind},
     skills:{unlocked:[...skillProfile.unlocked],points:getSkillPoints(skillProfile,skillProgress()),bonuses:{...skillBonuses}},checkpoint:checkpoint?{...checkpoint,completedMissionIds:[...checkpoint.completedMissionIds]}:null,
     cityLife:cityLife.getStats(),graphics:graphics.getStats?.()||null,lastDefense:{...lastDefense},
     patrol:patrolRun?{round:patrolRun.round,type:patrolRun.current?.type,remaining:Math.max(0,(patrolRun.current?.timeLimit||0)-(clock.running-patrolStarted)),completed:patrolRun.completed,failed:patrolRun.failed,damageTaken:patrolDamage,stealthCount:patrolStealth,finished:!!patrolRun.current?.finished,history:patrolRun.history.map(item=>({...item}))}:null,
@@ -1580,7 +1615,7 @@ window.__gotham = Object.freeze({
     missionIndex:campaign.currentMissionIndex, objectiveIndex:campaign.objectiveIndex,
     completedMissionIds:[...campaign.completedMissionIds], finished:campaign.finished,
     currentObjectiveId:targetObjective()?.id ?? null,
-    enemies:enemies.map(e=>({health:e.health,maxHealth:e.maxHealth,position:{x:e.model.position.x,y:e.model.position.y,z:e.model.position.z},alive:e.alive,site:e.site,missionId:e.missionId,active:enemyIsActive(e),archetype:e.archetype,attackPhase:e.attackClock?.phase,attackRemaining:e.attackClock?.remaining,awareness:e.awareness||0,alerted:!!e.alerted,facing:e.model.rotation.y,elite:e.elite,elitePhase:e.elitePhase,phaseTime:e.phaseTime,stun:e.stun||0,boss:e.boss,villainId:e.definition?.id??null,attackStyle:e.definition?.attackStyle??'melee',attackState:e.attackState})),
+    enemies:enemies.map(e=>({health:e.health,maxHealth:e.maxHealth,position:{x:e.model.position.x,y:e.model.position.y,z:e.model.position.z},alive:e.alive,site:e.site,missionId:e.missionId,active:enemyIsActive(e),airborne:!!e.airborne,archetype:e.archetype,attackPhase:e.attackClock?.phase,attackRemaining:e.attackClock?.remaining,awareness:e.awareness||0,alerted:!!e.alerted,facing:e.model.rotation.y,elite:e.elite,elitePhase:e.elitePhase,phaseTime:e.phaseTime,stun:e.stun||0,boss:e.boss,villainId:e.definition?.id??null,attackStyle:e.definition?.attackStyle??'melee',attackState:e.attackState})),
     selectedAnchor:selectedAnchor?{x:selectedAnchor.x,y:selectedAnchor.y,z:selectedAnchor.z}:null,
     objectives:objectives.map(s=>({id:s.id,x:s.x,y:s.y,z:s.z,name:s.name,kind:s.kind,terrain:s.terrain,missionId:s.missionId,disabled:s.disabled})),
     missions:MISSIONS.map(m=>({id:m.id,title:m.title,terrain:m.terrain,villainId:m.villainId,objectives:m.objectives.map(o=>o.id)})),

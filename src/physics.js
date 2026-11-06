@@ -16,7 +16,7 @@ function overlapsFootprint(position, building, radius) {
 }
 
 function intersectsHeight(position, building, height) {
-  return position.y < building.h - EPSILON && position.y + height > EPSILON;
+  return position.y < building.h - EPSILON && position.y + height > (Number.isFinite(building.baseY)?building.baseY:0)+EPSILON;
 }
 
 const bodyDimension = (value, fallback) => typeof value === 'number' &&
@@ -65,6 +65,7 @@ export function moveAndCollide(position, velocity, dt, buildings, grounded = fal
     position.y += velocity.y * step;
     onGround = false;
 
+    if(velocity.y>0){let underside=Infinity;for(const building of buildings){const base=Number.isFinite(building.baseY)?building.baseY:0;if(base>0&&overlapsFootprint(position,building,radius)&&previousY+height<=base+EPSILON&&position.y+height>=base-EPSILON)underside=Math.min(underside,base);}if(underside<Infinity){position.y=underside-height;velocity.y=0;}}
     if (velocity.y <= 0) {
       // Choose the highest roof crossed in this step, independent of list order.
       let surface = 0;

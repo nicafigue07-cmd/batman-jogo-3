@@ -1,0 +1,3 @@
+import test from'node:test';import assert from'node:assert/strict';import{createAirborneState,tickAirborne}from'../src/air-combat.js';
+test('launched enemies rise then land on their original roof',()=>{const s=createAirborneState(35);let peak=35;for(let i=0;i<100;i++){tickAirborne(s,.025,35);peak=Math.max(peak,s.y);assert.ok(s.y>=35);}assert.ok(peak>37);assert.equal(s.finished,true);assert.equal(s.y,35);assert.equal(s.velocity,0);});
+test('bad timings cannot move an enemy',()=>{assert.equal(createAirborneState(NaN),null);const s=createAirborneState(0);tickAirborne(s,Infinity);assert.equal(s.y,0);assert.equal(s.velocity,12);});

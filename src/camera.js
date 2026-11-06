@@ -18,7 +18,7 @@ function validBuilding(building) {
 
 function bounds(building, margin) {
   return {
-    min: { x: building.x - building.w / 2 - margin, y: 0, z: building.z - building.d / 2 - margin },
+    min: { x: building.x - building.w / 2 - margin, y: Number.isFinite(building.baseY)?Math.max(0,building.baseY-margin):0, z: building.z - building.d / 2 - margin },
     max: { x: building.x + building.w / 2 + margin, y: building.h + margin, z: building.z + building.d / 2 + margin },
   };
 }

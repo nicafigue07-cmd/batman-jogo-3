@@ -1,0 +1,5 @@
+/** Steer through normal mouse/keyboard input, rechecking rather than teleporting. */
+export async function walkTo(page,target,{radius=1.5,timeout=60000}={}){
+ const start=Date.now();let moving=false;
+ try{while(Date.now()-start<timeout){const s=await page.evaluate(()=>window.__gotham.snapshot());if(s.mode==='paused'){await page.keyboard.press('Escape');continue;}if(s.mode!=='playing')throw Error(`Movement stopped in ${s.mode}`);if(Math.hypot(s.position.x-target.x,s.position.z-target.z)<radius)return s;const desired=Math.atan2(s.position.x-target.x,s.position.z-target.z),diff=Math.atan2(Math.sin(desired-s.cameraYaw),Math.cos(desired-s.cameraYaw));if(Math.abs(diff)>.015){const turn=Math.max(-.8,Math.min(.8,diff));await page.mouse.move(300,440);await page.mouse.down();await page.mouse.move(300-turn/.004,440);await page.mouse.up();}if(!moving&&Math.abs(diff)<.08){await page.keyboard.down('KeyW');moving=true;}await page.waitForTimeout(60);}throw Error(`Did not reach ${JSON.stringify(target)}`);}finally{await page.keyboard.up('KeyW');}
+}

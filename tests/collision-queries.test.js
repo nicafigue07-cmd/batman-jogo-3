@@ -1,0 +1,3 @@
+import test from'node:test';import assert from'node:assert/strict';import{segmentSphereContact as hit}from'../src/collision-queries.js';
+test('fast shots use first continuous contact rather than the final point',()=>{assert.equal(hit({x:-10,y:0,z:0},{x:10,y:0,z:0},{x:0,y:0,z:0},1),.45);assert.equal(hit({x:-10,y:1,z:0},{x:10,y:1,z:0},{x:0,y:0,z:0},1),.5);});
+test('misses, stationary shots and malformed inputs are handled without mutation',()=>{const a={x:0,y:0,z:0};assert.equal(hit(a,a,a,1),0);assert.equal(hit(a,a,{x:4,y:0,z:0},1),null);assert.equal(hit(a,{x:10,y:0,z:0},{x:5,y:2,z:0},1),null);assert.equal(hit(a,{x:Infinity,y:0,z:0},a,1),null);assert.equal(hit(a,a,a,-1),null);assert.deepEqual(a,{x:0,y:0,z:0});});

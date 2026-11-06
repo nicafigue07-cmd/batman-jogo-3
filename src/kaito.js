@@ -225,7 +225,7 @@ export function createKaito(THREE) {
     return id;
   };
   const finite=(value,fallback=0)=>Number.isFinite(value)?value:fallback;
-  hero.userData.update=({time=0,moving=false,gliding=false,swimming=false,surfTrickPhase=0,rolling=false,rollPhase=0,attacking=false,grappling=false,defending=false,finisher=false,attackType=null,attackPhase=0}={})=>{
+  hero.userData.update=({time=0,moving=false,gliding=false,swimming=false,surfTrickPhase=0,landing=0,rolling=false,rollPhase=0,attacking=false,grappling=false,defending=false,finisher=false,attackType=null,attackPhase=0}={})=>{
     const t=finite(time),phase=THREE.MathUtils.clamp(finite(attackPhase),0,1),strike=Math.sin(phase*Math.PI);
     pose.position.set(0,0,0);pose.rotation.set(0,0,0);
     const stride=moving?Math.sin(t*11)*.45:0;
@@ -262,6 +262,7 @@ export function createKaito(THREE) {
     } else if(moving) {
       pose.position.y=Math.abs(Math.sin(t*11))*.018;board.rotation.z=-.31+Math.sin(t*11)*.015;
     }
+    if(!gliding&&!swimming&&landing>0){const settle=Math.max(0,Math.min(1,landing));pose.position.y-=settle*.05;legs[0].rotation.x-=settle*.15;legs[1].rotation.x-=settle*.15;knees[0].rotation.x+=settle*.3;knees[1].rotation.x+=settle*.3;}
     hero.userData.boardState=gliding?'surf':'back';hero.userData.boardMode=gliding?'surfing':'carried';hero.userData.surfing=!!gliding;
   };
   hero.userData.setArmor();hero.userData.update();
