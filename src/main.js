@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import './style.css';
+import { createLosAngeles } from './los-angeles.js';
 import { createWorld, createEnemy } from './world.js';
 import { createKaito, KAITO_PROFILE } from './kaito.js';
 import { createCharacterPreview } from './character-preview.js';
@@ -51,10 +52,10 @@ renderer.domElement.setAttribute('aria-label', 'Kaito Nami em uma aventura 3D. U
 $('game').appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color('#0b1721');
-scene.fog = new THREE.FogExp2('#0b1721', 0.0052);
-scene.add(new THREE.HemisphereLight(0x9cceea, 0x20202a, 2.1));
-const moonlight = new THREE.DirectionalLight(0xb2d8f4, 2.8);
+scene.background = new THREE.Color('#a5d1e2');
+scene.fog = new THREE.FogExp2('#a5d1e2', 0.0025);
+scene.add(new THREE.HemisphereLight(0xd9f2ff, 0xb59d76, 2.3));
+const moonlight = new THREE.DirectionalLight(0xffdfaa, 3.1);
 moonlight.position.set(-75, 140, -90);
 scene.add(moonlight);
 const rimLight = new THREE.DirectionalLight(0xe6b86c, 1.4);
@@ -62,6 +63,8 @@ rimLight.position.set(70, 35, 110);
 scene.add(rimLight);
 const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 1000);
 const world = createWorld(THREE, scene);
+const losAngeles=createLosAngeles(THREE,scene);
+world.spawn={x:-215,y:.03,z:40};
 // Wayne's stepped crown and spire are solid scenery above its base rooftop.
 const collisionBuildings=(world.collisionBuildings||world.buildings).map(building=>({...building}));
 const wayneTower=world.buildings.find(building=>building.x===0&&building.z===-168);
@@ -100,6 +103,10 @@ const player = {
   attacking: 0, dodge: 0, facing: Math.PI, jumpAge: 0, combo: 0, comboTimer: 0,
   slam:null, momentumTimer:0, launchGlide:false, slowTimer:0,
 };
+let waveCooldown=0,waveTime=0;
+const surfWave=new THREE.Group();surfWave.name="Onda de impulso";
+const curl=new THREE.Mesh(new THREE.TorusGeometry(1.7,.48,8,24,Math.PI*1.45),new THREE.MeshStandardMaterial({color:0x35c7df,transparent:true,opacity:.82,roughness:.3}));curl.rotation.z=-.7;surfWave.add(curl);
+const foam=new THREE.Mesh(new THREE.TorusGeometry(1.75,.13,5,24,Math.PI*1.35),new THREE.MeshBasicMaterial({color:0xf0ffff}));foam.position.z=.3;foam.rotation.z=-.7;surfWave.add(foam);surfWave.visible=false;scene.add(surfWave);
 let combat=createCombatState();
 let targetTimer=0;
 let mode = 'intro';
@@ -356,7 +363,7 @@ const rainPositions = new Float32Array(rainCount * 6);
 const rainGeometry = new THREE.BufferGeometry();
 rainGeometry.setAttribute('position', new THREE.BufferAttribute(rainPositions, 3));
 const rain = new THREE.LineSegments(rainGeometry, new THREE.LineBasicMaterial({ color: 0x94b8c8, transparent: true, opacity: 0.19, depthWrite: false }));
-rain.frustumCulled = false; scene.add(rain);
+rain.visible=false;rain.frustumCulled = false; scene.add(rain);
 const rainSeeds = Array.from({ length: rainCount }, () => [Math.random()*110-55, Math.random()*65, Math.random()*110-55]);
 
 function forward() { return v1.set(-Math.sin(yaw), 0, -Math.cos(yaw)); }
@@ -579,7 +586,7 @@ function reset(missionId = null,{resume=null}={}) {
   }
   player.position.set(spawn.x, spawn.y, spawn.z);
   player.velocity.set(0,0,0);
-  combat=createCombatState(); player.slam=null; player.momentumTimer=0; player.launchGlide=false; targetTimer=0; selectedAnchor=null;
+  waveCooldown=0;waveTime=0;surfWave.visible=false;combat=createCombatState(); player.slam=null; player.momentumTimer=0; player.launchGlide=false; targetTimer=0; selectedAnchor=null;
   player.health = maxHealth(); player.grounded = true; player.gliding = false; player.grapple = null;
   player.attacking = 0; player.combo = 0; player.facing = Math.PI; player.jumpAge = 0;
   player.dodge = 0; player.comboTimer = 0;
@@ -747,12 +754,12 @@ function end(won) {
   if(playStyle==='patrol'){finishPatrol(won);return;}
   mode = 'ended'; keys.clear();
   const mission = MISSIONS.find(m => m.id === selectedMissionId);
-  setText('end-title', won ? (mission ? 'MISSÃO CONCLUÍDA.' : 'GOTHAM RESPIRA.') : 'A NOITE AINDA NÃO ACABOU.');
+  setText('end-title', won ? (mission ? 'MISSÃO CONCLUÍDA.' : 'LOS ANGELES RESPIRA.') : 'A AVENTURA CONTINUA.');
   const duration = `${Math.floor(clock.running / 60)} min ${Math.floor(clock.running % 60)} s`;
   setText('end-description', won
     ? (mission ? `${mission.title}: ${mission.completeMessage} Tempo: ${duration}. Escolha outra missão no menu ou jogue novamente.`
-      : `As ${MISSIONS.length} missões foram concluídas em ${duration}. A rede foi restaurada, o civil está seguro e as provas foram recuperadas. A patrulha aérea também está concluída. Gotham respira por esta noite.`)
-    : 'Seus sinais vitais caíram. A equipe preparou outra tentativa. Use o gancho para chegar aos telhados e o disco de resgate para manter distância dos guardas.');
+      : `As ${MISSIONS.length} missões foram concluídas em ${duration}. A rede foi restaurada, o civil está seguro e as provas foram recuperadas. A patrulha aérea também está concluída. Los Angeles respira por hoje.`)
+    : 'Seus sinais vitais caíram. A equipe preparou outra tentativa. Use o onda para chegar aos telhados e o disco de resgate para manter distância dos guardas.');
   if (won && lastReward) {
     const rewardText = ` +${lastReward.xpEarned} XP · Nível ${getLevel(profile)}${lastReward.unlockedArmors.length ? ` · Nova equipamento: ${lastReward.unlockedArmors.map(a=>a.title).join(', ')}` : ''}.`;
     setText('end-description', $('end-description').textContent + rewardText);
@@ -788,17 +795,16 @@ function launchFromGrapple(glide=false) {
   player.velocity.set(velocity.x,velocity.y,velocity.z);
   player.grapple=null;player.grounded=false;player.jumpAge=.3;
   player.momentumTimer=.45;player.launchGlide=glide;player.gliding=glide;
-  tone(400,.14);toast(glide?'Impulso! Segure Espaço para planar.':'Gancho solto · impulso preservado',2);
+  tone(400,.14);toast(glide?'Impulso! Segure Espaço para planar.':'Onda solto · impulso preservado',2);
 }
 function grapple() {
-  if(mode!=='playing'||player.slam)return;
-  if(player.grapple) {
-    if(player.grapple.progress>.82) {player.grapple.chainRequested=true;toast('Próximo gancho preparado.',1.2);}
-    else launchFromGrapple();
-    return;
-  }
-  if(!selectedAnchor||!startGrapple(selectedAnchor)) {toast('Mire um telhado livre à frente para conectar o gancho.');return;}
-  toast('Gancho conectado · Espaço dá impulso e abre a prancha',2.5);
+  if(mode!=='playing'||player.slam||waveCooldown>0)return;
+  const direction=forward().clone();
+  player.grapple=null;player.grounded=false;player.gliding=true;player.launchGlide=true;player.jumpAge=.3;
+  const waveSpeed=30+skillBonuses.grappleBonus+(getArmor(profile).grappleSpeed-48)*.2;
+  player.velocity.set(direction.x*waveSpeed,14,direction.z*waveSpeed);player.momentumTimer=1.25;
+  waveCooldown=2.5;waveTime=1.5;player.facing=Math.atan2(direction.x,direction.z);
+  tone(230,.3,'sine',.035);toast('ONDA! Impulso na prancha · direcione com WASD.',2);
 }
 
 function spark(position, color = 0xeac477, count = 10) {
@@ -860,7 +866,7 @@ function useAttack(type='light') {
   if(!result.ok) {
     if(result.reason==='grounded')toast('Pule e pressione L para usar o impacto aéreo.',2);
     else if(result.reason==='airborne')toast('O chute pesado precisa de apoio no chão.',2);
-    else if(result.reason==='grappling')toast('Solte o gancho antes de atacar. Espaço dá impulso.',2);
+    else if(result.reason==='grappling')toast('Solte o onda antes de atacar. Espaço dá impulso.',2);
     return;
   }
   if(type==='smoke') {
@@ -939,7 +945,7 @@ function completeObjective(site,{airGate=false}={}) {
 function interact() {
   if (mode !== 'playing') return;
   const site=targetObjective(),position=objectivePosition();
-  if(site?.kind==='flight'){toast('Atravesse o anel planando com a prancha aberta. O gancho não conta.',3);return;}
+  if(site?.kind==='flight'){toast('Atravesse o anel planando com a prancha aberta. O onda não conta.',3);return;}
   if (!site || distance3(player.position,position)>5) { toast('Aproxime-se do objetivo dourado e pressione F.'); return; }
   if (currentGuards()) { toast('Neutralize os guardas para liberar este objetivo.'); return; }
   if(site.kind==='chase'){if(distance3(player.position,site)>3.5){toast('Chegue mais perto do mensageiro para interceptar.',2);return;}finishPatrol(true);return;}
@@ -1112,6 +1118,8 @@ document.querySelectorAll('#touch-controls button').forEach(button => {
 });
 
 function updatePlayer(dt) {
+  waveCooldown=Math.max(0,waveCooldown-dt);waveTime=Math.max(0,waveTime-dt);
+  surfWave.visible=waveTime>0;surfWave.position.copy(player.position);surfWave.position.y-=.3;surfWave.rotation.y=player.facing;surfWave.scale.setScalar(.7+waveTime*.25);
   tickCombat(combat,dt);player.momentumTimer=Math.max(0,player.momentumTimer-dt);
   attackCooldown = Math.max(0, attackCooldown-dt); batarangCooldown = Math.max(0,batarangCooldown-dt);
   player.attacking = Math.max(0,player.attacking-dt); player.dodge = Math.max(0,player.dodge-dt);
@@ -1168,14 +1176,14 @@ function updatePlayer(dt) {
   }
   if(player.grapple||!player.gliding)activeWind={active:false,lift:0,boost:0,id:null};
   hero.scale.y=THREE.MathUtils.lerp(hero.scale.y,crouching&&player.grounded?.76:1,1-Math.exp(-dt*12));
-  grappleLine.visible = !!player.grapple;
+  grappleLine.visible = false;
   hero.position.copy(player.position);
   let angle = Math.atan2(Math.sin(player.facing-hero.rotation.y),Math.cos(player.facing-hero.rotation.y));
   hero.rotation.y += angle * (1-Math.exp(-dt*12));
   hero.userData.update?.({ time: elapsed, moving: Math.hypot(player.velocity.x,player.velocity.z)>1 && player.grounded, gliding: player.gliding, defending:combat.defenseWindow>0,finisher:combat.animation==='finisher', attacking:!!combat.animation,attackType:player.slam?'slam':combat.animation==='light'?'punch':combat.animation,attackPhase:player.slam ? .4 : combat.animationDuration?1-combat.animationTime/combat.animationDuration:0,grappling:!!player.grapple });
   targetTimer-=dt;
   if(targetTimer<=0&&!player.grapple) {selectedAnchor=selectGrappleTarget(player.position,forward(),grappleAnchors,collisionBuildings,getArmor(profile).id==='tactical'?170:145);targetTimer=.12;}
-  anchorMarker.visible = !!selectedAnchor && !player.grapple;
+  anchorMarker.visible = false;
   if(selectedAnchor) { anchorMarker.position.set(selectedAnchor.x,selectedAnchor.y+2,selectedAnchor.z); anchorMarker.rotation.y=elapsed; }
 }
 
@@ -1415,7 +1423,7 @@ function updateHUD() {
   const mission = getCurrentMission(campaign), site = targetObjective();
   const position=objectivePosition();
   const distance = position ? distance3(player.position,position) : 0;
-  setText('mission-villain',mission?VILLAINS[mission.id].name.toUpperCase():'GOTHAM SEGURA');
+  setText('mission-villain',mission?VILLAINS[mission.id].name.toUpperCase():'LOS ANGELES SEGURA');
   setText('mission-terrain',mission?({ground:'MISSÃO TERRESTRE',roof:'MISSÃO NOS TELHADOS',air:'MISSÃO AÉREA'})[mission.terrain]:'PATRULHA CONCLUÍDA');
   const namedBoss=enemies.find(enemy=>enemy.boss&&enemy.missionId===mission?.id);
   show('boss-panel',!!namedBoss&&namedBoss.alive&&namedBoss.site===site?.id&&mode!=='intro');
@@ -1426,22 +1434,22 @@ function updateHUD() {
   setText('mission-count', mission ? `${completed} / ${mission.objectives.length}` : 'OK');
   setText('mission-label', mission ? `MISSÃO ${String(campaign.currentMissionIndex+1).padStart(2,'0')} / ${String(MISSIONS.length).padStart(2,'0')}` : 'OPERAÇÃO CONCLUÍDA');
   setText('campaign-count', selectedMissionId ? 'OPERAÇÃO INDIVIDUAL' : `${campaign.completedMissionIds.length} / ${MISSIONS.length} MISSÕES`);
-  setText('objective-type', mission ? missionTypeLabels[mission.type].toUpperCase() : 'GOTHAM SEGURA');
+  setText('objective-type', mission ? missionTypeLabels[mission.type].toUpperCase() : 'LOS ANGELES SEGURA');
   setText('distance-value',String(Math.round(distance)));
   setText('objective-title',mission ? mission.title.toUpperCase() : 'OBJETIVOS CONCLUÍDOS');
   const guards = currentGuards();
   let description = site ? (distance<5 && !guards ? `Pressione F: ${site.interaction.toLowerCase()}.` : `${site.name} · ${guards ? `${guards} guarda${guards > 1 ? 's' : ''}${site.kind === 'finale' ? ' de elite' : ''}` : site.interaction}`) : 'Escolha outra missão no menu M.';
-  if(site?.kind==='flight')description='Salte e segure Espaço / ✕ para planar pelo anel. O gancho não conta.';
+  if(site?.kind==='flight')description='Salte e segure Espaço / ✕ para planar pelo anel. O onda não conta.';
   if(site?.kind==='rescue'&&escort?.released) description='Escolte o civil até o círculo de extração. F quando ambos chegarem.';
   if(site?.kind==='evidence'&&!scannedClues.has(site.id)) description=`Ative R e analise a área: ${Math.min(100,Math.round(scanProgress/(getArmor(profile).scanBonus?1:2)*100))}%`;
   if(site?.kind==='finale'&&guards) { const elite=enemies.find(e=>e.elite&&e.alive); description=elite?.elitePhase==='exposed'?'Escudo desligado! Ataque com J ou Q.':'Bane prepara golpes pesados. Esquive e ataque durante a abertura.'; }
   setText('objective-description',description);
   setText('speed-value',String(Math.round(Math.hypot(player.velocity.x,player.velocity.z)*3.6)).padStart(2,'0'));
-  let status=player.grapple?'GANCHO CONECTADO':player.gliding?'PLANANDO':player.grounded?'PATRULHA ATIVA':'EM QUEDA · SEGURE ESPAÇO';
+  let status=player.grapple?'ONDA CONECTADO':player.gliding?'PLANANDO':player.grounded?'PATRULHA ATIVA':'EM QUEDA · SEGURE ESPAÇO';
   if(site && distance<5) status=guards?'J COMBATE · Q DISCO DE RESGATE':`F  ${site.interaction.toUpperCase()}`;
   if(site?.kind==='rescue'&&escort?.released) status=distance<5?'F  CONFIRMAR EVACUAÇÃO':'ESCOLTE O CIVIL ATÉ A EXTRAÇÃO';
   if(site?.kind==='flight')status=player.gliding?'PRANCHA ATIVA · ATRAVESSE O ANEL':'SEGURE ESPAÇO / ✕ PARA PLANAR';
-  if(mode==='intro') status='GOTHAM PRECISA DE VOCÊ';
+  if(mode==='intro') status='LOS ANGELES PRECISA DE VOCÊ';
   if(status!==lastStatus){setText('action-status',status);lastStatus=status;}
   setText('combo',combat.comboStep>1?`${combat.comboStep} / 3 COMBO`:'');
   setText('combat-status',player.slam?'IMPACTO AÉREO':combat.animation==='heavy'?'CHUTE PESADO':combat.comboStep?`COMBO ${combat.comboStep} / 3`:'COMBATE LIVRE');
@@ -1454,7 +1462,7 @@ function updateHUD() {
   setText('threat-status',threat?`${threat.definition?.name||ENEMY_ARCHETYPES[threat.archetype]?.name||'INIMIGO'} PREPARA ATAQUE · APARE OU ESQUIVE`:'');
   show('threat-status',!!threat&&mode==='playing');
   setText('ability-status',`K ${combat.cooldowns.heavy>0?Math.ceil(combat.cooldowns.heavy)+'s':'PRONTO'} · L ${combat.cooldowns.slam>0?Math.ceil(combat.cooldowns.slam)+'s':'PRONTO'} · Z ${combat.cooldowns.smoke>0?Math.ceil(combat.cooldowns.smoke)+'s':'PRONTO'}`);
-  setText('grapple-hint',player.grapple?'ESPAÇO · IMPULSO / PRANCHA':selectedAnchor?`E · GANCHO ${Math.round(distance3(player.position,selectedAnchor))} m`:'MIRE UM TELHADO');
+  setText('grapple-hint',waveCooldown>0?`ONDA · ${waveCooldown.toFixed(1)} s`:'E / R1 · INVOCAR ONDA');
   document.querySelector('[data-action="crouch"]')?.setAttribute('aria-pressed',String(crouching));
   show('patrol-readout',mode!=='intro');
   const awareness=Math.max(0,...enemies.filter(enemy=>enemyIsActive(enemy)&&enemy.alive).map(enemy=>enemy.awareness||0));
@@ -1468,7 +1476,7 @@ function updateHUD() {
     setText('campaign-count',`${patrolRun.completed} RESOLVIDAS`);
     setText('mission-count',`${patrolRun.completed} ✓`);
     setText('objective-type',({ambush:'COMBATE',rescue:'ESCOLTA',bomb:'DESARME',chase:'PERSEGUIÇÃO'})[encounter.type]);
-    setText('mission-terrain',encounter.terrain==='ground'?'RUAS DE GOTHAM':'TELHADOS DE GOTHAM');
+    setText('mission-terrain',encounter.terrain==='ground'?'RUAS DE LOS ANGELES':'TELHADOS DE LOS ANGELES');
     setText('mission-villain',encounter.type==='chase'?'MENSAGEIRO EM FUGA':'CRIME EM ANDAMENTO');
     setText('objective-title',encounter.title.toUpperCase());
     let instruction=encounter.description;
@@ -1529,7 +1537,7 @@ requestAnimationFrame(frame);
 window.__gotham = Object.freeze({
   snapshot: () => ({
     character:{...KAITO_PROFILE,id:hero.userData.characterId,appearance:{...hero.userData.features},boardMode:hero.userData.boardMode||'carried'},heroBody:{...heroBody},clockRunning:clock.running,characterPreview:{open:mode==='character',...(characterPreview?.getState()||{angle:0})},
-    mode,playStyle,crouching,difficulty:difficulty.id,wind:{...activeWind},
+    wave:{active:waveTime>0,cooldown:waveCooldown},mode,playStyle,crouching,difficulty:difficulty.id,wind:{...activeWind},
     skills:{unlocked:[...skillProfile.unlocked],points:getSkillPoints(skillProfile,skillProgress()),bonuses:{...skillBonuses}},checkpoint:checkpoint?{...checkpoint,completedMissionIds:[...checkpoint.completedMissionIds]}:null,
     cityLife:cityLife.getStats(),graphics:graphics.getStats?.()||null,lastDefense:{...lastDefense},
     patrol:patrolRun?{round:patrolRun.round,type:patrolRun.current?.type,remaining:Math.max(0,(patrolRun.current?.timeLimit||0)-(clock.running-patrolStarted)),completed:patrolRun.completed,failed:patrolRun.failed,damageTaken:patrolDamage,stealthCount:patrolStealth,finished:!!patrolRun.current?.finished,history:patrolRun.history.map(item=>({...item}))}:null,

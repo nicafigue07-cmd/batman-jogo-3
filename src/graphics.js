@@ -43,7 +43,7 @@ export function createGraphics(renderer, scene, camera, light, world) {
   renderer.shadowMap.autoUpdate=false;
   const sky = new THREE.Mesh(new THREE.SphereGeometry(680,24,16),new THREE.ShaderMaterial({
     side:THREE.BackSide,depthWrite:false,
-    uniforms:{top:{value:new THREE.Color('#040c19')},bottom:{value:new THREE.Color('#243c49')}},
+    uniforms:{top:{value:new THREE.Color('#438fc4')},bottom:{value:new THREE.Color('#e7d5b9')}},
     vertexShader:'varying vec3 direction; void main(){direction=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
     fragmentShader:`uniform vec3 top;uniform vec3 bottom;varying vec3 direction;
       float starHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}

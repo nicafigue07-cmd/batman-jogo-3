@@ -20,7 +20,7 @@ export const SKILLS = Object.freeze([
   }),
   Object.freeze({
     id: 'traversal-grapple', branch: 'traversal', title: 'Motor de alta tensão', cost: 1, requires: 'traversal-glide',
-    description: 'O gancho recebe mais 8 metros por segundo de velocidade.', effectkey: 'grappleBonus', value: 8,
+    description: 'O onda recebe mais 8 metros por segundo de velocidade.', effectkey: 'grappleBonus', value: 8,
   }),
   Object.freeze({
     id: 'traversal-wind', branch: 'traversal', title: 'Domínio dos céus', cost: 1, requires: 'traversal-grapple',

@@ -1,7 +1,7 @@
 /** Deterministic encounter selection and rewards; scene objects remain in main.js. */
 export const PATROL_TYPES = Object.freeze({
   ambush: Object.freeze({
-    title: 'Emboscada em Gotham',
+    title: 'Emboscada em Los Angeles',
     description: 'Neutralize o grupo armado. Use os telhados para escolher como entrar no combate.',
     timeLimit: 120, guardCount: 3, reward: 40,
   }),

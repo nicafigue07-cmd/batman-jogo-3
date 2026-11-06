@@ -15,7 +15,7 @@ export function createWorld(THREE, scene) {
     return detailSeed / 4294967296;
   };
   const group = new THREE.Group();
-  group.name = 'Gotham';
+  group.name = 'Los Angeles';
   scene.add(group);
   const ambientDetails = new THREE.Group();
   ambientDetails.name = 'City ambient details';
@@ -30,7 +30,7 @@ export function createWorld(THREE, scene) {
   const anchors = [];
   const boxes = { concrete: [], metal: [], gold: [], blue: [], lamps: [], road: [] };
   const materials = {
-    concrete: new THREE.MeshStandardMaterial({ color: 0x1e303a, roughness: .89, metalness: .18 }),
+    concrete: new THREE.MeshStandardMaterial({ color: 0xc3b7a3, roughness: .89, metalness: .18 }),
     metal: new THREE.MeshStandardMaterial({ color: 0x33414a, roughness: .65, metalness: .65 }),
     gold: new THREE.MeshStandardMaterial({ color: 0xc39a52, emissive: 0x765026, emissiveIntensity: .35, metalness: .6, roughness: .45 }),
     blue: new THREE.MeshBasicMaterial({ color: 0x5fcbcf, transparent: true, opacity: .65 }),
@@ -61,8 +61,8 @@ export function createWorld(THREE, scene) {
     };
     return { roughnessMap: make(roughness), normalMap: make(normals) };
   }
-  const roofMaterial = new THREE.MeshStandardMaterial({ color: 0x23343e, roughness: .85, metalness: .28, normalScale: new THREE.Vector2(.3, .3), ...surfaceMaps(128, true) });
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), new THREE.MeshStandardMaterial({ color: 0x101d25, roughness: .55, metalness: .62, normalScale: new THREE.Vector2(.22, .22), ...surfaceMaps(128) }));
+  const roofMaterial = new THREE.MeshStandardMaterial({ color: 0xb6b0a0, roughness: .85, metalness: .28, normalScale: new THREE.Vector2(.3, .3), ...surfaceMaps(128, true) });
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), new THREE.MeshStandardMaterial({ color: 0x60676a, roughness: .55, metalness: .62, normalScale: new THREE.Vector2(.22, .22), ...surfaceMaps(128) }));
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
   group.add(ground);
@@ -660,7 +660,7 @@ export function createWorld(THREE, scene) {
   batSignal.name='Sinal das ondas nas nuvens';
   batSignal.position.set(98,124,-224);
   batSignal.scale.set(56,48,1);
-  ambientDetails.add(batSignal);
+  batSignal.visible=false;ambientDetails.add(batSignal);
   const signalBase=new THREE.Vector3(112,44,-168);
   const signalDirection=batSignal.position.clone().sub(signalBase);
   const signalBeam=new THREE.Mesh(new THREE.CylinderGeometry(22,.22,signalDirection.length(),20,1,true),new THREE.MeshBasicMaterial({color:0xe4dcb6,transparent:true,opacity:.024,side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending}));
@@ -708,7 +708,7 @@ export function createWorld(THREE, scene) {
   const moon = new THREE.Mesh(new THREE.SphereGeometry(12, 28, 20), new THREE.MeshBasicMaterial({ color: 0xbbcdd0, fog: false }));
   moon.name = 'Moon';
   moon.position.set(-143, 148, -280);
-  group.add(moon);
+  moon.visible=false;group.add(moon);
   const haloCanvas = document.createElement('canvas');
   haloCanvas.width = haloCanvas.height = 128;
   const haloCtx = haloCanvas.getContext('2d');
@@ -722,7 +722,7 @@ export function createWorld(THREE, scene) {
   halo.name = 'Moon halo';
   halo.position.copy(moon.position);
   halo.scale.set(85, 85, 1);
-  group.add(halo);
+  halo.visible=false;group.add(halo);
 
   // Searchlights sweep above Gotham's buildings.
   const beams = [];

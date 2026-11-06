@@ -20,6 +20,19 @@ const stylesheetContent = await asset(href[1]);
 if (/<\/script/i.test(javascript)) throw new Error('Script requires HTML-safe escaping');
 html = html.replace(script[0], () => `<script type="module">\n${javascript}\n</script>`);
 html = html.replace(stylesheet[0], () => `<style>\n${stylesheetContent}\n</style>`);
+// Keep a readable screen even when a file viewer blocks JavaScript or WebGL.
+const boot = `<div id="startup-status" role="status" style="position:fixed;inset:0;z-index:99999;background:#102c39;color:#fff;display:grid;place-content:center;padding:28px;font:18px/1.6 Arial,sans-serif"><h1>Kaito Nami</h1><p id="startup-message">Abrindo o jogo…</p><p>Se esta mensagem continuar, abra este arquivo no Chrome ou Edge.<br>No navegador, pressione Ctrl + O e selecione o arquivo baixado.</p></div>
+<script>
+(function(){
+var box=document.getElementById('startup-status'), message=document.getElementById('startup-message');
+window.addEventListener('error',function(event){message.textContent='Não foi possível iniciar: '+(event.message||'erro do navegador');});
+var checks=0,timer=setInterval(function(){
+if(window.__gotham&&window.__gotham.snapshot().rendererCalls>0){box.remove();clearInterval(timer);}
+else if(++checks>80){message.textContent='O jogo não iniciou. Verifique se o navegador permite JavaScript e aceleração gráfica.';clearInterval(timer);}
+},250);
+})();
+</script>`;
+html=html.replace('<body>','<body>'+boot);
 const output = resolve(root, 'Kaito-Nami.html');
 await writeFile(output, html);
 console.log(`Jogo portátil: ${output}`);
