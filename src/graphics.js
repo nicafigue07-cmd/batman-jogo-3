@@ -7,6 +7,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 export const GRAPHICS_PRESETS = Object.freeze({
   low: {pixelRatio:1, shadows:false, bloom:false, shadowSize:512, minimumScale:.7},
   medium: {pixelRatio:1.4, shadows:true, bloom:false, shadowSize:1024, minimumScale:.65},
+  ultra: {pixelRatio:2, shadows:true, bloom:true, shadowSize:2048, minimumScale:.6},
   high: {pixelRatio:1.7, shadows:true, bloom:true, shadowSize:1536, minimumScale:.6},
 });
 
@@ -94,11 +95,12 @@ export function createGraphics(renderer, scene, camera, light, world) {
     if(preset.bloom&&!composer)composer=makeComposer();
     if(!preset.bloom)disposeComposer();
     applyResolution();
-    world.setQuality?.(quality);
+    world.setQuality?.(quality==='ultra'?'high':quality);
     document.body.dataset.quality=quality;
     return quality;
   }
   return {
+    setTime(daylight,tokyo=false){sky.material.uniforms.top.value.set(tokyo?'#182c60':'#438fc4').multiplyScalar(.2+daylight*.8);sky.material.uniforms.bottom.value.set(tokyo?'#8e7289':'#e7d5b9').multiplyScalar(.3+daylight*.7);},
     setQuality,
     getQuality:()=>quality,
     getStats:()=>({quality,adaptive,...resolution.snapshot()}),

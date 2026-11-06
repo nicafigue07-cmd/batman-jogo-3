@@ -169,3 +169,20 @@ node tests/patrol-playthrough.mjs
 Os fluxos cobrem missões de rua e voo, teclado/mouse, toque e gamepad simulado, save antigo, compra de habilidade, retomada de missão, aparos reais por comandos do navegador, consumo de foco e as quatro ocorrências de patrulha. As capturas ficam em `test-results/`. O sucesso desses testes não representa verificação de hardware físico ou de um console nativo.
 
 A troca para Kaito deve ser conferida novamente na build final, incluindo aparência, animações, UI e arquivo portátil. O projeto continua uma aventura de escopo reduzido: cidade finita, personagens estilizados e cinco missões.
+
+
+## Aventura das duas marés (nova expansão)
+
+Abra **Aventura · Poderes e mapa** na parte inferior e escolha **História das marés**. A organização Abissal tenta controlar a energia do oceano. Há seis objetivos encadeados com diálogos em texto: escolta até o porto, quatro arcos de velocidade, núcleo submerso, viagem de trem, antena no telhado e sentinela com três fases de vida. Cada capítulo concluído concede 80 XP; cristais concedem 20 XP e pedidos de moradores 25 XP. A história e os colecionáveis têm salvamento próprio, preservando o perfil anterior.
+
+As duas áreas usam a mesma base urbana de colisões, com cenários diferentes: **Praia de Nami** tem costa, porto, lojas e hotel; **Neo Tóquio** tem letreiros, luzes e estação de metrô. Vá à estação em x -185, z -28 e use **Viajar de trem** ou F. A troca acontece por transição entre áreas, sem uma viagem de trem completa simulada.
+
+Poderes: **1** jato que empurra inimigos e caixas; **2** escudo temporário; **3** correnteza; **4** tentáculo que puxa inimigos ou alcança telhados; **5** gelo temporário por oito segundos; **6** tsunami em área. Energia regenera, cada poder tem custo e recarga. Encontre cristais para evoluir os poderes pelo painel. No controle, segure **L2** e use ✕ para jato, ○ escudo, □ tentáculo, △ gelo, R1 correnteza ou L1 tsunami. Os botões do painel também funcionam por toque.
+
+Entre no mar pela margem oeste; **G** alterna mergulho e superfície. WASD move, Espaço sobe; fique atento ao ar. Segure W e Espaço perto de uma fachada para escalar; caixas baixas recebem subida automática. Shift executa rolamento. A água tem deformação de ondas e espuma no impulso; seu material tem brilho especular, sem reflexo completo da cena.
+
+**N** abre o mapa 3D. **P** abre o modo foto: arraste a câmera, + / - aproxima e Enter exporta PNG. **Salvar agora** guarda perfil, objetivo e progresso da aventura, não uma reprodução exata do combate. O painel também controla clima e texto grande/contraste. O ciclo de iluminação é gradual; não representa simulação meteorológica real. Gráficos incluem Leve, Equilibrado, Alto e Ultra, com resolução adaptativa.
+
+Esta é uma expansão procedural de navegador. Os diálogos são texto, os enquadramentos são curtos movimentos de câmera e o chefe tem padrões simples. Não inclui dublagem, expressões faciais completas, reconstruções reais das cidades, metrô com passageiros simulados, reflexos avançados ou conteúdo de um mundo AAA. Essas partes continuam como evolução futura.
+
+Validação: `npm test`, `node tests/adventure-smoke.mjs` após `npm run build:portable`. O teste de navegador usa entradas reais para escudo, gelo, mapa/foto, trem nos dois sentidos, surfe, mergulho e início da história.

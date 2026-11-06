@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import './style.css';
+import { createAdventure } from './adventure.js';
 import { createLosAngeles } from './los-angeles.js';
 import { createWorld, createEnemy } from './world.js';
 import { createKaito, KAITO_PROFILE } from './kaito.js';
@@ -34,6 +35,7 @@ const platformPreset=document.documentElement.dataset.platform||'auto';
 let platformMode=platformPreset;
 let padButtons=[], padIndex=null, padMove={x:0,z:0}, padJumpHeld=false, controllerConnected=false;
 try{if(platformPreset==='auto')platformMode=localStorage.getItem('gotham.platform.v1')||'auto';}catch{/* Use the edition's default. */}
+let photoZoom=0;
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let renderer;
 try {
@@ -82,9 +84,9 @@ const cityLife=createCityLife(THREE,scene,{reducedMotion});world.setTrafficEnabl
 const graphics = createGraphics(renderer,scene,camera,moonlight,world);
 let graphicsQuality=platformPreset==='tablet'?'low':'medium';
 try { graphicsQuality=localStorage.getItem('gotham.graphics.v1') || graphicsQuality; } catch { /* Keep the default when storage is unavailable. */ }
-graphicsQuality=graphics.setQuality(graphicsQuality);cityLife.setQuality(graphicsQuality);
+graphicsQuality=graphics.setQuality(graphicsQuality);cityLife.setQuality(graphicsQuality==='ultra'?'high':graphicsQuality);
 function setGraphicsQuality(value,persist=true) {
-  graphicsQuality=graphics.setQuality(value);cityLife.setQuality(graphicsQuality);
+  graphicsQuality=graphics.setQuality(value);cityLife.setQuality(graphicsQuality==='ultra'?'high':graphicsQuality);
   for(const id of ['graphics-quality','intro-graphics-quality'])if($(id))$(id).value=graphicsQuality;
   if(persist)try{localStorage.setItem('gotham.graphics.v1',graphicsQuality);}catch{/* The current selection still works. */}
 }
@@ -92,7 +94,7 @@ for(const id of ['graphics-quality','intro-graphics-quality']) {
   if($(id)) {$(id).value=graphicsQuality;$(id).addEventListener('change',event=>setGraphicsQuality(event.target.value));}
 }
 const hero = createKaito(THREE);
-const heroBody={radius:.42,height:2.05};
+const heroBody={radius:.42,height:2.05,minX:-650};
 let characterPreview=null,characterPreviousMode='intro';
 scene.add(hero);
 
@@ -264,7 +266,8 @@ function pollGamepad(dt) {
     return;
   }
   if(frame.actions.includes('pause')) {
-    if(mode==='character')closeCharacter();
+    if(mode==='photo'||mode==='map')adventure.closeView();
+    else if(mode==='character')closeCharacter();
     else if(mode==='intro')begin();
     else if(mode==='ended'){if(playStyle==='patrol')beginPatrol(true);else begin(selectedMissionId);}
     else if(mode==='playing')pause();
@@ -276,7 +279,8 @@ function pollGamepad(dt) {
   for(const name of frame.actions) {
     if(name==='armory'){openArmory();$('armory-list')?.querySelector('button:not(:disabled)')?.focus();}
     else if(name==='missions'){openMissions();$('missions-list')?.querySelector('button')?.focus();}
-    else action(name);
+    else if(frame.buttons[6]&&({jump:'jet',dodge:'shield',attack:'tentacle',heavy:'ice',grapple:'current',batarang:'tsunami'})[name])adventure.power(({jump:'jet',dodge:'shield',attack:'tentacle',heavy:'ice',grapple:'current',batarang:'tsunami'})[name]);
+    else if(!(frame.buttons[6]&&name==='smoke'&&frame.actions.length>1))action(name);
   }
 }
 
@@ -728,6 +732,7 @@ function begin(missionId = null,{resume=false}={}) {
   document.body.classList.add('playing');
   toast(getCurrentMission(campaign).briefing, 7);
   renderArmory(); updateHUD(); renderer.domElement.focus(); tone(350, 0.4);
+  if(missionId===null&&!resume)adventure.startStory();
 }
 
 function openCharacter() {
@@ -943,6 +948,7 @@ function completeObjective(site,{airGate=false}={}) {
   updateHUD();
 }
 function interact() {
+  if(adventure.interact())return;
   if (mode !== 'playing') return;
   const site=targetObjective(),position=objectivePosition();
   if(site?.kind==='flight'){toast('Atravesse o anel planando com a prancha aberta. O onda não conta.',3);return;}
@@ -1049,12 +1055,12 @@ document.addEventListener('visibilitychange', () => { if(document.hidden && mode
 
 let pointer = null;
 renderer.domElement.addEventListener('pointerdown', event => {
-  if (mode !== 'playing') return;
+  if (!['playing','photo'].includes(mode)) return;
   pointer = { x: event.clientX, y: event.clientY, id: event.pointerId };
   renderer.domElement.setPointerCapture(event.pointerId);
 });
 renderer.domElement.addEventListener('pointermove', event => {
-  if (!pointer || mode !== 'playing') return;
+  if (!pointer || !['playing','photo'].includes(mode)) return;
   yaw -= (event.clientX-pointer.x) * .004;
   pitch = THREE.MathUtils.clamp(pitch+(event.clientY-pointer.y)*.0025, -.12, .85);
   pointer.x=event.clientX; pointer.y=event.clientY;
@@ -1119,7 +1125,8 @@ document.querySelectorAll('#touch-controls button').forEach(button => {
 
 function updatePlayer(dt) {
   waveCooldown=Math.max(0,waveCooldown-dt);waveTime=Math.max(0,waveTime-dt);
-  surfWave.visible=waveTime>0;surfWave.position.copy(player.position);surfWave.position.y-=.3;surfWave.rotation.y=player.facing;surfWave.scale.setScalar(.7+waveTime*.25);
+  surfWave.visible=waveTime>0;surfWave.position.copy(player.position);surfWave.position.y-=.3;surfWave.rotation.y=player.facing;surfWave.scale.setScalar((.7+waveTime*.25)*(player.position.x< -229?2.2:1));
+  if(adventure.movement(dt))return;
   tickCombat(combat,dt);player.momentumTimer=Math.max(0,player.momentumTimer-dt);
   attackCooldown = Math.max(0, attackCooldown-dt); batarangCooldown = Math.max(0,batarangCooldown-dt);
   player.attacking = Math.max(0,player.attacking-dt); player.dodge = Math.max(0,player.dodge-dt);
@@ -1180,7 +1187,7 @@ function updatePlayer(dt) {
   hero.position.copy(player.position);
   let angle = Math.atan2(Math.sin(player.facing-hero.rotation.y),Math.cos(player.facing-hero.rotation.y));
   hero.rotation.y += angle * (1-Math.exp(-dt*12));
-  hero.userData.update?.({ time: elapsed, moving: Math.hypot(player.velocity.x,player.velocity.z)>1 && player.grounded, gliding: player.gliding, defending:combat.defenseWindow>0,finisher:combat.animation==='finisher', attacking:!!combat.animation,attackType:player.slam?'slam':combat.animation==='light'?'punch':combat.animation,attackPhase:player.slam ? .4 : combat.animationDuration?1-combat.animationTime/combat.animationDuration:0,grappling:!!player.grapple });
+  hero.userData.update?.({ time: elapsed, moving: Math.hypot(player.velocity.x,player.velocity.z)>1 && player.grounded, gliding: player.gliding,rolling:player.dodge>.1,rollPhase:1-player.dodge/.6, defending:combat.defenseWindow>0,finisher:combat.animation==='finisher', attacking:!!combat.animation,attackType:player.slam?'slam':combat.animation==='light'?'punch':combat.animation,attackPhase:player.slam ? .4 : combat.animationDuration?1-combat.animationTime/combat.animationDuration:0,grappling:!!player.grapple });
   targetTimer-=dt;
   if(targetTimer<=0&&!player.grapple) {selectedAnchor=selectGrappleTarget(player.position,forward(),grappleAnchors,collisionBuildings,getArmor(profile).id==='tactical'?170:145);targetTimer=.12;}
   anchorMarker.visible = false;
@@ -1188,7 +1195,7 @@ function updatePlayer(dt) {
 }
 
 function takeDamage(amount,{attacker=null,parryable=true}={}) {
-  if(mode!=='playing'||player.grapple)return false;
+  if(mode!=='playing'||player.grapple||adventure.shielded())return false;
   const defense=resolveDefense(combat,{parryable});
   if(defense.parried) {
     lastDefense={kind:defense.perfect?'perfect':'parry',at:clock.running};
@@ -1386,7 +1393,7 @@ function updateCamera(dt, snap=false) {
   if(Math.abs(camera.fov-fov)>.01){camera.fov=fov;camera.updateProjectionMatrix();}
   const intro=mode==='intro';
   const angle=yaw+(intro ? Math.sin(elapsed*.065)*.1 : 0);
-  const radius=intro ? 7.2 : player.gliding ? 12.5 : 8.8;
+  const radius=Math.max(3,(intro ? 7.2 : player.gliding ? 12.5 : 8.8)+photoZoom);
   const target=player.position.clone().add(new THREE.Vector3(0,intro ? 1.3 : 1.2,0));
   const desired=new THREE.Vector3(player.position.x+Math.sin(angle)*radius,player.position.y+(intro ? 2.2 : 2.5+Math.sin(pitch)*radius),player.position.z+Math.cos(angle)*radius);
   const boom=clampCameraBoom(target,desired,collisionBuildings);desired.set(boom.x,boom.y,boom.z);
@@ -1487,13 +1494,19 @@ function updateHUD() {
     setText('patrol-timer',`${Math.floor(remaining/60)}:${String(remaining%60).padStart(2,'0')} · +${encounter.reward} XP · BÔNUS SEM DANO / FURTIVO`);
     show('boss-panel',false);show('flight-progress',false);
   }
+  const narrative=adventure.snapshot();
+  if(narrative.active){for(const site of objectives)site.visual.group.visible=false;show('boss-panel',false);}
+  const cityName=narrative.state.city==='nami'?'PRAIA DE NAMI':'NEO TÓQUIO';
+  const cityLabel=document.querySelector('.city-status>span:nth-child(2)');if(cityLabel)cityLabel.textContent=cityName;
+  if(narrative.active&&narrative.objective){const objective=narrative.objective;setText('objective-title',objective.name);setText('objective-description',objective.text);setText('objective-type','ENERGIA DO OCEANO · ABISSAL');setText('mission-label',`CAPÍTULO ${narrative.state.chapter+1} / 6`);setText('mission-villain',cityName);setText('mission-count',`${narrative.state.collected.length} / 8 CRISTAIS`);setText('distance-value',String(Math.round(Math.hypot(player.position.x-objective.x,player.position.z-objective.z))));}
   drawMap();
 }
 
 function updateWaypoint() {
-  const s=targetObjective(), el=$('waypoint');
+  const narrative=adventure.snapshot();const story=narrative.active?narrative.objective:null;
+  const s=story||targetObjective(), el=$('waypoint');
   if(!s || !el || mode==='intro'){show('waypoint',false);return;}
-  const point=objectivePosition();
+  const point=story||objectivePosition();
   const pos=new THREE.Vector3(point.x,point.y+(s.kind==='flight'?0:7),point.z);
   const cameraSpace=pos.clone().applyMatrix4(camera.matrixWorldInverse);
   if(cameraSpace.z>0){show('waypoint',false);return;}
@@ -1505,6 +1518,13 @@ function updateWaypoint() {
 }
 
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();graphics.resize();});
+const adventure=createAdventure(THREE,{
+ setTime:(v,t)=>graphics.setTime(v,t),orbit:delta=>{yaw+=delta;},waving:()=>waveTime>0,scene,player,hero,world,coast:losAngeles,solids:collisionBuildings,light:moonlight,rain,createCharacter:createKaito,
+ getMode:()=>mode,setMode:value=>{mode=value;keys.clear();},forward:()=>forward().clone(),wave:grapple,
+ targets:nearbyEnemies,hit:hitEnemy,moveEnemy,roofTarget:()=>selectedAnchor,pull:startGrapple,toast,sound:tone,damage:takeDamage,
+ resetCamera:()=>{yaw=Math.PI/2;updateCamera(1,true);},zoom:delta=>{photoZoom=THREE.MathUtils.clamp(photoZoom+delta,-5,12);},
+ save:()=>{persistProfile();if(playStyle==='campaign')persistCheckpoint();},reward:xp=>{profile=createProfile({...getProfileData(profile),xp:profile.xp+xp});persistProfile();renderArmory();}
+});
 reset();
 renderMissions();
 renderArmory();updateCheckpointUI();
@@ -1527,16 +1547,17 @@ function frame(now) {
   }
   hudTimer+=dt;
   if(hudTimer>.1){updateHUD();hudTimer=0;}
+  adventure.update(dt);if(mode==='photo')updateCamera(dt);
   soundscape.update({speed:Math.hypot(player.velocity.x,player.velocity.z),gliding:mode==='playing'&&player.gliding,inCombat:mode==='playing'&&enemies.some(enemy=>enemyIsActive(enemy)&&enemy.alive&&distance3(enemy.model.position,player.position)<22)});
   updateWaypoint();graphics.update(player.position,rawDelta,mode==='playing');
-  if(mode==='character')characterPreview.render(renderer,now/1000,innerWidth,innerHeight);else graphics.render();
+  if(mode==='character')characterPreview.render(renderer,now/1000,innerWidth,innerHeight);else if(adventure.map())adventure.renderMap(renderer);else graphics.render();adventure.afterRender(renderer);
 }
 requestAnimationFrame(frame);
 
 // Read-only state for smoke checks and diagnosing user reports; no gameplay cheats.
 window.__gotham = Object.freeze({
   snapshot: () => ({
-    character:{...KAITO_PROFILE,id:hero.userData.characterId,appearance:{...hero.userData.features},boardMode:hero.userData.boardMode||'carried'},heroBody:{...heroBody},clockRunning:clock.running,characterPreview:{open:mode==='character',...(characterPreview?.getState()||{angle:0})},
+    adventure:adventure.snapshot(),character:{...KAITO_PROFILE,id:hero.userData.characterId,appearance:{...hero.userData.features},boardMode:hero.userData.boardMode||'carried'},heroBody:{...heroBody},clockRunning:clock.running,characterPreview:{open:mode==='character',...(characterPreview?.getState()||{angle:0})},
     wave:{active:waveTime>0,cooldown:waveCooldown},mode,playStyle,crouching,difficulty:difficulty.id,wind:{...activeWind},
     skills:{unlocked:[...skillProfile.unlocked],points:getSkillPoints(skillProfile,skillProgress()),bonuses:{...skillBonuses}},checkpoint:checkpoint?{...checkpoint,completedMissionIds:[...checkpoint.completedMissionIds]}:null,
     cityLife:cityLife.getStats(),graphics:graphics.getStats?.()||null,lastDefense:{...lastDefense},

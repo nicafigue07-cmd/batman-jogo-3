@@ -55,7 +55,8 @@ export function moveAndCollide(position, velocity, dt, buildings, grounded = fal
           velocity[axis] = 0;
         }
       }
-      const constrained = Math.max(-WORLD_BOUND, Math.min(WORLD_BOUND, position[axis]));
+      const lower=axis==='x'&&Number.isFinite(body?.minX)?Math.min(-radius,body.minX):-WORLD_BOUND;
+      const constrained = Math.max(lower, Math.min(WORLD_BOUND, position[axis]));
       if (constrained !== position[axis]) velocity[axis] = 0;
       position[axis] = constrained;
     }

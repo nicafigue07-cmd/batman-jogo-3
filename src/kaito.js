@@ -225,7 +225,7 @@ export function createKaito(THREE) {
     return id;
   };
   const finite=(value,fallback=0)=>Number.isFinite(value)?value:fallback;
-  hero.userData.update=({time=0,moving=false,gliding=false,attacking=false,grappling=false,defending=false,finisher=false,attackType=null,attackPhase=0}={})=>{
+  hero.userData.update=({time=0,moving=false,gliding=false,swimming=false,surfTrickPhase=0,rolling=false,rollPhase=0,attacking=false,grappling=false,defending=false,finisher=false,attackType=null,attackPhase=0}={})=>{
     const t=finite(time),phase=THREE.MathUtils.clamp(finite(attackPhase),0,1),strike=Math.sin(phase*Math.PI);
     pose.position.set(0,0,0);pose.rotation.set(0,0,0);
     const stride=moving?Math.sin(t*11)*.45:0;
@@ -234,8 +234,11 @@ export function createKaito(THREE) {
     legs.forEach((leg,i)=>{leg.position.set((i?1:-1)*.139,1.035,0);leg.rotation.set((i?1:-1)*stride,0,0);});
     knees.forEach((knee,i)=>knee.rotation.set(moving?Math.max(0,Math.sin(t*11+(i?Math.PI:0)))*.32:0,0,0));
     board.position.set(.30,1.12,-.41);board.rotation.set(-Math.PI/2,.03,-.31);
-    if(gliding) {
-      pose.position.y=.10;pose.rotation.y=.43;pose.rotation.z=Math.sin(t*1.5)*.025;
+    board.visible=!swimming;
+    if(swimming){pose.rotation.x=-1.25;pose.position.y=.65;arms[0].rotation.x=Math.sin(t*5)*1.8;arms[1].rotation.x=-Math.sin(t*5)*1.8;legs[0].rotation.x=Math.sin(t*7)*.3;legs[1].rotation.x=-Math.sin(t*7)*.3;
+    } else if(rolling){pose.rotation.x=-Math.max(0,Math.min(1,rollPhase))*Math.PI*2;pose.position.y=.5;arms[0].rotation.x=arms[1].rotation.x=-1.4;
+    } else if(gliding) {
+      pose.position.y=.10;pose.rotation.y=.43+Math.max(0,Math.min(1,surfTrickPhase))*Math.PI*2;pose.rotation.z=Math.sin(t*1.5)*.025;
       arms[0].rotation.set(-.34,0,-.75);arms[1].rotation.set(.19,0,.76);
       forearms[0].rotation.x=-.32;forearms[1].rotation.x=-.26;
       legs[0].position.z=.16;legs[1].position.z=-.16;legs[0].rotation.set(-.15,0,-.08);legs[1].rotation.set(.15,0,.09);
