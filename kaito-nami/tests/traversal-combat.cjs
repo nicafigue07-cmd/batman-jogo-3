@@ -12,7 +12,7 @@ test('Deslize de Névoa is gated by story and bounded by air time, with no infin
 });
 test('basic combo is free, timed, directional and short range; shields enable a consumed counter',()=>{
  const g=new Game({mission:8});g.x=8;g.z=8;g.facing=Math.PI;for(const [i,e]of g.enemies.entries()){e.x=8+i*9;e.z=6;e.attack=100;}const e=g.enemies[0],initial=e.hp,energy=g.energy;
- assert(g.attack());assert.equal(g.energy,energy);assert.equal(e.hp,initial-16);assert(!g.attack());step(g,.275);assert(g.attack());assert.equal(g.meleeStep,2);step(g,.275);assert(g.attack());assert.equal(g.meleeStep,3);assert.equal(e.hp,0);
+ assert(g.attack());assert.equal(g.energy,energy);assert.equal(e.hp,initial-21);assert(!g.attack());step(g,.275);assert(g.attack());assert.equal(g.meleeStep,2);step(g,.275);assert(g.attack());assert.equal(g.meleeStep,3);assert.equal(e.hp,0);
  step(g,1.2);assert.equal(g.meleeStep,0);const far=g.enemies[1].hp;g.facing=0;assert(g.attack());assert.equal(g.enemies[1].hp,far);
  const guarded=new Game({mission:8,x:6,z:8});guarded.facing=Math.PI;guarded.effects.shield=1;guarded.damage(10);assert(guarded.counter>0);guarded.attack();assert.equal(guarded.counter,0);assert(guarded.impacts.length>0);
 });
