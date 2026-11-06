@@ -36,7 +36,7 @@ Há degraus de treino perto da praia que o controlador sobe automaticamente em i
 
 ## Etapa 8 — áudio, leitura de diálogos e ciclo diário
 
-**Implementado:** novas sequências musicais sintetizadas originais para praia, cidade, combate, chefe, tempestade, diálogo e encerramento. Música e efeitos continuam separados. Leitura opcional do texto dos diálogos pela síntese de voz do navegador, em português solicitado, com volume independente, cancelamento ao fechar/pausar e tratamento de indisponibilidade. É acessibilidade por voz do navegador, não dublagem produzida para os personagens. A qualidade/disponibilidade da voz depende do aparelho.
+**Implementado:** novas sequências musicais sintetizadas originais para praia, cidade, combate, chefe, tempestade, diálogo e encerramento. Música e efeitos continuam separados. Leitura opcional do texto dos diálogos pela síntese de voz do navegador, em português solicitado, com volume independente, cancelamento ao fechar/pausar e tratamento de indisponibilidade. A navegação por gamepad pula controles desativados, evitando foco preso quando a voz não é suportada. É acessibilidade por voz do navegador, não dublagem produzida para os personagens. A qualidade/disponibilidade da voz depende do aparelho.
 
 Ciclo de oito minutos de tempo ativo para um dia completo, relógio no HUD, iluminação/céu variáveis nas duas cidades, janelas e postes com material emissivo mais aparente à noite. É emissão visual; os postes não projetam iluminação física nem sombras volumétricas. A opção Ciclo de dia e noite pode ser desligada, mantendo o visual fixo por cidade. O tempo é salvo e restaurado. Cidadãos retornam ao ponto de descanso do bairro à noite; não fingimos que entram em casas com interiores inexistentes.
 
