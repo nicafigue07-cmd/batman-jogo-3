@@ -70,6 +70,7 @@
     }
     return result;
   }
+  function safeCamera(target,desired,obstacles){let best=cameraPosition(target,desired,obstacles),distance=Math.hypot(best[0]-target[0],best[2]-target[2]);if(distance>=2.4)return best;const dx=desired[0]-target[0],dz=desired[2]-target[2];for(const angle of [Math.PI/6,-Math.PI/6,Math.PI/3,-Math.PI/3,Math.PI/2,-Math.PI/2,Math.PI]){const c=Math.cos(angle),s=Math.sin(angle),candidate=cameraPosition(target,[target[0]+dx*c+dz*s,desired[1],target[2]-dx*s+dz*c],obstacles),length=Math.hypot(candidate[0]-target[0],candidate[2]-target[2]);if(length>distance){best=candidate;distance=length;}if(distance>=2.4)break;}return best;}
   function stick(x, z, deadzone = .16) {
     x = clamp(finite(x), -1, 1); z = clamp(finite(z), -1, 1);
     const length = Math.hypot(x, z);
@@ -95,7 +96,7 @@
     const result={quality:['1','1.5','2'].includes(String(s.quality))?String(s.quality):'1.5',
       fpsCap:Number(s.fpsCap)===30?30:60,compatibility:!!s.compatibility,
       difficulty:['easy','normal','hard'].includes(s.difficulty)?s.difficulty:'normal',
-      volume:number('volume',35,0,100),music:number('music',0,0,100),distance:number('distance',95,40,140),
+      dayCycle:s.dayCycle!==false,narration:!!s.narration,dialogueVolume:number('dialogueVolume',70,0,100),volume:number('volume',35,0,100),music:number('music',0,0,100),distance:number('distance',95,40,140),
       sensitivity:number('sensitivity',1,.5,2),map:s.map!==false,shadows:s.shadows!==false,weather:s.weather!==false,
       reducedMotion:!!s.reducedMotion,contrast:!!s.contrast,largeText:!!s.largeText,cinematics:s.cinematics!==false,
       tutorials:s.tutorials!==false,performance:!!s.performance,bindings:{}};
@@ -117,7 +118,11 @@
     out.angle=angle+Math.atan2(Math.sin(desired-angle),Math.cos(desired-angle))*(1-Math.exp(-clamp(finite(dt),0,.05)*4));
     const blend=Math.min(.22,3/Math.max(1,length));out.x=player.x-dx*blend;out.z=player.z-dz*blend;out.distance=target.boss?2:1;out.fov=target.boss?4:2;return out;
   }
-  const api = {combatFraming,preferences, finite, clamp, overlaps, pushOut, move, cameraPosition, stick, gamepad};
+  function frustum(matrix,out=new Float32Array(24)){let index=0;for(let axis=0;axis<3;axis++)for(const sign of [-1,1]){const a=matrix[3]+sign*matrix[axis],b=matrix[7]+sign*matrix[axis+4],c=matrix[11]+sign*matrix[axis+8],d=matrix[15]+sign*matrix[axis+12],length=Math.hypot(a,b,c)||1;out[index++]=a/length;out[index++]=b/length;out[index++]=c/length;out[index++]=d/length;}return out;}
+  function visibleSphere(planes,x,y,z,radius){for(let i=0;i<24;i+=4)if(planes[i]*x+planes[i+1]*y+planes[i+2]*z+planes[i+3]<-radius)return false;return true;}
+  function daylight(time){return .18+.82*Math.max(0,Math.sin((finite(time)/480*24+4)/24*Math.PI*2));}
+  function worldClock(time){const minutes=Math.floor(((finite(time)/480*24+10)%24)*60);return String(Math.floor(minutes/60)).padStart(2,'0')+':'+String(minutes%60).padStart(2,'0');}
+  const api = {safeCamera,daylight,worldClock,frustum,visibleSphere,combatFraming,preferences, finite, clamp, overlaps, pushOut, move, cameraPosition, stick, gamepad};
   root.KaitoSystems = api;
   if (typeof module !== 'undefined') module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

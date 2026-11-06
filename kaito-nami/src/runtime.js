@@ -1,6 +1,6 @@
 /* Startup diagnostics and bounded graphics recovery. Campaign storage is never erased. */
 (function(root){
- const VERSION='0.8.0';let details='',watchdog;
+ const VERSION='0.9.0';let details='',watchdog;
  function rawOptions(){try{const s=JSON.parse(root.localStorage.getItem('kaito-options')||'{}');return s&&typeof s==='object'&&!Array.isArray(s)?s:{};}catch{return {};}}
  function lightQuery(){try{return new URL(root.location.href).searchParams.get('mode')==='light';}catch{return false;}}
  const initial=rawOptions();

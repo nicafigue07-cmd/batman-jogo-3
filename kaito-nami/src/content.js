@@ -40,7 +40,7 @@
     'Ative Visão Oceânica para revelar as pistas. Depois, aproxime-se de cada fragmento e use Interagir.',
     'F executa uma sequência de três ataques próximos. Treine no alvo azul ao lado da escola de surf. Evite as áreas vermelhas antes dos ataques. Escudo bloqueia; R esquiva. Após um bloqueio, contra-ataque com uma onda.',
     'No píer, use Interagir para embarcar. A campanha e seus itens continuam salvos na outra cidade.',
-    'Bem-vindo a Hikaru. Mika aguarda perto da entrada do porto.',
+    'Bem-vindo a Hikaru. Mika aguarda perto da entrada do porto. Corrida + Salto sobe paredes de prédios com telhados planos; solte Corrida e segure Salto para descer. Três sensores de Yuna esperam nos telhados do centro: use Interagir perto deles.',
     'Use Visão Oceânica junto ao laboratório. O marcador mostra a distância até o terminal.',
     'Entre na torre, use o elevador à direita e investigue o terminal do mirante. Volte ao térreo para sair.',
     'Atravesse os anéis na ordem. Se o tempo acabar, retorne ao primeiro. Surf Rápido dá uma vantagem.',
