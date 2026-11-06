@@ -1418,6 +1418,8 @@ function drawMap() {
   for(const s of objectives){if(s.disabled || (playStyle==='patrol'?s.missionId!=='patrol':s.missionId!==getCurrentMission(campaign)?.id))continue;const active=s.id===targetObjective()?.id;map.fillStyle=active?'#e8c47e':'#7197ac';map.beginPath();map.arc(THREE.MathUtils.clamp(tx(s.x),7,w-7),THREE.MathUtils.clamp(tz(s.z),7,h-7),active?4:3,0,Math.PI*2);map.fill();}
   for(const current of windCurrents.currents){map.strokeStyle='#59bbdd';map.beginPath();map.arc(tx(current.x),tz(current.z),4,0,Math.PI*2);map.stroke();}
   for(const e of enemies){if(!e.alive || !enemyIsActive(e))continue;map.fillStyle='#ec7169';map.beginPath();map.arc(tx(e.model.position.x),tz(e.model.position.z),2,0,Math.PI*2);map.fill();}
+  const storyPoint=adventure.snapshot().objective;if(storyPoint){map.fillStyle='#ff927d';map.beginPath();map.arc(THREE.MathUtils.clamp(tx(storyPoint.x),7,w-7),THREE.MathUtils.clamp(tz(storyPoint.z),7,h-7),5,0,Math.PI*2);map.fill();}
+  map.fillStyle='#72e8ed';map.fillRect(tx(-185)-3,tz(-28)-3,6,6);
   map.save();map.translate(w/2,h/2);map.rotate(-player.facing);map.fillStyle='#e9eee8';map.beginPath();map.moveTo(0,7);map.lineTo(-4,-4);map.lineTo(0,-2);map.lineTo(4,-4);map.closePath();map.fill();map.restore();
 }
 
@@ -1519,7 +1521,7 @@ function updateWaypoint() {
 
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();graphics.resize();});
 const adventure=createAdventure(THREE,{
- setTime:(v,t)=>graphics.setTime(v,t),orbit:delta=>{yaw+=delta;},waving:()=>waveTime>0,scene,player,hero,world,coast:losAngeles,solids:collisionBuildings,light:moonlight,rain,createCharacter:createKaito,
+ setTime:(v,t)=>graphics.setTime(v,t),orbit:delta=>{yaw+=delta;},faceObjective:q=>{yaw=Math.atan2(player.position.x-q.x,player.position.z-q.z);},waving:()=>waveTime>0,scene,player,hero,world,coast:losAngeles,solids:collisionBuildings,light:moonlight,rain,createCharacter:createKaito,
  getMode:()=>mode,setMode:value=>{mode=value;keys.clear();},forward:()=>forward().clone(),wave:grapple,
  targets:nearbyEnemies,hit:hitEnemy,moveEnemy,roofTarget:()=>selectedAnchor,pull:startGrapple,toast,sound:tone,damage:takeDamage,
  resetCamera:()=>{yaw=Math.PI/2;updateCamera(1,true);},zoom:delta=>{photoZoom=THREE.MathUtils.clamp(photoZoom+delta,-5,12);},
