@@ -1,10 +1,10 @@
 {
   "name": "kaito-nami",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "test": "node tests/startup.cjs && node tests/smoke.cjs && node tests/improvements.cjs && node tests/traversal-combat.cjs && node tests/focus-course.cjs && node tests/vertical.cjs && node tests/expansion.cjs && node tests/scenery-physics.cjs && node tests/campaign-walk.cjs && node tests/bundle.cjs",
+    "test": "node tests/startup.cjs && node tests/smoke.cjs && node tests/improvements.cjs && node tests/traversal-combat.cjs && node tests/focus-course.cjs && node tests/vertical.cjs && node tests/expansion.cjs && node tests/scenery-physics.cjs && node tests/fluidity.cjs && node tests/campaign-walk.cjs && node tests/bundle.cjs",
     "build": "node build.mjs",
     "test:graphics": "python3 tests/shader-egl.py"
   }

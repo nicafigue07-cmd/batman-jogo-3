@@ -1,8 +1,9 @@
 /* Startup diagnostics and bounded graphics recovery. Campaign storage is never erased. */
 (function(root){
- const VERSION='0.11.0';let details='',watchdog;
+ const VERSION='0.12.0';let details='',watchdog;
  function rawOptions(){try{const s=JSON.parse(root.localStorage.getItem('kaito-options')||'{}');return s&&typeof s==='object'&&!Array.isArray(s)?s:{};}catch{return {};}}
  function lightQuery(){try{return new URL(root.location.href).searchParams.get('mode')==='light';}catch{return false;}}
+ const started=root.performance?.now?.()??Date.now();const elapsed=()=>Math.max(0,(root.performance?.now?.()??Date.now())-started);
  const initial=rawOptions();
  const boot={version:VERSION,stage:'document',failed:false,contextLost:false,ready:false,
    compatibility:lightQuery()||initial.compatibility===true||String(initial.quality)==='1',history:[],graphics:{}};
@@ -13,9 +14,9 @@
  const queue=[];let scheduled=false;
  boot.enqueue=function(stage,run){queue.push({stage,run});if(scheduled)return;scheduled=true;root.setTimeout(pump,0);};
  function pump(){if(boot.failed)return;const next=queue.shift();if(!next){scheduled=false;return;}boot.mark(next.stage);try{next.run();if(next.stage!=='game')boot.finish(next.stage);}catch(error){boot.fail(error.message||error,'MODULE_INITIALIZATION');return;}root.setTimeout(pump,0);}
- boot.mark=function(stage){boot.stage=stage;boot.history.push({stage});if(boot.history.length>12)boot.history.shift();progress();};
+ boot.mark=function(stage){boot.stage=stage;boot.history.push({stage,ms:Math.round(elapsed()*100)/100});if(boot.history.length>12)boot.history.shift();progress();};
  boot.note=function(code,message){boot.history.push({code,message:String(message).slice(0,1500)});if(boot.history.length>12)boot.history.shift();};
- boot.diagnostic=function(code,message){return {version:VERSION,stage:boot.stage,code,message:String(message),graphics:boot.graphics,history:boot.history.slice()};};
+ boot.diagnostic=function(code,message){return {version:VERSION,stage:boot.stage,code,message:String(message),graphics:boot.graphics,timing:{elapsedMs:Math.round(elapsed()*100)/100,readyMs:boot.readyMs??null},history:boot.history.slice()};};
  boot.fail=function(message,code='RUNTIME_ERROR'){
   if(boot.failed){boot.note(code,message);return;}
   boot.failed=true;root.clearTimeout?.(watchdog);details=String(message||'Erro de inicialização desconhecido.');
@@ -62,7 +63,7 @@
    try{if(root.sessionStorage&&Number(root.sessionStorage.getItem('kaito-context-recoveries')||0)<1){root.sessionStorage.setItem('kaito-context-recoveries','1');root.location.reload();}}catch{}
   });
  };
- boot.complete=function(){if(boot.failed||boot.contextLost)return;boot.finish('frame');boot.ready=true;boot.mark('ready');try{root.localStorage.setItem('kaito-last-boot',JSON.stringify(boot.diagnostic('READY','Inicialização concluída.')));}catch{}root.clearTimeout?.(watchdog);};
+ boot.complete=function(){if(boot.failed||boot.contextLost)return;boot.finish('frame');boot.readyMs=Math.round(elapsed()*100)/100;boot.ready=true;boot.mark('ready');try{root.localStorage.setItem('kaito-last-boot',JSON.stringify(boot.diagnostic('READY','Inicialização concluída.')));}catch{}root.clearTimeout?.(watchdog);};
  root.KaitoBoot=boot;root.KaitoFail=(message,code)=>boot.fail(message,code);
  root.addEventListener('error',event=>boot.fail(event.message||event.error?.message||(event.target?.src?'Falha ao carregar um arquivo do jogo.':'Erro inesperado.'),'JAVASCRIPT_ERROR'));
  root.addEventListener('unhandledrejection',event=>boot.fail(event.reason?.message||event.reason,'PROMISE_ERROR'));

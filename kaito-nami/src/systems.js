@@ -126,7 +126,13 @@
   function visibleSphere(planes,x,y,z,radius){for(let i=0;i<24;i+=4)if(planes[i]*x+planes[i+1]*y+planes[i+2]*z+planes[i+3]<-radius)return false;return true;}
   function daylight(time){return .18+.82*Math.max(0,Math.sin((finite(time)/480*24+4)/24*Math.PI*2));}
   function worldClock(time){const minutes=Math.floor(((finite(time)/480*24+10)%24)*60);return String(Math.floor(minutes/60)).padStart(2,'0')+':'+String(minutes%60).padStart(2,'0');}
-  const api = {containsRect,solidAt,safeCamera,daylight,worldClock,frustum,visibleSphere,combatFraming,preferences, finite, clamp, overlaps, pushOut, move, cameraPosition, stick, gamepad};
+  function advanceFixed(clock,elapsed,update){const step=1/60,delta=Math.max(0,finite(elapsed));clock.dropped=finite(clock.dropped)+Math.max(0,delta-.25);clock.accumulator=finite(clock.accumulator)+Math.min(.25,delta);let count=0;while(clock.accumulator+1e-9>=step&&count<8){update(step);clock.accumulator=Math.max(0,clock.accumulator-step);count++;}if(clock.accumulator>=step){const discarded=clock.accumulator-clock.accumulator%step;clock.dropped+=discarded;clock.accumulator-=discarded;}return count;}
+  class FrameMonitor{
+    constructor(){this.times=new Float32Array(120);this.count=0;this.index=0;this.last=null;this.frames=0;this.cpu=0;this.excludedPauses=0;}
+    record(now,cpu){if(this.last!==null){const dt=now-this.last;if(dt>0&&dt<=1000){this.times[this.index]=dt;this.index=(this.index+1)%this.times.length;this.count=Math.min(this.count+1,this.times.length);}else if(dt>1000)this.excludedPauses++;}this.last=now;this.frames++;if(Number.isFinite(cpu)&&cpu>=0)this.cpu=cpu;}
+    snapshot(memory){const values=Array.from(this.times.subarray(0,this.count)).sort((a,b)=>a-b),sum=values.reduce((a,b)=>a+b,0);return {frames:this.frames,samples:this.count,fps:sum?1000*this.count/sum:0,p95Ms:values[Math.max(0,Math.ceil(values.length*.95)-1)]||0,lastCpuMs:this.cpu,heapBytes:Number.isFinite(memory?.usedJSHeapSize)?memory.usedJSHeapSize:null,excludedPauses:this.excludedPauses};}
+  }
+  const api = {advanceFixed,FrameMonitor,containsRect,solidAt,safeCamera,daylight,worldClock,frustum,visibleSphere,combatFraming,preferences, finite, clamp, overlaps, pushOut, move, cameraPosition, stick, gamepad};
   root.KaitoSystems = api;
   if (typeof module !== 'undefined') module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

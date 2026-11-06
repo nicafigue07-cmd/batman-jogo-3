@@ -2,7 +2,7 @@ const test=require('node:test'),assert=require('node:assert/strict'),vm=require(
 function environment({href='https://example.test/kaito/?v=0.6',stored={},storageError=false}={}){
  const elements=new Map(),storage=new Map(Object.entries(stored)),session=new Map(),listeners={},canvasEvents={},contexts=[],timers=[];
  const el=id=>{if(!elements.has(id))elements.set(id,{classList:{add(){},remove(){}},textContent:''});return elements.get(id);};
- const context={URL,console:{error(){},warn(){}},document:{getElementById:el},addEventListener:(name,fn)=>listeners[name]=fn,
+ const context={URL,performance:{now:()=>0},console:{error(){},warn(){}},document:{getElementById:el},addEventListener:(name,fn)=>listeners[name]=fn,
    localStorage:{getItem:key=>{if(storageError)throw Error('blocked');return storage.get(key)??null;},setItem:(key,value)=>{if(storageError)throw Error('blocked');storage.set(key,value);}},
    sessionStorage:{getItem:key=>session.get(key)??null,setItem:(key,v)=>session.set(key,v),removeItem:key=>session.delete(key)},
    location:{href,reloads:0,reload(){this.reloads++;},replace(url){this.replaced=url;}},setTimeout:fn=>{timers.push(fn);return timers.length;},clearTimeout(){},navigator:{clipboard:{writeText:async value=>context.copied=value}}};
@@ -43,4 +43,8 @@ test('a driver refusing the normal context is retried without antialias before g
 });
 test('a background tab defers its watchdog and a denied clipboard opens the manual diagnostic',async()=>{
  const e=environment();e.context.document.hidden=true;e.timers[0]();assert(!e.boot.failed);e.context.document.hidden=false;e.timers[1]();assert.equal(e.boot.lastError.code,'BOOT_TIMEOUT');e.context.navigator.clipboard.writeText=async()=>{throw Error('denied');};await e.el('copyError').onclick();assert.equal(e.el('diagnosticPanel').open,true);assert(e.el('errorSummary').textContent.includes('BOOT_TIMEOUT'));
+});
+
+test('startup diagnostic measures completed milestones and the first ready frame',()=>{
+ const e=environment();e.context.performance.now=()=>42;e.boot.mark('geometry');assert.equal(e.boot.history.at(-1).ms,42);e.context.performance.now=()=>75;e.boot.complete();const d=e.boot.diagnostic();assert.equal(d.timing.readyMs,75);assert.equal(d.timing.elapsedMs,75);
 });
