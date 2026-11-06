@@ -4,17 +4,21 @@
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   function overlaps(x, z, obstacle, radius = .4) {
     if (obstacle.hx !== undefined) {
+      if(obstacle.rot){const c=Math.cos(obstacle.rot),s=Math.sin(obstacle.rot),dx=x-obstacle.x,dz=z-obstacle.z;return Math.hypot(Math.max(0,Math.abs(dx*c-dz*s)-obstacle.hx),Math.max(0,Math.abs(dx*s+dz*c)-obstacle.hz))<radius-.00001;}
       const nearX = clamp(x, obstacle.x - obstacle.hx, obstacle.x + obstacle.hx);
       const nearZ = clamp(z, obstacle.z - obstacle.hz, obstacle.z + obstacle.hz);
       return Math.hypot(x - nearX, z - nearZ) < radius - .00001;
     }
     return Math.hypot(x - obstacle.x, z - obstacle.z) < (obstacle.r || 0) + radius - .00001;
   }
+  function containsRect(x,z,o,margin=0){const dx=x-o.x,dz=z-o.z,c=Math.cos(o.rot||0),s=Math.sin(o.rot||0);return Math.abs(dx*c-dz*s)<=o.hx+margin&&Math.abs(dx*s+dz*c)<=o.hz+margin;}
+  function solidAt(obstacle,foot,height=2.3){return foot<(obstacle.roofHeight??obstacle.height??Infinity)-.025&&foot+height>(obstacle.minHeight??-Infinity)+.025;}
   function pushOut(position, obstacles, radius = .4) {
     for (let pass = 0; pass < 6; pass++) {
       let changed = false;
       for (const o of obstacles) {
         if (!overlaps(position.x, position.z, o, radius)) continue;
+        if(o.rot){const c=Math.cos(o.rot),s=Math.sin(o.rot),dx=position.x-o.x,dz=position.z-o.z,local={x:dx*c-dz*s,z:dx*s+dz*c};pushOut(local,[{x:0,z:0,hx:o.hx,hz:o.hz}],radius);position.x=o.x+local.x*c+local.z*s;position.z=o.z-local.x*s+local.z*c;changed=true;continue;}
         if (o.hx !== undefined) {
           const nx = clamp(position.x, o.x - o.hx, o.x + o.hx);
           const nz = clamp(position.z, o.z - o.hz, o.z + o.hz);
@@ -122,7 +126,7 @@
   function visibleSphere(planes,x,y,z,radius){for(let i=0;i<24;i+=4)if(planes[i]*x+planes[i+1]*y+planes[i+2]*z+planes[i+3]<-radius)return false;return true;}
   function daylight(time){return .18+.82*Math.max(0,Math.sin((finite(time)/480*24+4)/24*Math.PI*2));}
   function worldClock(time){const minutes=Math.floor(((finite(time)/480*24+10)%24)*60);return String(Math.floor(minutes/60)).padStart(2,'0')+':'+String(minutes%60).padStart(2,'0');}
-  const api = {safeCamera,daylight,worldClock,frustum,visibleSphere,combatFraming,preferences, finite, clamp, overlaps, pushOut, move, cameraPosition, stick, gamepad};
+  const api = {containsRect,solidAt,safeCamera,daylight,worldClock,frustum,visibleSphere,combatFraming,preferences, finite, clamp, overlaps, pushOut, move, cameraPosition, stick, gamepad};
   root.KaitoSystems = api;
   if (typeof module !== 'undefined') module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

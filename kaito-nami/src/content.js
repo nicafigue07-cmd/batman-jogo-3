@@ -37,7 +37,7 @@
     'Aproxime-se do terminal e use Interagir. Ao perder o caminho, consulte o diário (J).',
     'Locais descobertos liberam viagem rápida no mapa. Não é possível viajar durante um combate.',
     'Salto Aquático funciona no ar. Use-o para alcançar mais altura. Segure Salto na descida para planar por até dois segundos; Interagir aciona as trilhas de escalada.',
-    'Ative Visão Oceânica para revelar as pistas. Depois, aproxime-se de cada fragmento e use Interagir.',
+    'Ative Visão Oceânica para revelar as pistas e despistar robôs distantes com névoa. Atacar desfaz a névoa; robôs próximos e chefes ainda enxergam você. Depois, aproxime-se de cada fragmento e use Interagir.',
     'F executa uma sequência de três ataques próximos. Treine no alvo azul ao lado da escola de surf. Evite as áreas vermelhas antes dos ataques. Escudo bloqueia; R esquiva. Após um bloqueio, contra-ataque com uma onda.',
     'No píer, use Interagir para embarcar. A campanha e seus itens continuam salvos na outra cidade.',
     'Bem-vindo a Hikaru. Mika aguarda perto da entrada do porto. Corrida + Salto sobe paredes de prédios com telhados planos; solte Corrida e segure Salto para descer. Três sensores de Yuna esperam nos telhados do centro: use Interagir perto deles.',
