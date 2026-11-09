@@ -55,3 +55,5 @@ test('surfing deploys the board below the feet and all gameplay poses stay finit
  }
  hero.userData.update();assert.equal(hero.userData.boardState,'back');assert.equal(hero.userData.surfing,false);
 });
+
+test('board customization changes the board without recoloring Kaito clothing',()=>{const hero=createKaito(THREE),colors=()=>{const out={};hero.traverse(o=>{if(o.material&&['Camiseta azul','Mochila vermelha','Lentes vermelhas'].includes(o.material.name))out[o.material.name]=o.material.color.getHex();});return out;};const original=colors();hero.userData.setBoardStyle('abyss');assert.equal(hero.userData.boardStyle,'abyss');assert.deepEqual(colors(),original);assert.equal(hero.userData.setBoardStyle('unknown'),'classic');});

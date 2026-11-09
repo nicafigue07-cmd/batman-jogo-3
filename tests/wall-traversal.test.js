@@ -1,0 +1,6 @@
+import test from'node:test';import assert from'node:assert/strict';import{findWallContact,wallRunVelocity}from'../src/wall-traversal.js';import{moveAndCollide}from'../src/physics.js';
+const b={x:0,z:0,w:20,d:30,h:40};
+test('vertical and horizontal runs stay outside the facade',()=>{const p={x:10.42,y:4,z:0},c=findWallContact(p,[b]);assert.ok(c);const up=wallRunVelocity(c,{x:-1,z:0});assert.equal(up.kind,'vertical');moveAndCollide(p,up,.2,[b],false,{radius:.42,height:2.05});assert.ok(p.y>6);const along=wallRunVelocity(c,{x:0,z:1});assert.equal(along.kind,'horizontal');moveAndCollide(p,along,.3,[b],false,{radius:.42,height:2.05});assert.ok(p.x>=10.42);assert.ok(p.z>3);});
+test('ceilings and roof tops are not mistaken for reachable facades',()=>{assert.equal(findWallContact({x:10.42,y:41,z:0},[b]),null);assert.equal(findWallContact({x:5.42,y:0,z:0},[{x:0,z:0,w:10,d:10,baseY:5,h:6}]),null);assert.equal(wallRunVelocity(null,{x:1,z:0}),null);});
+
+test('vaulting must clear the entire adjacent ceiling, not just the wall top',async()=>{const{isBodyClear}=await import('../src/wall-traversal.js');const roof={x:0,z:0,w:10,d:10,baseY:3.2,h:3.5};assert.equal(isBodyClear({x:0,y:3.3,z:0},[roof]),false);assert.equal(isBodyClear({x:0,y:3.6,z:0},[roof]),true);});

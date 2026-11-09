@@ -87,3 +87,7 @@ test('reduced motion softens movement and stats are detached from live actor sta
   ordinary.update(Number.NaN);
   assert.deepEqual(ordinary.getStats(), before, 'invalid time cannot corrupt actor matrices');
 });
+
+test('proximity culling hides distant actors without discarding routes or allocating a new city',()=>{
+ const scene=new THREE.Scene(),city=createCityLife(THREE,scene);city.setQuality('high');const children=city.group.children.slice();city.update(12,{x:-640,z:0});assert.equal(city.getStats().renderedCars,0);assert.equal(city.getStats().renderedPedestrians,0);assert.equal(city.getStats().positions.cars.length,12);city.update(12);assert.equal(city.getStats().renderedCars,12);assert.equal(city.getStats().renderedPedestrians,20);assert.deepEqual(city.group.children,children);
+});

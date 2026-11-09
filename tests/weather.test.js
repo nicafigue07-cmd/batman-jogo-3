@@ -1,0 +1,2 @@
+import test from'node:test';import assert from'node:assert/strict';import{WEATHER,nextWeather,weatherPreset}from'../src/weather.js';
+test('weather cycle includes storm and fog and always returns finite settings',()=>{let id='sun';const seen=new Set();for(let i=0;i<5;i++){seen.add(id);const p=weatherPreset(id);assert.ok(p.fog>0&&p.fog<.03);assert.ok(p.light>0&&p.light<=1);id=nextWeather(id);}assert.equal(id,'sun');assert.equal(seen.size,5);assert.equal(weatherPreset('bad'),WEATHER.sun);});

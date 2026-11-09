@@ -3,7 +3,8 @@ export function createSoundscape() {
   let context = null, master = null, rainGain = null, windGain = null;
   let windFilter = null, droneGain = null, combatGain = null;
   let enabled = false, disposed = false, revision = 0, lastUpdate = -Infinity;
-  let speed = 0, gliding = false, inCombat = false;
+  let speed = 0, gliding = false, inCombat = false,weather='sun',city='nami',musicStep=-1;
+  const musicOscillators=[];
   const nodes = [], sources = [];
   const keep = node => { nodes.push(node); return node; };
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
@@ -14,6 +15,7 @@ export function createSoundscape() {
   }
 
   function releaseGraph() {
+    musicOscillators.length=0;musicStep=-1;
     for (const source of sources.splice(0)) {
       try { source.stop(); } catch { /* A partially initialized source may not be running. */ }
     }
@@ -72,7 +74,7 @@ export function createSoundscape() {
         drone.type = 'sine';
         drone.frequency.value = frequency;
         drone.connect(droneGain);
-        sources.push(drone);
+        sources.push(drone);musicOscillators.push(drone);
       }
 
       const pulse = keep(context.createOscillator());
@@ -106,8 +108,10 @@ export function createSoundscape() {
     if (!force && now - lastUpdate < .08) return;
     lastUpdate = now;
     const movement = clamp(speed / 32, 0, 1);
-    smooth(rainGain.gain, gliding ? .009 : .012, now);
-    smooth(windGain.gain, .002 + movement * .014 + (gliding ? .012 : 0), now, .18);
+    const rainLevel=weather==='storm'?.018:weather==='rain'?.012:city==='nami'?.003:0;
+    smooth(rainGain.gain,rainLevel,now);
+    const step=Math.floor(now*(inCombat?2.2:.8));if(step!==musicStep){musicStep=step;const notes=inCombat?[0,0,3,7,0,10,7,3]:city==='tokyo'?[0,3,5,7,10,7,5,3]:[0,4,7,11,7,4,2,7];const semitone=notes[step%notes.length];for(let i=0;i<musicOscillators.length;i++)smooth(musicOscillators[i].frequency,(city==='tokyo'?73.416:65.406)*Math.pow(2,(semitone+i*7)/12),now,.18);}
+    smooth(windGain.gain, .002 + movement * .014 + (gliding ? .012 : 0)+(weather==='storm'?.015:weather==='wind'?.008:0), now, .18);
     smooth(windFilter.frequency, 420 + movement * 680 + (gliding ? 360 : 0), now);
     smooth(droneGain.gain, inCombat ? .0018 : .0025, now, .6);
     smooth(combatGain.gain, inCombat ? .008 : 0, now, .3);
@@ -149,7 +153,7 @@ export function createSoundscape() {
     const input = settings && typeof settings === 'object' ? settings : {};
     speed = Number.isFinite(input.speed) ? clamp(input.speed, 0, 100) : 0;
     gliding = input.gliding === true;
-    inCombat = input.inCombat === true;
+    inCombat = input.inCombat === true;weather=typeof input.weather==='string'?input.weather:'sun';city=input.city==='tokyo'?'tokyo':'nami';
     if (disposed) return;
     try { applyMix(); } catch { /* Device changes cannot interrupt the game loop. */ }
   }

@@ -3,6 +3,7 @@ import './style.css';
 import { createAirborneState,tickAirborne } from './air-combat.js';
 import { createWaterTether,stepWaterTether,releaseWaterTether,jumpImpulse } from './water-tether.js';
 import { segmentSphereContact } from './collision-queries.js';
+import { createControlSettings } from './control-settings.js';
 import { createAdventure } from './adventure.js';
 import { createLosAngeles } from './los-angeles.js';
 import { createWorld, createEnemy } from './world.js';
@@ -221,7 +222,7 @@ function applyPlatform(value,persist=false) {
   if(persist)try{localStorage.setItem('gotham.platform.v1',platformMode);}catch{/* Controls still work for this session. */}
 }
 function topMenu() {
-  return ['character-overlay','armory-overlay','missions-overlay','help-overlay','pause-overlay','end-overlay','intro']
+  return ['control-settings','character-overlay','armory-overlay','missions-overlay','help-overlay','pause-overlay','end-overlay','intro']
     .map(id=>$(id)).find(element=>element&&!element.hidden);
 }
 function controllerMenuInput(frame) {
@@ -242,7 +243,8 @@ function controllerMenuInput(frame) {
   }
   if(frame.menu.confirm) (elements.includes(document.activeElement)?document.activeElement:elements[0])?.click();
   if(frame.menu.back) {
-    if(mode==='character')closeCharacter();
+    if(mode==='controls')controlSettings.close();
+    else if(mode==='character')closeCharacter();
     else if(!$('armory-overlay').hidden)closeArmory();
     else if(!$('missions-overlay').hidden)closeMissions();
     else if(!$('help-overlay').hidden){show('help-overlay',false);if(mode==='paused')pause();}
@@ -271,7 +273,8 @@ function pollGamepad(dt) {
     return;
   }
   if(frame.actions.includes('pause')) {
-    if(mode==='photo'||mode==='map')adventure.closeView();
+    if(mode==='controls')controlSettings.close();
+    else if(mode==='photo'||mode==='map')adventure.closeView();
     else if(mode==='character')closeCharacter();
     else if(mode==='intro')begin();
     else if(mode==='ended'){if(playStyle==='patrol')beginPatrol(true);else begin(selectedMissionId);}
@@ -748,7 +751,7 @@ function begin(missionId = null,{resume=false}={}) {
 function openCharacter() {
   if(mode==='challenge')return;
   characterPreviousMode=mode;mode='character';keys.clear();
-  characterPreview ||= createCharacterPreview(THREE,createKaito);characterPreview.reset();
+  characterPreview ||= createCharacterPreview(THREE,createKaito);characterPreview.reset();characterPreview.model.userData.setBoardStyle(hero.userData.boardStyle);
   for(const id of ['intro','help-overlay','pause-overlay'])show(id,false);show('character-overlay',true);document.body.classList.add('viewing-character');
   $('close-character')?.focus();
 }
@@ -1192,7 +1195,8 @@ function updatePlayer(dt) {
     player.gliding = glide;
     player.slowTimer=Math.max(0,player.slowTimer-dt);
     activeWind=sampleWind(player.position,{gliding:glide,grappling:false,slamming:!!player.slam});
-    const speed=(glide?22+activeWind.boost+skillBonuses.glideBonus:crouching?4.8:(keys.has('ShiftLeft')||keys.has('ShiftRight'))?16:10)*(player.slowTimer>0?.65:1);
+    const diving=glide&&(keys.has('ShiftLeft')||keys.has('ShiftRight')||padButtons[1]);
+    const speed=(glide?(diving?30:22)+activeWind.boost+skillBonuses.glideBonus:crouching?4.8:(keys.has('ShiftLeft')||keys.has('ShiftRight'))?16:10)*(player.slowTimer>0?.65:1);
     const dx = (x*Math.cos(yaw)-z*Math.sin(yaw)) / Math.max(1,length);
     const dz = (-x*Math.sin(yaw)-z*Math.cos(yaw)) / Math.max(1,length);
     if (player.dodge <= .28 && player.momentumTimer<=0) {
@@ -1204,7 +1208,8 @@ function updatePlayer(dt) {
       player.velocity.z = THREE.MathUtils.lerp(player.velocity.z, tz, smoothing);
     }
     if(length || glide) player.facing = Math.atan2(player.velocity.x,player.velocity.z);
-    player.velocity.y = player.slam ? Math.max(-65,player.velocity.y-dt*40) : glide ? Math.max(-3.4,player.velocity.y-dt*(activeWind.active?0:10)) : player.velocity.y-dt*29;
+    player.velocity.y = player.slam ? Math.max(-65,player.velocity.y-dt*40) : glide ? Math.max(diving?-18:-3.4,player.velocity.y-dt*(diving?24:activeWind.active?0:10)) : player.velocity.y-dt*29;
+    if(!diving&&glide&&pitch<.1&&Math.hypot(player.velocity.x,player.velocity.z)>20)player.velocity.y=Math.min(1.5,player.velocity.y+dt*12);
     if(activeWind.active){player.velocity.y=Math.min(2.8,player.velocity.y+activeWind.lift*(1+skillBonuses.windBonus)*dt);}
     const result = moveAndCollide(player.position,player.velocity,dt,collisionBuildings,player.grounded,heroBody);
     if(result.landed)player.landing=.22;
@@ -1411,13 +1416,13 @@ function updateEffects(dt) {
   }
   for(const site of objectives) site.visual.update(elapsed);
   const offset=player.position;
-  for(let i=0;i<rainCount;i++) {
+  if(rain.visible)for(let i=0;i<rainCount;i++) {
     const seed=rainSeeds[i], y=(seed[1]-elapsed*26)%65;
     const yy=(y+65)%65;
     rainPositions[i*6]=offset.x+seed[0]; rainPositions[i*6+1]=offset.y+yy; rainPositions[i*6+2]=offset.z+seed[2];
     rainPositions[i*6+3]=offset.x+seed[0]-.14; rainPositions[i*6+4]=offset.y+yy-1.5; rainPositions[i*6+5]=offset.z+seed[2]+.1;
   }
-  rainGeometry.attributes.position.needsUpdate=true;
+  if(rain.visible)rainGeometry.attributes.position.needsUpdate=true;
   if(toastTimer>0) {toastTimer-=dt;if(toastTimer<=0){$('toast')?.classList.remove('visible');show('toast',false);}}
 }
 
@@ -1556,12 +1561,13 @@ function updateWaypoint() {
 
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();graphics.resize();});
 const adventure=createAdventure(THREE,{
- setTime:(v,t)=>graphics.setTime(v,t),orbit:delta=>{if(cameraMotion)yaw+=delta;},cameraMotion:()=>cameraMotion,setCameraMotion:value=>{cameraMotion=value;try{localStorage.setItem('kaito.camera-motion.v1',String(value));}catch{}},body:heroBody,shop:openArmory,launch:launchAttack,moveInput:()=>({x:padMove.x+(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),z:padMove.z+(keys.has('KeyW')?1:0)-(keys.has('KeyS')?1:0)}),swing:toggleTether,beginCharge:()=>{if(mode==='playing'&&player.grounded){jumpCharging=true;jumpCharge=0;}},releaseCharge:releaseChargedJump,faceObjective:q=>{yaw=Math.atan2(player.position.x-q.x,player.position.z-q.z);},waving:()=>waveTime>0,scene,player,hero,world,coast:losAngeles,solids:collisionBuildings,light:moonlight,rain,createCharacter:createKaito,
+ setTime:(v,t)=>graphics.setTime(v,t),orbit:delta=>{if(cameraMotion)yaw+=delta;},cameraMotion:()=>cameraMotion,setCameraMotion:value=>{cameraMotion=value;try{localStorage.setItem('kaito.camera-motion.v1',String(value));}catch{}},jumpHeld:()=>keys.has('Space')||padJumpHeld,boardStyle:id=>hero.userData.setBoardStyle(id),body:heroBody,shop:openArmory,launch:launchAttack,moveInput:()=>({x:padMove.x+(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),z:padMove.z+(keys.has('KeyW')?1:0)-(keys.has('KeyS')?1:0)}),swing:toggleTether,beginCharge:()=>{if(mode==='playing'&&player.grounded){jumpCharging=true;jumpCharge=0;}},releaseCharge:releaseChargedJump,faceObjective:q=>{yaw=Math.atan2(player.position.x-q.x,player.position.z-q.z);},waving:()=>waveTime>0,scene,player,hero,world,coast:losAngeles,solids:collisionBuildings,light:moonlight,rain,createCharacter:createKaito,
  getMode:()=>mode,setMode:value=>{if(mode==='photo'&&value==='playing')photoZoom=0;mode=value;keys.clear();},forward:()=>forward().clone(),wave:grapple,
  targets:nearbyEnemies,hit:hitEnemy,moveEnemy,roofTarget:()=>selectedAnchor,pull:startGrapple,toast,sound:tone,damage:takeDamage,
  resetCamera:()=>{tether=null;jumpCharging=false;jumpCharge=0;yaw=Math.PI/2;updateCamera(1,true);},zoom:delta=>{photoZoom=THREE.MathUtils.clamp(photoZoom+delta,-5,12);},
  save:()=>{persistProfile();if(playStyle==='campaign')persistCheckpoint();},reward:xp=>{profile=createProfile({...getProfileData(profile),xp:profile.xp+xp});persistProfile();renderArmory();}
 });
+const controlSettings=createControlSettings({player,getMode:()=>mode,setMode:value=>{mode=value;keys.clear();jumpCharging=false;jumpCharge=0;},startPlaying:()=>{if(mode==='intro')begin();else if(mode==='paused')pause();}});
 reset();
 renderMissions();
 renderArmory();updateCheckpointUI();
@@ -1585,8 +1591,8 @@ function frame(now) {
   hudTimer+=dt;
   if(hudTimer>.1){updateHUD();hudTimer=0;}
   if(mode!=='playing')adventure.update(0);if(mode==='photo')updateCamera(dt);
-  soundscape.update({speed:Math.hypot(player.velocity.x,player.velocity.z),gliding:mode==='playing'&&player.gliding,inCombat:mode==='playing'&&enemies.some(enemy=>enemyIsActive(enemy)&&enemy.alive&&distance3(enemy.model.position,player.position)<22)});
-  updateWaypoint();graphics.update(player.position,rawDelta,mode==='playing');
+  soundscape.update({city:adventure.city(),weather:adventure.weather(),speed:Math.hypot(player.velocity.x,player.velocity.z),gliding:mode==='playing'&&player.gliding,inCombat:mode==='playing'&&enemies.some(enemy=>enemyIsActive(enemy)&&enemy.alive&&distance3(enemy.model.position,player.position)<22)});
+  controlSettings.update(now);updateWaypoint();graphics.update(player.position,rawDelta,mode==='playing');
   if(mode==='character')characterPreview.render(renderer,now/1000,innerWidth,innerHeight);else if(adventure.map())adventure.renderMap(renderer);else graphics.render();adventure.afterRender(renderer);
 }
 requestAnimationFrame(frame);
@@ -1594,7 +1600,7 @@ requestAnimationFrame(frame);
 // Read-only state for smoke checks and diagnosing user reports; no gameplay cheats.
 window.__gotham = Object.freeze({
   snapshot: () => ({
-    adventure:adventure.snapshot(),character:{...KAITO_PROFILE,id:hero.userData.characterId,appearance:{...hero.userData.features},boardMode:hero.userData.boardMode||'carried'},heroBody:{...heroBody},clockRunning:clock.running,characterPreview:{open:mode==='character',...(characterPreview?.getState()||{angle:0})},
+    controls:controlSettings.snapshot(),adventure:adventure.snapshot(),character:{...KAITO_PROFILE,id:hero.userData.characterId,appearance:{...hero.userData.features},boardStyle:hero.userData.boardStyle,boardMode:hero.userData.boardMode||'carried'},heroBody:{...heroBody},clockRunning:clock.running,characterPreview:{open:mode==='character',...(characterPreview?.getState()||{angle:0})},
     accessibility:{cameraMotion},traversal:{swinging:!!tether,ropeLength:tether?.length??null,charge:jumpCharge,charging:jumpCharging},wave:{active:waveTime>0,cooldown:waveCooldown},mode,playStyle,crouching,difficulty:difficulty.id,wind:{...activeWind},
     skills:{unlocked:[...skillProfile.unlocked],points:getSkillPoints(skillProfile,skillProgress()),bonuses:{...skillBonuses}},checkpoint:checkpoint?{...checkpoint,completedMissionIds:[...checkpoint.completedMissionIds]}:null,
     cityLife:cityLife.getStats(),graphics:graphics.getStats?.()||null,lastDefense:{...lastDefense},

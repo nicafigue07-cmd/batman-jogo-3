@@ -82,6 +82,21 @@ node tests/traversal-stage-smoke.mjs
 node tests/air-combat-smoke.mjs
 node tests/city-polish-smoke.mjs
 node tests/adventure-smoke.mjs
+node tests/controls-round2-smoke.mjs
+node tests/story-complete-smoke.mjs
 ```
 
 Os testes de navegador usam Chromium com renderização por software. Não demonstram desempenho ou compatibilidade de um console físico. Os arquivos independentes são gerados em `dist/`; `jogar.zip` é o download compartilhável.
+
+## Segunda rodada — travessia, controles e desempenho
+
+- Corrida vertical e lateral em fachadas enquanto segura o salto, com consumo de energia e verificação do espaço para subir ao telhado.
+- Prancha com mergulho acelerado e sustentação conforme a direção da câmera.
+- Pedestres e veículos distantes deixam de ser desenhados; suas rotas continuam preservadas. A distância varia com a qualidade gráfica.
+- Teclas remapeáveis com detecção de conflitos, preferência salva e tutorial interativo de movimento, salto, onda e mapa. O controle mantém o esquema padrão.
+- Três pinturas de prancha, com desbloqueios por cristais, preservando roupa, mochila e lentes do protagonista.
+- Cinco condições climáticas, incluindo tempestade e neblina, com preferência salva; ambiente sonoro procedural varia por cidade e clima.
+- Correção da saída do oceano: o limite da superfície impedia alcançar o ponto de retorno à praia.
+- Testes adicionais para fachadas, passagem segura, proximidade, cores da roupa, teclas e preferências. O teste `story-complete-smoke.mjs` percorre os seis capítulos com comandos reais, incluindo o retorno do mergulho, o trem, o telhado e o chefe.
+
+Ainda pendentes: mapas urbanos inteiramente distintos, expressões faciais, furtividade completa, chefes com pontos fracos elaborados, remapeamento dos botões do controle e validação em consoles físicos. Esta rodada não conclui todos os 72 itens do plano.

@@ -178,6 +178,8 @@ export function createKaito(THREE) {
   box(wristDevice,materials.frame,'Pulseira de exploração',0,-.17,.012,.125,.045,.12);
   box(wristDevice,materials.gear,'Marcador do equipamento',0,-.17,.079,.061,.032,.014);
 
+  const boardDeck=materials.white.clone(),boardAccent=materials.turquoise.clone(),boardInk=materials.red.clone();
+  boardDeck.name="Prancha base";boardAccent.name="Prancha faixa";boardInk.name="Prancha desenho";
   const board=group(hero,'Prancha de surf personalizada');
   const boardShape=new THREE.Shape();boardShape.moveTo(0,1.055);
   boardShape.bezierCurveTo(.19,.97,.335,.46,.315,-.30);boardShape.quadraticCurveTo(.30,-.87,.215,-.985);
@@ -185,22 +187,22 @@ export function createKaito(THREE) {
   boardShape.bezierCurveTo(-.335,.46,-.19,.97,0,1.055);
   const boardGeometry=new THREE.ExtrudeGeometry(boardShape,{depth:.05,bevelEnabled:true,bevelThickness:.018,bevelSize:.022,bevelSegments:2,steps:1,curveSegments:14});
   boardGeometry.translate(0,0,-.025);boardGeometry.rotateX(Math.PI/2);
-  add(board,boardGeometry,materials.white,'Prancha de espuma e fibra',0,0,0);
+  add(board,boardGeometry,boardDeck,'Prancha de espuma e fibra',0,0,0);
   const stripe=new THREE.Shape();stripe.moveTo(-.09,-.94);stripe.lineTo(.09,-.94);stripe.lineTo(.052,.88);stripe.quadraticCurveTo(0,1.02,-.052,.88);stripe.closePath();
   const stripeGeometry=new THREE.ShapeGeometry(stripe);stripeGeometry.rotateX(Math.PI/2);
-  add(board,stripeGeometry,materials.turquoise,'Faixa turquesa da prancha',0,.048,0).material.side=THREE.DoubleSide;
+  add(board,stripeGeometry,boardAccent,'Faixa turquesa da prancha',0,.048,0).material.side=THREE.DoubleSide;
   const boardWave=wave.clone();const boardWaveGeometry=new THREE.ShapeGeometry(boardWave);boardWaveGeometry.rotateX(Math.PI/2);
-  add(board,boardWaveGeometry,materials.red,'Onda personalizada da prancha',0,.052,.35,1.35,1,1.35).material.side=THREE.DoubleSide;
+  add(board,boardWaveGeometry,boardInk,'Onda personalizada da prancha',0,.052,.35,1.35,1,1.35).material.side=THREE.DoubleSide;
   // KN initials are geometry, so the board needs no web font or image request.
-  box(board,materials.red,'Inicial K',-.10,.056,-.20,.022,.009,.18);
+  box(board,boardInk,'Inicial K',-.10,.056,-.20,.022,.009,.18);
   for(const direction of [-1,1]) {
-    const stroke=box(board,materials.red,'Inicial K diagonal',-.061,.056,-.20+direction*.041,.021,.009,.12);
+    const stroke=box(board,boardInk,'Inicial K diagonal',-.061,.056,-.20+direction*.041,.021,.009,.12);
     stroke.rotation.y=direction*.63;
   }
-  box(board,materials.red,'Inicial N esquerda',.047,.056,-.20,.018,.009,.18);
-  box(board,materials.red,'Inicial N direita',.13,.056,-.20,.018,.009,.18);
-  const diagonal=box(board,materials.red,'Inicial N diagonal',.09,.056,-.20,.018,.009,.2);diagonal.rotation.y=.46;
-  const fin=new THREE.Mesh(new THREE.ConeGeometry(.095,.15,3),materials.turquoise);
+  box(board,boardInk,'Inicial N esquerda',.047,.056,-.20,.018,.009,.18);
+  box(board,boardInk,'Inicial N direita',.13,.056,-.20,.018,.009,.18);
+  const diagonal=box(board,boardInk,'Inicial N diagonal',.09,.056,-.20,.018,.009,.2);diagonal.rotation.y=.46;
+  const fin=new THREE.Mesh(new THREE.ConeGeometry(.095,.15,3),boardAccent);
   fin.name='Quilha da prancha';fin.position.set(0,-.10,-.61);fin.rotation.z=Math.PI;board.add(fin);
   ribbon(board,[[-.17,-.026,-.90],[-.27,-.035,-1.04],[-.12,-.031,-1.08]],materials.frame,.006,'Cordinha da prancha');
 
@@ -218,6 +220,8 @@ export function createKaito(THREE) {
     features:Object.freeze({hair:'preto, curto e bagunçado',face:'infantil natural',glasses:'esportivos estilo Juliete, lentes vermelhas',shirt:'azul larga com desenho de onda',shorts:'bermuda florida',footwear:'chinelos',backpack:'vermelha',surfboard:'personalizada com onda e iniciais KN'}),
     renderStats:{beforeMeshes,afterMeshes:rawMeshes()},
   };
+  hero.userData.setBoardStyle=(id='classic')=>{const styles={classic:[0xfff1dc,0x4ed5cd,0xe64741],sunset:[0xffdfb0,0xf4a15e,0x8d4c87],abyss:[0x243b69,0x71e4dc,0xf0f6ff]};if(!styles[id])id='classic';const palette=styles[id];boardDeck.color.setHex(palette[0]);boardAccent.color.setHex(palette[1]);boardInk.color.setHex(palette[2]);hero.userData.boardStyle=id;return id;};
+  hero.userData.setBoardStyle();
   hero.userData.setArmor=(requested='vigilante')=>{
     const id=Object.hasOwn(EQUIPMENT,requested)?requested:'vigilante';
     materials.gear.color.setHex(EQUIPMENT[id].accent);equipmentClip.visible=id!=='vigilante';wristDevice.visible=id!=='vigilante';
@@ -225,7 +229,7 @@ export function createKaito(THREE) {
     return id;
   };
   const finite=(value,fallback=0)=>Number.isFinite(value)?value:fallback;
-  hero.userData.update=({time=0,moving=false,gliding=false,swimming=false,surfTrickPhase=0,landing=0,rolling=false,rollPhase=0,attacking=false,grappling=false,defending=false,finisher=false,attackType=null,attackPhase=0}={})=>{
+  hero.userData.update=({time=0,moving=false,gliding=false,swimming=false,wallRunning=false,surfTrickPhase=0,landing=0,rolling=false,rollPhase=0,attacking=false,grappling=false,defending=false,finisher=false,attackType=null,attackPhase=0}={})=>{
     const t=finite(time),phase=THREE.MathUtils.clamp(finite(attackPhase),0,1),strike=Math.sin(phase*Math.PI);
     pose.position.set(0,0,0);pose.rotation.set(0,0,0);
     const stride=moving?Math.sin(t*11)*.45:0;
@@ -235,7 +239,8 @@ export function createKaito(THREE) {
     knees.forEach((knee,i)=>knee.rotation.set(moving?Math.max(0,Math.sin(t*11+(i?Math.PI:0)))*.32:0,0,0));
     board.position.set(.30,1.12,-.41);board.rotation.set(-Math.PI/2,.03,-.31);
     board.visible=!swimming;
-    if(swimming){pose.rotation.x=-1.25;pose.position.y=.65;arms[0].rotation.x=Math.sin(t*5)*1.8;arms[1].rotation.x=-Math.sin(t*5)*1.8;legs[0].rotation.x=Math.sin(t*7)*.3;legs[1].rotation.x=-Math.sin(t*7)*.3;
+    if(wallRunning){pose.rotation.z=.16;arms[0].rotation.x=-1.4;arms[1].rotation.x=-.7;knees[0].rotation.x=.55;knees[1].rotation.x=.3;
+    }else if(swimming){pose.rotation.x=-1.25;pose.position.y=.65;arms[0].rotation.x=Math.sin(t*5)*1.8;arms[1].rotation.x=-Math.sin(t*5)*1.8;legs[0].rotation.x=Math.sin(t*7)*.3;legs[1].rotation.x=-Math.sin(t*7)*.3;
     } else if(rolling){pose.rotation.x=-Math.max(0,Math.min(1,rollPhase))*Math.PI*2;pose.position.y=.5;arms[0].rotation.x=arms[1].rotation.x=-1.4;
     } else if(gliding) {
       pose.position.y=.10;pose.rotation.y=.43+Math.max(0,Math.min(1,surfTrickPhase))*Math.PI*2;pose.rotation.z=Math.sin(t*1.5)*.025;

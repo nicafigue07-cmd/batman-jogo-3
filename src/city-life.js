@@ -104,7 +104,7 @@ export function createCityLife(THREE, scene, { reducedMotion = false } = {}) {
 
   const dummy = new THREE.Object3D();
   let quality = 'medium';
-  let lastElapsed = 0;
+  let lastElapsed = 0, lastFocus=null;
   let carCount = 0, pedestrianCount = 0;
   const carPositions = [], pedestrianPositions = [];
 
@@ -117,7 +117,10 @@ export function createCityLife(THREE, scene, { reducedMotion = false } = {}) {
     mesh.setMatrixAt(index, dummy.matrix);
   }
 
-  function update(elapsed = lastElapsed) {
+  function update(elapsed = lastElapsed,focus=null) {
+    lastFocus=focus&&Number.isFinite(focus.x)&&Number.isFinite(focus.z)?{x:focus.x,z:focus.z}:null;
+    const range=quality==='low'?100:quality==='high'?190:145;
+    let visibleCars=0,visiblePeople=0;
     if (Number.isFinite(elapsed) && elapsed >= 0) lastElapsed = elapsed;
     const time = lastElapsed * (reducedMotion ? .55 : 1);
     carPositions.length = 0;
@@ -125,29 +128,35 @@ export function createCityLife(THREE, scene, { reducedMotion = false } = {}) {
     for (let index = 0; index < carCount; index++) {
       const route = cars[index], position = sampleCityRoute(route, time);
       carPositions.push({ id: route.id, ...position });
-      place(carBodies, index, position, 0, .72, 0, 1.85, .73, 3.9);
-      place(carCabins, index, position, 0, 1.25, -.12, 1.48, .58, 1.9);
-      for (let wheel = 0; wheel < 4; wheel++) place(wheels, index * 4 + wheel, position,
+      if(lastFocus&&Math.hypot(position.x-lastFocus.x,position.z-lastFocus.z)>range)continue;
+      const slot=visibleCars++;carBodies.setColorAt(slot,color.setHex(carPaint[index%carPaint.length]));
+      place(carBodies, slot, position, 0, .72, 0, 1.85, .73, 3.9);
+      place(carCabins, slot, position, 0, 1.25, -.12, 1.48, .58, 1.9);
+      for (let wheel = 0; wheel < 4; wheel++) place(wheels, slot * 4 + wheel, position,
         wheel % 2 ? .91 : -.91, .38, wheel < 2 ? 1.22 : -1.22, .19, .27, .27);
-      for (let lamp = 0; lamp < 4; lamp++) place(lamps, index * 4 + lamp, position,
+      for (let lamp = 0; lamp < 4; lamp++) place(lamps, slot * 4 + lamp, position,
         lamp % 2 ? .61 : -.61, .82, lamp < 2 ? 1.96 : -1.96, .4, .14, .045);
-      if (pools.count) place(pools, index, position, 0, .055, 5.1, 3.3, 6.4, 1, 0, true);
+      if (CITY_LIFE_PRESETS[quality].headlightPools) place(pools, slot, position, 0, .055, 5.1, 3.3, 6.4, 1, 0, true);
     }
     for (let index = 0; index < pedestrianCount; index++) {
       const route = pedestrians[index], position = sampleCityRoute(route, time);
       pedestrianPositions.push({ id: route.id, ...position });
+      if(lastFocus&&Math.hypot(position.x-lastFocus.x,position.z-lastFocus.z)>range)continue;
+      const slot=visiblePeople++;coats.setColorAt(slot,color.setHex(coatColors[index%coatColors.length]));heads.setColorAt(slot,color.setHex(skinColors[index%skinColors.length]));umbrellas.setColorAt(slot,color.setHex(umbrellaColors[index%umbrellaColors.length]));
       const step = Math.sin(time * 5.1 + route.gait) * (reducedMotion ? .08 : .31);
-      place(coats, index, position, 0, 1.16, 0, .5, .79, .31);
-      place(heads, index, position, 0, 1.76, 0, .19, .22, .18);
+      place(coats, slot, position, 0, 1.16, 0, .5, .79, .31);
+      place(heads, slot, position, 0, 1.76, 0, .19, .22, .18);
       // Legs and arms use one batch, even though their size and stride differ.
-      place(limbs, index * 5, position, -.15, .42, step * .24, .17, .76, .18, step);
-      place(limbs, index * 5 + 1, position, .15, .42, -step * .24, .17, .76, .18, -step);
-      place(limbs, index * 5 + 2, position, -.33, 1.15, 0, .14, .65, .15, -step * .7);
-      place(limbs, index * 5 + 3, position, .31, 1.28, .13, .14, .58, .15, -.48);
-      place(limbs, index * 5 + 4, position, .32, 1.9, .14, .025, 1.05, .025);
-      place(umbrellas, index, position, .3, 2.37, .14, .86, .24, .86);
+      place(limbs, slot * 5, position, -.15, .42, step * .24, .17, .76, .18, step);
+      place(limbs, slot * 5 + 1, position, .15, .42, -step * .24, .17, .76, .18, -step);
+      place(limbs, slot * 5 + 2, position, -.33, 1.15, 0, .14, .65, .15, -step * .7);
+      place(limbs, slot * 5 + 3, position, .31, 1.28, .13, .14, .58, .15, -.48);
+      place(limbs, slot * 5 + 4, position, .32, 1.9, .14, .025, 1.05, .025);
+      place(umbrellas, slot, position, .3, 2.37, .14, .86, .24, .86);
     }
-    for (const mesh of meshes) if (mesh.count) mesh.instanceMatrix.needsUpdate = true;
+    carBodies.count=carCabins.count=visibleCars;wheels.count=lamps.count=visibleCars*4;pools.count=CITY_LIFE_PRESETS[quality].headlightPools?visibleCars:0;
+    coats.count=heads.count=umbrellas.count=visiblePeople;limbs.count=visiblePeople*5;
+    for(const mesh of meshes){mesh.visible=mesh.count>0;if(mesh.count)mesh.instanceMatrix.needsUpdate=true;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;}
   }
 
   function setQuality(value) {
@@ -161,13 +170,13 @@ export function createCityLife(THREE, scene, { reducedMotion = false } = {}) {
     coats.count = heads.count = umbrellas.count = pedestrianCount;
     limbs.count = pedestrianCount * 5;
     for (const mesh of meshes) mesh.visible = mesh.count > 0;
-    update(lastElapsed);
+    update(lastElapsed,lastFocus);
     return quality;
   }
 
   function getStats() {
     return {
-      quality, cars: carCount, pedestrians: pedestrianCount,
+      quality, cars: carCount, pedestrians: pedestrianCount,renderedCars:carBodies.count,renderedPedestrians:heads.count,
       drawCalls: group.visible ? meshes.filter(mesh => mesh.visible && mesh.count > 0).length : 0,
       reducedMotion: !!reducedMotion,
       positions: {

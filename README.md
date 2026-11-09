@@ -193,3 +193,7 @@ Veja [etapas concluídas, testes e pendências](docs/ETAPAS-DE-MELHORIA.md). Nov
 
 
 Nesta rodada, **I** lança capangas e o terceiro golpe leve pode disparar um jato, consumindo sua energia normal. O **Nami Surf Lab** em x -215, z -165 tem porta acessível; use F dentro para abrir equipamentos. Neo Tóquio ganhou um parque compacto e uma passagem coberta com colisão de teto. A opção **Reduzir movimento da câmera** fica no painel da aventura e tem preferência salva. Chefes completos, mais interiores e a ampliação do mapa permanecem no plano de etapas.
+
+### Atualização de travessia e controles
+
+Corrida em paredes segurando salto, controle de mergulho da prancha, teclas remapeáveis com tutorial, pinturas desbloqueáveis, tempestade/neblina e redução dos atores desenhados à distância. Preferências e progresso anterior são preservados. Veja [etapas e pendências](docs/ETAPAS-DE-MELHORIA.md).
