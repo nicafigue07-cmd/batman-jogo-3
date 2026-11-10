@@ -112,7 +112,7 @@ body[data-game-mode=true] #game-details{display:block}
 <div id="advanced" hidden>
 <strong>Conectar um modelo de IA real</strong>
 <p>Informe a URL HTTPS do seu próprio servidor com API protegida. Nunca coloque a chave da OpenAI aqui ou no código do site.</p>
-<input type="url" id="endpoint" placeholder="https://seu-servidor.com/api/forge" autocomplete="off">
+<input type="url" id="endpoint" placeholder="https://seu-servidor.com/api/forge" autocomplete="off"><label for="access-token" style="margin:9px 0 5px">Senha de acesso ao servidor (não é a chave da OpenAI)</label><input type="password" id="access-token" placeholder="Sua senha privada do servidor" autocomplete="off">
 <button id="connect" class="optbtn">Salvar endereço do servidor</button>
 <button id="disconnect" class="optbtn">Voltar ao modo local</button>
 </div>
@@ -132,11 +132,11 @@ const pressed=new Set();
 
 const baseSpec=()=>({world:'city',time:'day',density:1,collectibles:7,npcs:2,obstacles:0,camera:'third',speed:8,playerColor:'#27a8c1',title:'Meu mundo 3D'});
 let spec=(()=>{try{return {...baseSpec(),...JSON.parse(decodeURIComponent(document.body.dataset.exportSpec||''))}}catch{return baseSpec()}})();
-let changes=[],conversation=[],apiEndpoint='',npcs=[],npcClock=0;
+let changes=[],conversation=[],apiEndpoint='',accessToken='',npcs=[],npcClock=0;
 let savedSpec=null;
-try{apiEndpoint=localStorage.getItem('forge3d_api_endpoint')||'';savedSpec=JSON.parse(localStorage.getItem('forge3d_project')||'null')}catch{}
+try{apiEndpoint=localStorage.getItem('forge3d_api_endpoint')||'';accessToken=sessionStorage.getItem('forge3d_access_token')||'';savedSpec=JSON.parse(localStorage.getItem('forge3d_project')||'null')}catch{}
 const clamp=(v,min,max)=>Math.min(max,Math.max(min,Number(v)||0));
-function refreshBadge(){const el=$('online-mode');el.textContent=apiEndpoint?'● IA real: servidor conectado':'● Modo criativo local';el.classList.toggle('on',!!apiEndpoint)}
+function refreshBadge(){const el=$('online-mode');el.textContent=apiEndpoint?'● Servidor de IA configurado':'● Modo criativo local';el.classList.toggle('on',!!apiEndpoint)}
 function message(role,body){const box=document.createElement('div');box.className='message '+role;const head=document.createElement('span');head.className='role';head.textContent=role==='user'?'VOCÊ':'FORGE · ASSISTENTE';box.append(head,document.createTextNode(body));$('chatlog').append(box);$('chatlog').scrollTop=$('chatlog').scrollHeight}
 function snapshot(){return JSON.parse(JSON.stringify(spec))}
 function normalizeSpec(input){
@@ -204,7 +204,7 @@ if(apiEndpoint){
 const controller=new AbortController();const to=setTimeout(()=>controller.abort(),25000);
 let result;
 try{
-const res=await fetch(apiEndpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:request,project:snapshot(),history:conversation.slice(-10)}),signal:controller.signal});
+const res=await fetch(apiEndpoint,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+accessToken},body:JSON.stringify({message:request,project:snapshot(),history:conversation.slice(-10)}),signal:controller.signal});
 if(!res.ok)throw Error('O servidor respondeu '+res.status);
 result=await res.json();
 }finally{clearTimeout(to)}
@@ -229,7 +229,7 @@ function trunk(x,z,forest=false){cube(.65,4,.65,0x75513e,x,2,z);ball(forest?2.4:
 function structure(x,z,h,c){cube(4.7,h,4.7,c,x,h/2,z);cube(5.3,.35,5.3,0x344965,x,h+.17,z);for(let f=0;f<Math.floor(h/2);f++){for(let dx of [-1.2,1.2])cube(.82,.77,.05,0xaff2f3,x+dx,1.5+f*2,z+2.39)}solids.push({x,z,r:3})}
 function chooseType(){let t=$('world').value;if(t!=='auto')return t;const v=$('prompt').value.toLowerCase();if(/praia|mar|oceano|surf|ilha/.test(v))return 'beach';if(/floresta|mata|árvore|natureza|montanha|selva/.test(v))return 'forest';if(/espaço|espacial|lua|planeta|alien/.test(v))return 'space';return 'city'}
 function generate(){
-worldType=spec.world||chooseType();const p=palettes[worldType],rnd=rand(43);scene=new THREE.Scene();const sky=spec.time==='night'?0x101d39:spec.time==='sunset'?0xee9a87:p.sky;scene.background=new THREE.Color(sky);scene.fog=new THREE.Fog(sky,55,135);solids=[];crystals=[];npcs=[];score=0;$('score').textContent='0/'+spec.collectibles;
+if(scene){scene.traverse(o=>{if(o.isMesh){o.geometry?.dispose();const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>m?.dispose())}})}worldType=spec.world||chooseType();const p=palettes[worldType],rnd=rand(43);scene=new THREE.Scene();const sky=spec.time==='night'?0x101d39:spec.time==='sunset'?0xee9a87:p.sky;scene.background=new THREE.Color(sky);scene.fog=new THREE.Fog(sky,55,135);solids=[];crystals=[];npcs=[];score=0;$('score').textContent='0/'+spec.collectibles;
 scene.add(new THREE.HemisphereLight(0xffffff,0x56606a,spec.time==='night'?.9:2.4));
 let sun=new THREE.DirectionalLight(spec.time==='sunset'?0xffb280:0xffffff,spec.time==='night'?.55:2.1);sun.position.set(-12,20,14);scene.add(sun);
 ground=cube(116,.5,116,p.ground,0,-.34,0);
@@ -311,13 +311,13 @@ $('load').addEventListener('click',()=>{try{const o=JSON.parse(localStorage.getI
 $('new').addEventListener('click',()=>{changes.push(snapshot());spec=baseSpec();conversation=[];generate();message('assistant','Novo projeto criado. Vamos desenvolver um jogo 3D!')});
 $('reset-camera').addEventListener('click',()=>{yaw=.4;pitch=.34;msg.style.display='none';message('assistant','Câmera centralizada.')});
 $('settings').addEventListener('click',()=>{$('advanced').hidden=!$('advanced').hidden});
-$('endpoint').value=apiEndpoint;
+$('endpoint').value=apiEndpoint;$('access-token').value=accessToken;
 $('connect').addEventListener('click',()=>{
 const v=$('endpoint').value.trim();
 try{const u=new URL(v);if(u.protocol!=='https:'&&!['localhost','127.0.0.1'].includes(u.hostname))throw Error();
-apiEndpoint=u.href;localStorage.setItem('forge3d_api_endpoint',apiEndpoint);refreshBadge();message('assistant','Endereço do servidor configurado. Os próximos comandos usarão a API. A chave secreta deve permanecer no servidor, nunca neste site.')}catch{message('assistant','Insira um endereço de servidor válido começando com https:// (ou localhost para testes locais).')}
+apiEndpoint=u.href;accessToken=$('access-token').value.trim();localStorage.setItem('forge3d_api_endpoint',apiEndpoint);if(accessToken)sessionStorage.setItem('forge3d_access_token',accessToken);refreshBadge();message('assistant','Servidor configurado. Os próximos comandos vão tentar usar a IA real. A chave da OpenAI deve permanecer protegida no servidor.')}catch{message('assistant','Insira um endereço de servidor válido começando com https:// (ou localhost para testes locais).')}
 });
-$('disconnect').addEventListener('click',()=>{apiEndpoint='';try{localStorage.removeItem('forge3d_api_endpoint')}catch{}refreshBadge();message('assistant','Voltei ao modo criativo local.')});
+$('disconnect').addEventListener('click',()=>{apiEndpoint='';accessToken='';$('access-token').value='';try{localStorage.removeItem('forge3d_api_endpoint');sessionStorage.removeItem('forge3d_access_token')}catch{}refreshBadge();message('assistant','Voltei ao modo criativo local.')});
 $('export').addEventListener('click',()=>{
 const clone=document.documentElement.cloneNode(true);
 clone.querySelector('body').dataset.gameMode='true';
