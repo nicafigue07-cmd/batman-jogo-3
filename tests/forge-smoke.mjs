@@ -121,7 +121,7 @@ try {
  if(project.spec.objects.length!==1)throw Error('Projeto JSON incompleto');
  await page.locator('[data-preset=parkour]').click();
  const park=await page.evaluate(()=>window.__forgeStats());
- if(park.objects!==12||park.gameMode!=='time')throw Error('Modelo parkour não funcionou');
+ if(park.objects!==12||park.gameMode!=='race')throw Error('Modelo parkour/corrida não funcionou');
  const fileBuffer=Buffer.from(JSON.stringify(project));
  await page.locator('#import-file').setInputFiles({name:'projeto-forge.json',mimeType:'application/json',buffer:fileBuffer});
  await page.waitForTimeout(500);
