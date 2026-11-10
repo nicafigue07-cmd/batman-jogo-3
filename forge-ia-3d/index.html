@@ -97,6 +97,27 @@ body[data-game-mode=true] #game-details{display:block}
 #quality{width:112px;min-width:112px;max-width:112px;flex:none}
 @media(min-width:850px){.toolbar .top-actions{flex-wrap:nowrap}}
 @media(max-width:700px){#quality{width:95px;min-width:95px}}
+
+/* Editor de objetos FORGE v5 */
+#object-editor{margin-top:11px;border:1px solid #385672;background:#091b30;border-radius:12px;padding:8px 10px}
+#object-editor summary{cursor:pointer;font-weight:850;font-size:12px;padding:6px 2px;user-select:none}
+#object-count{float:right;font-weight:500;color:#90c3c8}
+.edithelp{font-size:10px;color:#a4bdd2;line-height:1.5;margin:7px 0}
+.editor-row{display:flex;align-items:stretch;gap:6px;margin:8px 0}
+.editor-row select{flex:1;min-width:0;padding:8px;font-size:12px}
+.editor-row button,#duplicate-object{min-width:0;flex:1;border:1px solid #416483;border-radius:8px;background:#183249;color:#e4f6ff;cursor:pointer;padding:9px 6px;font-size:11px;font-weight:750}
+.editor-row button:disabled{opacity:.4;cursor:not-allowed}
+.editor-row button.active{background:#126c69;color:#fff;border-color:#6ef8de}
+.editor-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}
+.editor-fields label{font-size:11px;color:#bad3e5}
+.editor-fields input{width:100%;background:#092037;color:#e9faff;border:1px solid #40617e;border-radius:7px;padding:7px 6px;margin-top:4px}
+.editor-fields input[type=color]{height:34px;padding:3px}
+#selected-name{font-size:12px;color:#7cffe0}
+#duplicate-object{width:100%}
+#inspector{margin:11px 0;padding:9px;background:#0f2941;border-radius:10px}
+#inspector[hidden]{display:none}
+body[data-game-mode=true] #object-editor{display:none}
+@media(max-width:900px){#object-editor{margin-top:8px}}
 </style>
 </head>
 <body>
@@ -124,6 +145,31 @@ body[data-game-mode=true] #game-details{display:block}
 <div><label for="world">Cenário</label><select id="world"><option value="auto">Automático</option><option value="city">Cidade</option><option value="beach">Praia</option><option value="forest">Floresta</option><option value="space">Espaço</option></select></div>
 <div><label for="camera-mode">Câmera</label><select id="camera-mode"><option value="third">Terceira pessoa</option><option value="first">Primeira pessoa</option><option value="iso">Isométrica</option></select></div>
 </div>
+
+<details id="object-editor">
+<summary>🧱 Editor de objetos 3D <span id="object-count">0 objetos</span></summary>
+<div class="edithelp">Crie objetos, clique neles para selecionar e arraste para mudar de lugar. Use os campos para ajustar com precisão.</div>
+<div class="editor-row"><select id="add-type" aria-label="Tipo de objeto">
+<option value="tree">🌳 Árvore</option><option value="house">🏠 Casa</option>
+<option value="rock">🪨 Rocha</option><option value="crate">📦 Caixa</option>
+<option value="wall">🧱 Muro</option><option value="tower">🏰 Torre</option>
+<option value="lamp">💡 Poste</option><option value="portal">🌀 Portal</option>
+<option value="platform">🟦 Plataforma</option>
+</select><button id="add-object">＋ Adicionar</button></div>
+<div class="editor-row"><button id="edit-mode" aria-pressed="false">🖱 Editar: desligado</button><button id="delete-object" disabled>Excluir selecionado</button></div>
+<div id="inspector" hidden><strong id="selected-name">Objeto selecionado</strong>
+<div class="editor-fields">
+<label>X <input id="obj-x" type="number" min="-52" max="52" step=".5"></label>
+<label>Z <input id="obj-z" type="number" min="-52" max="52" step=".5"></label>
+<label>Tamanho <input id="obj-scale" type="number" min=".4" max="4" step=".1"></label>
+<label>Cor <input id="obj-color" type="color" value="#73cbbb"></label>
+</div>
+<button id="duplicate-object">⧉ Duplicar objeto</button>
+</div>
+<div class="editor-row"><button id="redo">↷ Refazer</button><button id="export-project">⬇ Projeto JSON</button><button id="import-project">⬆ Importar</button><input id="import-file" type="file" accept=".json,application/json" hidden></div>
+<div class="editor-row"><button data-preset="city">🏙 Aventura</button><button data-preset="parkour">🧗 Parkour</button><button data-preset="beach">🏖 Praia</button></div>
+<p class="edithelp">Os projetos JSON guardam suas construções. O arquivo HTML exportado inclui os objetos. Ctrl+Z desfaz; Ctrl+Y refaz.</p>
+</details>
 <div class="toolbar-buttons">
 <button id="undo" title="Desfazer a última mudança">↶ Desfazer</button><button id="save">💾 Salvar</button><button id="load">📂 Carregar</button>
 </div>
@@ -160,15 +206,29 @@ const view=document.getElementById('viewport'),msg=document.getElementById('msg'
 let renderer,scene,camera,player,ground,crystals=[],solids=[],clock=new THREE.Clock(),vertical=0,onGround=true,score=0,worldType='city',yaw=0.4,pitch=0.34,drag=null;let elapsed=0,paused=false,zoom=8,sunLight=null;
 const pressed=new Set();
 
-const baseSpec=()=>({world:'city',time:'day',density:1,collectibles:7,npcs:2,obstacles:0,camera:'third',speed:8,playerColor:'#27a8c1',title:'Meu mundo 3D'});
+const baseSpec=()=>({world:'city',time:'day',density:1,collectibles:7,npcs:2,obstacles:0,camera:'third',speed:8,playerColor:'#27a8c1',title:'Meu mundo 3D',gameMode:'collect',objects:[]});
 let spec=(()=>{try{return {...baseSpec(),...JSON.parse(decodeURIComponent(document.body.dataset.exportSpec||''))}}catch{return baseSpec()}})();
-let changes=[],conversation=[],apiEndpoint='',accessToken='',npcs=[],npcClock=0;
+let changes=[],redos=[],conversation=[],apiEndpoint='',accessToken='',npcs=[],npcClock=0;
+let editMode=false,selectedId=null,customGroups=[],selectedHelper=null,draggingEntity=null;
+const allowedTypes=new Set(['tree','house','rock','crate','wall','tower','lamp','portal','platform']);
+let entityCounter=0;
 let savedSpec=null;
 try{apiEndpoint=localStorage.getItem('forge3d_api_endpoint')||'';accessToken=sessionStorage.getItem('forge3d_access_token')||'';savedSpec=JSON.parse(localStorage.getItem('forge3d_project')||'null')}catch{}
 const clamp=(v,min,max)=>Math.min(max,Math.max(min,Number(v)||0));
 function refreshBadge(){const el=$('online-mode');el.textContent=apiEndpoint?'● Servidor de IA configurado':'● Modo criativo local';el.classList.toggle('on',!!apiEndpoint)}
 function message(role,body){const box=document.createElement('div');box.className='message '+role;const head=document.createElement('span');head.className='role';head.textContent=role==='user'?'VOCÊ':'FORGE · ASSISTENTE';box.append(head,document.createTextNode(body));$('chatlog').append(box);$('chatlog').scrollTop=$('chatlog').scrollHeight}
 function snapshot(){return JSON.parse(JSON.stringify(spec))}
+function saveCheckpoint(){changes.push(snapshot());changes=changes.slice(-50);redos.length=0}
+function cleanEntity(input){
+ if(!input||typeof input!=='object'||!allowedTypes.has(input.type))return null;
+ const x=Number(input.x),z=Number(input.z),scale=Number(input.scale);
+ const color=typeof input.color==='string'&&/^#[0-9a-f]{6}$/i.test(input.color)?input.color:'#79c9b4';
+ return {id:String(input.id||('obj-'+(++entityCounter))).slice(0,45),type:input.type,
+ x:Number.isFinite(x)?THREE.MathUtils.clamp(x,-52,52):0,
+ z:Number.isFinite(z)?THREE.MathUtils.clamp(z,-52,52):0,
+ scale:Number.isFinite(scale)?THREE.MathUtils.clamp(scale,.4,4):1,color};
+}
+
 function normalizeSpec(input){
 const o={...spec};
 const world=['city','beach','forest','space'];
@@ -182,6 +242,13 @@ if(Number.isFinite(Number(input.obstacles)))o.obstacles=Math.round(clamp(input.o
 if(Number.isFinite(Number(input.density)))o.density=clamp(input.density,.4,2.2);
 if(Number.isFinite(Number(input.speed)))o.speed=clamp(input.speed,3,18);
 if(typeof input.playerColor==='string'&&/^#[a-f0-9]{6}$/i.test(input.playerColor))o.playerColor=input.playerColor;
+if(['collect','time','explore'].includes(input.gameMode))o.gameMode=input.gameMode;
+if(Array.isArray(input.objects))o.objects=input.objects.slice(0,80).map(cleanEntity).filter(Boolean);
+if(Array.isArray(input.objectsAdd)){
+ const base=Array.isArray(o.objects)?o.objects:[];
+ o.objects=base.concat(input.objectsAdd.slice(0,15).map(v=>cleanEntity({...v,id:'obj-'+Date.now()+'-'+(++entityCounter)})).filter(Boolean)).slice(0,80);
+}
+if(!Array.isArray(o.objects))o.objects=[];
 return o}
 function detectOffline(request){
 const v=request.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
@@ -241,12 +308,12 @@ result=await res.json();
 if(!result||typeof result!=='object'||typeof result.reply!=='string'||!result.patch||typeof result.patch!=='object'||Array.isArray(result.patch))throw Error('Formato inesperado do servidor');
 patch=result.patch;reply=result.reply.slice(0,1400);
 }else{const output=detectOffline(request);patch=output.patch;reply=output.reply}
-if(Object.keys(patch).length){changes.push(snapshot());changes=changes.slice(-30);spec=normalizeSpec(patch);generate()}
+if(Object.keys(patch).length){saveCheckpoint();spec=normalizeSpec(patch);generate()}
 message('assistant',reply);conversation.push({role:'assistant',content:reply});conversation=conversation.slice(-12);
 }catch(e){message('assistant','Não consegui conectar ao servidor de IA: '+e.message+'. Verifique a URL, a publicação do servidor e as permissões de acesso. Seu jogo anterior foi preservado.')}
 finally{button.disabled=false;button.textContent='✦ Enviar e atualizar jogo'}
 }
-function persist(){try{localStorage.setItem('forge3d_project',JSON.stringify({spec,conversation}))}catch{}}
+function persist(){try{if(!standalone)localStorage.setItem('forge3d_project',JSON.stringify({spec,conversation}))}catch{}}
 
 const standalone=document.body.dataset.gameMode==='true';
 const $=id=>document.getElementById(id);
@@ -366,7 +433,7 @@ $('prompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.pr
 document.querySelectorAll('[data-example]').forEach(b=>b.addEventListener('click',()=>applyPrompt(b.dataset.example)));
 $('world').addEventListener('change',()=>{if($('world').value==='auto')return;changes.push(snapshot());spec.world=$('world').value;generate();message('assistant','Cenário alterado. Você pode continuar dando comandos por mensagem.')});
 $('camera-mode').addEventListener('change',()=>{changes.push(snapshot());spec.camera=$('camera-mode').value;generate();message('assistant','Câmera ajustada para '+({third:'terceira pessoa',first:'primeira pessoa',iso:'visão isométrica'})[spec.camera]+'.')});
-$('undo').addEventListener('click',()=>{if(changes.length){spec=changes.pop();generate();message('assistant','Desfiz a última mudança.')}else message('assistant','Ainda não há alterações para desfazer.')});
+$('undo').addEventListener('click',()=>{undoProject()});
 $('save').addEventListener('click',()=>{persist();message('assistant','Projeto salvo neste navegador!')});
 $('load').addEventListener('click',()=>{try{const o=JSON.parse(localStorage.getItem('forge3d_project')||'null');if(!o?.spec)throw Error();changes.push(snapshot());spec=normalizeSpec(o.spec);generate();message('assistant','Projeto salvo carregado!')}catch{message('assistant','Não encontrei um projeto salvo neste navegador.')}})
 $('new').addEventListener('click',()=>{changes.push(snapshot());spec=baseSpec();conversation=[];generate();message('assistant','Novo projeto criado. Vamos desenvolver um jogo 3D!')});
