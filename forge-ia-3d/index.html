@@ -318,7 +318,9 @@ if(foundMode){
  }
 }
 const missionAmount=v.match(/\b(\d{1,2})\s*(?:checkpoints?|pontos de controle|entregas?|pacotes?|resgates?|pessoas? para resgatar|lugares?|locais?|objetivos?|missoes?)\b/);
-if(missionAmount){patch.missionGoal=Math.min(10,Math.max(2,Number(missionAmount[1])));details.push(patch.missionGoal+' etapas de missão')}
+const rescueAmount=foundMode?.id==='rescue'?v.match(/(?:resgatar|salvar|resgate de)\s*(\d{1,2})\s*(?:personagens?|pessoas?|habitantes?|animais?)/):null;
+const countMatch=missionAmount||rescueAmount;
+if(countMatch){patch.missionGoal=Math.min(10,Math.max(2,Number(countMatch[1])));details.push(patch.missionGoal+' etapas de missão')}
 
 const numberNear=(re)=>{const m=v.match(re);return m?Number(m[1]):null}
 const chr=numberNear(/\b(\d{1,2})\s*(personagens?|npcs?|pessoas?|habitantes?)/);
@@ -667,10 +669,10 @@ function redoProject(){
 function presetWorld(kind){
  saveCheckpoint();selectedId=null;spec=baseSpec();
  if(kind==='parkour'){
-   spec.world='space';spec.title='Corrida das Plataformas';spec.collectibles=12;spec.obstacles=14;spec.speed=11;spec.gameMode='time';spec.npcs=0;
+   spec.world='space';spec.title='Corrida das Plataformas';spec.collectibles=12;spec.missionGoal=8;spec.obstacles=12;spec.speed=11;spec.gameMode='race';spec.npcs=0;
    spec.objects=Array.from({length:12},(_,i)=>cleanEntity({type:'platform',id:'park-'+i,x:(i%2?5:-5),z:38-i*7,scale:1,color:'#68a9d6'}));
  }else if(kind==='beach'){
-   spec.world='beach';spec.title='Tesouro na Praia';spec.collectibles=10;spec.time='sunset';spec.npcs=5;spec.objects=[
+   spec.world='beach';spec.title='Expedição na Praia';spec.collectibles=10;spec.missionGoal=5;spec.gameMode='explore';spec.time='sunset';spec.npcs=5;spec.objects=[
     cleanEntity({id:'beach-hut',type:'house',x:17,z:20,color:'#edbd89',scale:1}),
     cleanEntity({id:'beach-portal',type:'portal',x:-14,z:31,color:'#4af4df',scale:1})];
  }else{
@@ -715,7 +717,7 @@ function editorPointerMove(e){
 
 
 /* Mecânicas de missão: objetivos distintos, vitória e progresso real. */
-let missionTargets=[],missionProgress=0,missionCarry=false,missionFinished=false;
+let missionTargets=[],missionProgress=0,missionCarry=false,missionFinished=false,carriedPackage=null;
 let missionTickHint='',movementDirection={x:0,z:0};
 const modeNames={collect:'💎 Cristais',time:'⏱ Cristais no tempo',race:'🏁 Checkpoints',delivery:'📦 Entregas',rescue:'🛟 Resgates',explore:'🧭 Lugares'};
 const missionDescriptions={
@@ -744,6 +746,11 @@ function missionBeacon(x,z,color,shape='ring'){
  if(shape==='package'){
   center.geometry.dispose();center.geometry=new THREE.BoxGeometry(.75,.75,.75);
   center.position.y=1.7;
+ }else if(shape==='landmark'){
+  center.visible=false;
+  const monument=new THREE.Mesh(new THREE.ConeGeometry(.55,2.1,4),
+    new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.32,metalness:.46,roughness:.34}));
+  monument.position.y=1.6;root.add(monument);
  }else if(shape==='npc'){
   center.visible=false;
   const body=new THREE.Mesh(new THREE.CapsuleGeometry(.47,1,.5,6),new THREE.MeshStandardMaterial({color:0xf3bd8e}));
@@ -772,7 +779,7 @@ function nextMissionTarget(){
  return null;
 }
 function setupMission(){
- missionTargets=[];missionProgress=0;missionCarry=false;missionFinished=false;missionTickHint='';
+ missionTargets=[];missionProgress=0;missionCarry=false;missionFinished=false;missionTickHint='';if(carriedPackage)carriedPackage.visible=false;
  const mode=spec.gameMode;
  if(mode==='race'){
    for(let i=0;i<spec.missionGoal;i++){const {x,z}=missionWaypoint(i,spec.missionGoal);
@@ -783,7 +790,7 @@ function setupMission(){
    missionTargets[1].root.visible=false;
  }else if(mode==='rescue'||mode==='explore'){
    for(let i=0;i<spec.missionGoal;i++){const {x,z}=missionWaypoint(i,spec.missionGoal);
-    missionTargets.push(missionBeacon(x,z,mode==='rescue'?0xffba75:0x7ee6ff,mode==='rescue'?'npc':'ring'))}
+    missionTargets.push(missionBeacon(x,z,mode==='rescue'?0xffba75:0x7ee6ff,mode==='rescue'?'npc':'landmark'))}
  }
  updateMissionHUD();
  const hint=missionDescriptions[mode]||missionDescriptions.collect;
@@ -823,10 +830,10 @@ function missionInteract(){
  if(dist>3.5){$('dialogue').textContent='Aproxime-se do marcador e aperte E.';$('dialogue').hidden=false;dialogueTimer=2;return false}
  if(mode==='delivery'){
    if(!missionCarry){
-    missionCarry=true;missionTargets[0].root.visible=false;missionTargets[1].root.visible=true;
+    missionCarry=true;missionTargets[0].root.visible=false;missionTargets[1].root.visible=true;if(carriedPackage)carriedPackage.visible=true;
     $('dialogue').textContent='📦 Pacote coletado. Leve-o à base azul!';
    }else{
-    missionCarry=false;missionTargets[0].root.visible=true;missionTargets[1].root.visible=false;
+    missionCarry=false;missionTargets[0].root.visible=true;missionTargets[1].root.visible=false;if(carriedPackage)carriedPackage.visible=false;
     missionProgress++;
     $('dialogue').textContent='✅ Entrega '+missionProgress+' realizada!';
     if(missionProgress>=spec.missionGoal)missionVictory();
@@ -838,7 +845,7 @@ function missionInteract(){
 }
 function missionTick(dt){
  const mode=spec.gameMode;
- if(missionFinished||['collect','time'].includes(mode))return;
+ if(editMode||missionFinished||['collect','time'].includes(mode))return;
  if(mode==='delivery'){
   for(const t of missionTargets){t.ring.rotation.z+=dt*.25;t.center.rotation.y+=dt*.8}
   return;
@@ -945,6 +952,7 @@ for(let i=0;i<5;i++){
 }
 player=new THREE.Group();cube(.78,1.35,.46,spec.playerColor,0,1.3,0,player);ball(.44,0xf2c49d,0,2.27,0,player);const hair=ball(.46,0x252e3c,0,2.55,.025,player);hair.scale.set(1,.65,1);cube(.38,.56,.12,0x4d6b92,0,1.42,.31,player);for(const ex of [-.14,.14])ball(.045,0x293744,ex,2.31,-.4,player);cube(.33,.85,.36,0x26334f,-.23,.46,0,player);cube(.33,.85,.36,0x26334f,.23,.46,0,player);cube(.22,.9,.35,spec.playerColor,-.53,1.3,0,player);cube(.22,.9,.35,spec.playerColor,.53,1.3,0,player);
 for(const sx of [-1,1]){cube(.39,.2,.65,0xf5f4ed,sx*.24,.1,-.1,player);cube(.14,.19,.15,0x394f70,sx*.48,1.17,-.03,player)}
+carriedPackage=cube(.62,.66,.55,0xe2aa6d,0,1.25,-.6,player);carriedPackage.visible=false;
 scene.add(player);player.position.set(0,.1,12);vertical=0;onGround=true;elapsed=0;paused=false;portalCooldown=0;dialogueTimer=0;
 for(let i=0;i<(['collect','time'].includes(spec.gameMode)?spec.collectibles:0);i++){let z=worldType==='beach'?3+(i%10)*4.7:-40+(i%11)*7.5,x=(Math.floor(i/11)%2===0?-1:1)*(2.5+(i%3)*2);if(worldType==='beach')x=(i%2===0?-1:1)*(4+(i%4)*1.8);const c=new THREE.Mesh(new THREE.OctahedronGeometry(.7),new THREE.MeshStandardMaterial({color:0x5bffdf,emissive:0x2ab9ae,emissiveIntensity:.5}));c.position.set(x,1.5,z);const aura=new THREE.Mesh(new THREE.TorusGeometry(.83,.055,5,16),new THREE.MeshBasicMaterial({color:0x73ffe8,transparent:true,opacity:.53,depthWrite:false}));
 aura.rotation.x=Math.PI/2;c.add(aura);
