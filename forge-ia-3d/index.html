@@ -1115,7 +1115,7 @@ if(camera)camera.position.set(0,6,20);
 let idea=spec.title||'Meu mundo 3D';$('title').textContent=idea.length>40?idea.slice(0,38)+'…':idea;$('scene-details').textContent=({city:'Cidade',beach:'Praia',forest:'Floresta',space:'Base espacial'})[worldType]+' · '+({day:'Dia',night:'Noite',sunset:'Pôr do sol'})[spec.time];$('mode-label').textContent=spec.camera==='first'?'PRIMEIRA PESSOA':spec.camera==='iso'?'CÂMERA ISOMÉTRICA':'TERCEIRA PESSOA';$('world').value=spec.world;$('camera-mode').value=spec.camera;$('mission-mode').value=spec.gameMode;$('mission-count').value=String([3,5,8,10].reduce((a,b)=>Math.abs(b-spec.missionGoal)<Math.abs(a-spec.missionGoal)?b:a));setupMission();persist();
 status.textContent='MUNDO PRONTO';$('pause-banner').classList.remove('visible');drawMinimap();updateObjective();
 }
-function start(){try{renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio,Number($('quality').value)));renderer.setSize(view.clientWidth,view.clientHeight);renderer.shadowMap.enabled=Number($('quality').value)>1;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.35;view.insertBefore(renderer.domElement,view.firstChild);camera=new THREE.PerspectiveCamera(65,view.clientWidth/view.clientHeight,.1,220);generate();animate()}catch(e){msg.textContent='Não foi possível iniciar o 3D: '+e.message;status.textContent='ERRO WEBGL'}}
+function start(){try{renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Number($('quality').value)===2?2:Math.min(devicePixelRatio,Number($('quality').value)));renderer.setSize(view.clientWidth,view.clientHeight);renderer.shadowMap.enabled=Number($('quality').value)>1;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.35;view.insertBefore(renderer.domElement,view.firstChild);camera=new THREE.PerspectiveCamera(65,view.clientWidth/view.clientHeight,.1,220);generate();animate()}catch(e){msg.textContent='Não foi possível iniciar o 3D: '+e.message;status.textContent='ERRO WEBGL'}}
 let last=performance.now();
 
 
@@ -1286,7 +1286,7 @@ document.querySelectorAll('#mobile button').forEach(b=>{const k=b.dataset.k;b.ad
 $('jump').addEventListener('pointerdown',e=>{e.preventDefault();jump()});$('interact').addEventListener('pointerdown',e=>{e.preventDefault();talkToNPC()});$('restart-level').addEventListener('click',restartMission);$('quality').addEventListener('change',()=>{
  if(!renderer)return;
  const level=Number($('quality').value);
- renderer.setPixelRatio(Math.min(devicePixelRatio,level));
+ renderer.setPixelRatio(level===2?2:Math.min(devicePixelRatio,level));
  renderer.setSize(view.clientWidth,view.clientHeight);
  renderer.shadowMap.enabled=level>1;
  if(sunLight){
