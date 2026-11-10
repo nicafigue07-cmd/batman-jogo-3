@@ -1,33 +1,59 @@
-# FORGE IA 3D PRO
+# FORGE IA 3D PRO — versão 5
 
 **Site:** https://nicafigue07-cmd.github.io/batman-jogo-3/forge-ia-3d/
 
-## O que o site faz sem configurar nada
-- Cria e modifica protótipos 3D (cidade, praia, floresta ou espaço).
-- Entende comandos simples em português, como "coloque 8 personagens", "deixe de noite", "adicione 15 cristais", "câmera em primeira pessoa".
-- Edita a quantidade de NPCs decorativos, cristais e obstáculos, velocidade e iluminação.
-- Salva o projeto no navegador, desfaz alterações e permite exportar jogo HTML.
+A FORGE é um editor de protótipos 3D com Three.js. A parte gratuita funciona diretamente no navegador. O modo de geração por IA real exige um servidor e chave de API, que não são fornecidos pelo GitHub Pages.
 
-O modo gratuito **não é uma IA generativa real**; usa interpretação de comandos por regras.
+## Ferramentas gratuitas
 
-## Para ativar um modelo de IA real
+- Cenários de cidade, praia, floresta e base espacial; iluminação de dia, noite e pôr do sol.
+- Jogabilidade 3D com câmera, sombras, minimapa, coleção de cristais, plataformas, portais e NPCs que respondem à tecla E.
+- Corrida, salto, pausa, reinício de missão e modo contra o tempo.
+- **Editor de objetos 3D**: árvores, casas, rochas, caixas, muros, torres, postes, portais e plataformas.
+- Clique para adicionar, ligar o modo editar e arrastar os objetos; alterar posição, cor e tamanho, duplicar e excluir.
+- Modelos de aventura urbana, parkour e exploração na praia.
+- Desfazer/refazer; salvar e carregar; exportar e importar o projeto JSON.
+- Exportar seu jogo HTML e jogar no navegador (internet necessária para carregar Three.js).
+- Comandos locais em português, por exemplo: "adicione 5 casas", "crie uma praia", "coloque 8 cristais".
 
-O arquivo backend/server.mjs fornece uma API opcional usando **OpenAI Responses API**. Requer Node.js 22+, hospedagem Node com HTTPS, conexão com a internet e conta com acesso à API OpenAI.
+**Importante:** os comandos locais são regras, não um modelo generativo equivalente ao ChatGPT.
 
-1. Hospede este servidor em uma plataforma para Node.js (ou rode localmente para testar).
-2. Cadastre as variáveis de ambiente **privadas**:
-   - OPENAI_API_KEY: sua chave da API OpenAI (nunca coloque no HTML nem no GitHub).
-   - FORGE_ACCESS_TOKEN: uma senha longa *diferente* da chave da API, para autorizar suas solicitações.
-   - OPENAI_MODEL (opcional): padrão gpt-6.1-sol.
-   - PORT (opcional): porta da hospedagem, padrão 8787.
-3. Comando de inicialização: node forge-ia-3d/backend/server.mjs (a partir da raiz do repositório).
-4. No site, clique em "⚙ IA real", informe a URL HTTPS terminada em /api/forge e sua senha de acesso.
-5. Digite o pedido no chat. O modelo planejará alterações no projeto com base no estado atual.
+## Ativar modelo de IA real (opcional)
 
-A senha de acesso fica só na sessão do navegador. O backend tem limite básico de 5 pedidos/minuto/IP, mas para uso público amplie a proteção com autenticação e controle de gastos. A API pode gerar cobranças. Se for menor de idade, configure serviços pagos com um responsável.
+O backend Node.js 22+ está no arquivo forge-ia-3d/backend/server.mjs. Ele chama a OpenAI Responses API quando configurado.
 
-**Limitação:** mesmo com modelo real, este editor não cria jogos AAA, carros dirigíveis, animações avançadas ou multiplayer. A IA adapta opções de cenário/câmera e conversa sobre o desenvolvimento; funcionalidades de jogo novas exigem código novo.
+1. Publique o backend em hospedagem Node.js HTTPS (não use apenas GitHub Pages).
+2. Configure variáveis de ambiente privadas na hospedagem:
+   - OPENAI_API_KEY: chave da API OpenAI. Nunca coloque no HTML ou no repositório.
+   - FORGE_ACCESS_TOKEN: senha longa, diferente da chave da API.
+   - OPENAI_MODEL: opcional, padrão gpt-6.1-sol.
+   - PORT: opcional, padrão 8787.
+3. Comando a executar a partir da raiz do repositório: node forge-ia-3d/backend/server.mjs
+4. No estúdio, clique em **⚙ IA real** e informe a URL HTTPS terminada em /api/forge e a senha de acesso.
+5. Use o chat para pedir mudanças de cenário, câmera, personagens e novos objetos.
+6. Para pedir um minijogo HTML independente, clique em **🚀 Gerar um jogo novo com código de IA**. A prévia é exibida em iframe isolado, e o arquivo HTML pode ser baixado após teste.
 
-## Jogo exportado
+A prévia utiliza iframe com sandbox e CSP restrita. Mesmo assim, confira todo código gerado pela IA antes de executá-lo fora do editor. Não compartilhe sua senha. O servidor inclui limite básico de requisições; para uso público também são necessários controle de custos e autenticação aprimorada.
 
-O HTML exportado carrega Three.js pela internet. É um protótipo, não um projeto Unity ou Unreal.
+**Custos:** a API pode gerar cobranças. Para menores de idade, qualquer configuração de serviços pagos deve ser feita com um responsável.
+
+## Controles
+
+| Controle | Função |
+| --- | --- |
+| W/A/S/D ou setas | Andar |
+| Espaço | Pular |
+| Shift | Correr |
+| Arrastar mouse | Girar câmera |
+| Rodinha do mouse | Zoom |
+| E | Conversar com NPC próximo |
+| P | Pausar ou continuar |
+| R | Reiniciar missão |
+| Ctrl+Z / Ctrl+Y | Desfazer/refazer no editor |
+| Modo Editar | Selecionar e arrastar objetos |
+
+## Testes automatizados
+
+O fluxo de trabalho .github/workflows/testar-forge.yml verifica o backend com uma API OpenAI simulada e roda o estúdio em Chromium/Playwright com WebGL. Abrange controles, cristal coletado, pausa, minimapa, edição de objetos, modelos de mundo, importar/exportar JSON e HTML, prévia de código gerado com servidor simulado e viewport mobile.
+
+A FORGE não é um motor AAA nem substitui Unity ou Unreal. O modelo conectado ajuda a criar protótipos, mas a qualidade, os testes e a correção do código gerado ainda exigem revisão.
