@@ -165,6 +165,12 @@ font-weight:750;font-size:13px;pointer-events:none;max-width:70%;text-align:cent
 .travel-toolbar{margin:10px 0;display:grid;gap:5px}
 .travel-toolbar label{color:#92ded4;font-size:11px;font-weight:800}
 .travel-toolbar select{background:#112d45;color:#e5fffa;border:1px solid #4c9b9d;border-radius:9px;padding:10px;max-width:100%;font-weight:700}
+.quest-journal{margin-top:9px;border:1px solid #406f80;border-radius:10px;background:#0c2438;padding:9px}
+.quest-journal summary{cursor:pointer;font-weight:850;font-size:12px;color:#b7f9eb}
+.quest-list{display:grid;gap:5px;max-height:290px;overflow:auto;margin-top:9px}
+.quest-list>div{padding:7px 8px;border-radius:7px;background:#112c40;color:#a9c2d0;font-size:11px}
+.quest-list>div.current{background:#175363;color:#dbfff6;border:1px solid #63daba}
+.quest-list>div.finished{color:#9fe6ca}
 #campaign-progress{font-size:11px;color:#91eacb;font-weight:850;min-width:28px}
 .chapter-status{position:absolute;top:65px;left:50%;transform:translateX(-50%);max-width:68%;background:#071e32de;border:1px solid #7adcc8aa;border-radius:9px;padding:6px 12px;z-index:3;font-weight:850;font-size:12px;text-align:center;pointer-events:none}
 .chapter-story{position:absolute;bottom:44px;left:12px;max-width:48%;background:#081b2ec9;padding:6px 11px;border-radius:8px;font-size:11px;line-height:1.5;color:#dceff5;z-index:2;pointer-events:none}
@@ -204,6 +210,10 @@ font-weight:750;font-size:13px;pointer-events:none;max-width:70%;text-align:cent
 <div class="mission-select"><label for="mission-count">Quantidade de objetivos</label><select id="mission-count"><option value="2">2 desafios</option><option value="3">3 desafios</option><option value="4">4 desafios</option><option value="5" selected>5 desafios</option><option value="6">6 desafios</option><option value="7">7 desafios</option><option value="8">8 desafios</option><option value="9">9 desafios</option><option value="10">10 desafios</option></select></div>
 </div>
 <div class="campaign-toolbar"><button id="start-campaign">📖 Criar campanha com 20 missões</button><span id="campaign-progress">1/20</span></div>
+<details class="quest-journal" id="quest-journal">
+<summary>📚 Ver as 20 missões da história</summary>
+<div id="quest-list" class="quest-list" aria-label="Capítulos da campanha"></div>
+</details>
 <div class="travel-toolbar">
   <label for="travel-destination">🧭 Explorar mapa de 640 × 640</label>
   <select id="travel-destination" aria-label="Viagem rápida pelo mundo 3D">
@@ -515,7 +525,7 @@ function asphaltTexture(){
  t.anisotropy=Math.min(renderer?.capabilities?.getMaxAnisotropy?.()||1,4);return t;
 }
 function newOcean(){
- const geo=new THREE.PlaneGeometry(MAP_SIZE-8,160,96,46);
+ const geo=new THREE.PlaneGeometry(MAP_SIZE-8,128,96,42);
  oceanMaterial=new THREE.ShaderMaterial({
   uniforms:{uTime:{value:0},uDay:{value:spec.time==='night'?0.26:spec.time==='sunset'?.78:1}},
   vertexShader:[
@@ -547,7 +557,7 @@ function newOcean(){
   side:THREE.DoubleSide,transparent:false,depthWrite:true
  });
  waterMesh=new THREE.Mesh(geo,oceanMaterial);waterMesh.rotation.x=-Math.PI/2;
- waterMesh.position.set(0,.105,-57);waterMesh.receiveShadow=false;waterMesh.castShadow=false;scene.add(waterMesh);
+ waterMesh.position.set(0,.105,-70);waterMesh.receiveShadow=false;waterMesh.castShadow=false;scene.add(waterMesh);
 }
 function contactShadowTexture(){
  const c=document.createElement('canvas');c.width=c.height=64;const ctx=c.getContext('2d');
@@ -1003,8 +1013,20 @@ function loadChapter(i){
  Object.assign(spec,{campaign:true,chapterIndex:index,gameMode:c.mode,world:c.world,time:c.time,
   missionGoal:c.goal,collectibles:c.crystals||7,npcs:Math.max(spec.npcs,c.mode==='rescue'?5:3),title:c.name});
 }
+function updateQuestJournal(){
+ const container=$('quest-list');if(!container)return;
+ container.replaceChildren();
+ for(let i=0;i<CHAPTERS.length;i++){
+  const ch=CHAPTERS[i];const el=document.createElement('div');
+  const active=Boolean(spec.campaign);
+  el.className=active&&i===spec.chapterIndex?'current':active&&i<spec.chapterIndex?'finished':'';
+  el.textContent=(active&&i<spec.chapterIndex?'✓ ':active&&i===spec.chapterIndex?'▶ ':'○ ')+(i+1)+'. '+ch.name+' — '+({collect:'Coleta',time:'Contra o tempo',race:'Corrida',rescue:'Resgate',delivery:'Entrega',explore:'Exploração'})[ch.mode];
+  el.title=ch.lore;
+  container.append(el);
+ }
+}
 function updateChapterUI(){
- const active=Boolean(spec.campaign);
+ const active=Boolean(spec.campaign);updateQuestJournal();
  $('campaign-status').hidden=!active;
  $('chapter-story').hidden=!active;
  $('next-chapter').hidden=true;
@@ -1247,7 +1269,7 @@ function expandOuterRegion(r){
   shore.castShadow=false;
   const promenade=cube(MAP_SIZE-20,.08,7,0xbcaf97,0,.079,146);
   promenade.castShadow=false;
-  const waterside=newOceanSegment(-150,175);
+  newOceanSegment(0,-216);
   for(let i=0;i<(low?30:60);i++){
    const x=-300+r()*600,z=157+r()*120;
    if(Math.abs(x)<25&&z<175)continue;
@@ -1278,9 +1300,9 @@ function expandOuterRegion(r){
  }
 }
 function newOceanSegment(x,z){
- const plane=new THREE.Mesh(new THREE.PlaneGeometry(MAP_SIZE-12,230,2,2),
+ const plane=new THREE.Mesh(new THREE.PlaneGeometry(MAP_SIZE-12,206,2,2),
   new THREE.MeshPhysicalMaterial({color:0x1a8ca8,metalness:.12,roughness:.35,clearcoat:.6}));
- plane.rotation.x=-Math.PI/2;plane.position.set(x,.039,z-185);
+ plane.rotation.x=-Math.PI/2;plane.position.set(x,.039,z);
  scene.add(plane);return plane;
 }
 
