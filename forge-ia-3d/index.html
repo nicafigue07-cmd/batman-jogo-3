@@ -159,6 +159,16 @@ font-weight:750;font-size:13px;pointer-events:none;max-width:70%;text-align:cent
 #generated-panel{z-index:14}
 @media(max-width:600px){#hud{padding:8px 10px}#game-details{padding:7px 9px}#direction{padding:7px}}
 
+
+.campaign-toolbar{display:flex;align-items:center;gap:8px;margin:10px 0 3px}
+.campaign-toolbar button{flex:1;padding:10px 8px;font-size:12px;font-weight:850;background:linear-gradient(105deg,#095f71,#187b74);color:#e7fffa;border:1px solid #79e5cf;border-radius:9px;cursor:pointer}
+#campaign-progress{font-size:11px;color:#91eacb;font-weight:850;min-width:28px}
+.chapter-status{position:absolute;top:65px;left:50%;transform:translateX(-50%);max-width:68%;background:#071e32de;border:1px solid #7adcc8aa;border-radius:9px;padding:6px 12px;z-index:3;font-weight:850;font-size:12px;text-align:center;pointer-events:none}
+.chapter-story{position:absolute;bottom:44px;left:12px;max-width:48%;background:#081b2ec9;padding:6px 11px;border-radius:8px;font-size:11px;line-height:1.5;color:#dceff5;z-index:2;pointer-events:none}
+#next-chapter{position:absolute;z-index:4;bottom:85px;left:50%;transform:translateX(-50%);background:linear-gradient(115deg,#159478,#227faa);color:white;border:2px solid #b6ffee;box-shadow:0 10px 35px #0009;border-radius:14px;padding:16px 23px;font-size:15px;font-weight:900;cursor:pointer}
+#next-chapter[hidden],#campaign-status[hidden],#chapter-story[hidden]{display:none}
+@media(max-width:750px){.chapter-status{top:68px;font-size:10px;max-width:54%;padding:5px}.chapter-story{max-width:60%;font-size:9px;bottom:20px}#next-chapter{bottom:110px;font-size:11px;padding:12px 14px}}
+
 </style>
 </head>
 <body>
@@ -188,6 +198,7 @@ font-weight:750;font-size:13px;pointer-events:none;max-width:70%;text-align:cent
 <div class="mission-select"><label for="mission-mode">Objetivo do jogo</label><select id="mission-mode"><option value="collect">💎 Coletar cristais</option><option value="time">⏱ Coleta contra o tempo</option><option value="race">🏁 Corrida por checkpoints</option><option value="delivery">📦 Fazer entregas</option><option value="rescue">🛟 Resgatar personagens</option><option value="explore">🧭 Descobrir lugares</option></select></div>
 <div class="mission-select"><label for="mission-count">Quantidade de objetivos</label><select id="mission-count"><option value="3">3 desafios</option><option value="5" selected>5 desafios</option><option value="8">8 desafios</option><option value="10">10 desafios</option></select></div>
 </div>
+<div class="campaign-toolbar"><button id="start-campaign">📖 Criar campanha com 10 missões</button><span id="campaign-progress">1/10</span></div>
 <div class="mission-preset-buttons">
 <button data-mission="race">🏁 Corrida</button><button data-mission="delivery">📦 Entregas</button><button data-mission="rescue">🛟 Resgate</button><button data-mission="explore">🗺 Exploração</button>
 </div>
@@ -233,7 +244,10 @@ font-weight:750;font-size:13px;pointer-events:none;max-width:70%;text-align:cent
 </aside>
 <section><div class="toolbar"><strong>🎮 Editor e prévia 3D</strong><div class="top-actions"><select id="quality" aria-label="Qualidade gráfica"><option value="1">Leve (FPS)</option><option value="1.5" selected>Equilibrado</option><option value="2">Ultra (2×)</option></select><button id="stop-player" title="Parar qualquer movimento do personagem">■ Parar</button><button id="restart-level">↻ Missão</button><button id="reset-camera">⟳ Câmera</button><span class="pill" id="status">CARREGANDO 3D</span></div></div>
 <div id="viewport"><div id="hud"><strong id="title">Meu jogo 3D</strong><span id="goal-name">💎 Cristais</span>: <span id="score">0/7</span></div>
-<div id="game-details"><b id="mode-label">EXPLORAÇÃO 3D</b><span id="scene-details">Mundo criado pela FORGE</span></div><div id="direction"><strong>🧭 Missão:</strong> encontre os cristais</div><div id="dialogue" hidden></div><div id="minimap-wrap"><canvas id="minimap" width="308" height="308" aria-label="Minimapa do cenário"></canvas><span id="minimap-name">MAPA</span></div><div id="pause-banner">⏸ PAUSADO</div><div id="generated-panel" hidden><div class="generated-head"><strong id="generated-title">Novo jogo da IA</strong><div><button id="download-generated">⬇ Baixar jogo</button><button id="close-generated">✕ Voltar</button></div></div><iframe id="generated-frame" title="Prévia de minijogo 3D criado pela IA" sandbox="allow-scripts" referrerpolicy="no-referrer"></iframe></div><div id="msg">Preparando mundo 3D…</div><div class="hint">WASD: mover • Shift: correr • Espaço: pular • E: interagir • R: reiniciar • P: pausar</div>
+<div id="campaign-status" class="chapter-status">📖 Capítulo 1/10 — A Luz Perdida</div>
+<div id="chapter-story" class="chapter-story">Reúna cristais para restaurar a cidade.</div>
+<div id="game-details"><b id="mode-label">EXPLORAÇÃO 3D</b><span id="scene-details">Mundo criado pela FORGE</span></div><div id="direction"><strong>🧭 Missão:</strong> encontre os cristais</div><div id="dialogue" hidden></div><div id="minimap-wrap"><canvas id="minimap" width="308" height="308" aria-label="Minimapa do cenário"></canvas><span id="minimap-name">MAPA</span></div><div id="pause-banner">⏸ PAUSADO</div>
+<button id="next-chapter" hidden>⭐ PRÓXIMA MISSÃO</button><div id="generated-panel" hidden><div class="generated-head"><strong id="generated-title">Novo jogo da IA</strong><div><button id="download-generated">⬇ Baixar jogo</button><button id="close-generated">✕ Voltar</button></div></div><iframe id="generated-frame" title="Prévia de minijogo 3D criado pela IA" sandbox="allow-scripts" referrerpolicy="no-referrer"></iframe></div><div id="msg">Preparando mundo 3D…</div><div class="hint">WASD: mover • Shift: correr • Espaço: pular • E: interagir • R: reiniciar • P: pausar</div>
 <div id="mobile"><button data-k="KeyW">↑</button><button data-k="KeyA">←</button><button data-k="KeyS">↓</button><button data-k="KeyD">→</button></div>
 <button id="jump">PULAR</button><button id="interact" aria-label="Interagir com objetivo ou personagem">INTERAGIR</button></div>
 <footer id="notice">Protótipo 3D no navegador • Salve seu projeto regularmente • O modo IA real exige servidor configurado.</footer></section></main>
@@ -258,7 +272,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)stopMovemen
 document.addEventListener('focusin',e=>{if(e.target.closest?.('aside, .toolbar'))stopMovement()});
 
 
-const baseSpec=()=>({world:'city',time:'day',density:1,collectibles:7,npcs:2,obstacles:0,camera:'third',speed:8,playerColor:'#27a8c1',title:'Meu mundo 3D',gameMode:'collect',missionGoal:5,objects:[]});
+const baseSpec=()=>({world:'city',time:'day',density:1,collectibles:7,npcs:2,obstacles:0,camera:'third',speed:8,playerColor:'#27a8c1',title:'Meu mundo 3D',gameMode:'collect',missionGoal:5,campaign:true,chapterIndex:0,objects:[]});
 let spec=(()=>{try{return {...baseSpec(),...JSON.parse(decodeURIComponent(document.body.dataset.exportSpec||''))}}catch{return baseSpec()}})();
 let changes=[],redos=[],conversation=[],apiEndpoint='',accessToken='',npcs=[],npcClock=0;
 let editMode=false,selectedId=null,customGroups=[],selectedHelper=null,draggingEntity=null;
@@ -296,6 +310,8 @@ if(Number.isFinite(Number(input.density)))o.density=clamp(input.density,.4,2.2);
 if(Number.isFinite(Number(input.speed)))o.speed=clamp(input.speed,3,18);
 if(typeof input.playerColor==='string'&&/^#[a-f0-9]{6}$/i.test(input.playerColor))o.playerColor=input.playerColor;
 if(['collect','time','race','delivery','rescue','explore'].includes(input.gameMode))o.gameMode=input.gameMode;
+if(typeof input.campaign==='boolean')o.campaign=input.campaign;
+if(Number.isInteger(input.chapterIndex))o.chapterIndex=THREE.MathUtils.clamp(input.chapterIndex,0,9);
 if(Number.isFinite(Number(input.missionGoal)))o.missionGoal=Math.round(clamp(input.missionGoal,2,10));
 if(Array.isArray(input.objects))o.objects=input.objects.slice(0,80).map(cleanEntity).filter(Boolean);
 if(Array.isArray(input.objectsAdd)){
@@ -395,6 +411,10 @@ else if(has(/explorar livremente|modo livre|sem missao/)&&!foundMode){patch.game
 else if(has(/coletar cristais|coleta de cristais|modo coleta/)&&!foundMode){patch.gameMode='collect';details.push('missão de coleta')}
 
 if(has(/reset|recomecar|limpar tudo/)){return {patch:baseSpec(),reply:'Reiniciei o cenário com as configurações iniciais.'}}
+if(has(/campanha|historia com|lore com|varias missoes|muitas missoes|(?:6|7|8|9|10|12|15|20) missoes/)){
+ patch.campaign=true;patch.chapterIndex=0;
+ details.push('campanha de 10 capítulos conectados pela história');
+}
 if(mentions&&Object.keys(patch).length===0){patch.title=request.slice(0,65);details.push('nome do projeto atualizado')}
 return {patch,reply:details.length?'Pronto! Atualizei: '+details.join(', ')+'. Você pode pedir mais mudanças sem perder as anteriores.': 'Entendi sua ideia! Ainda não consigo gerar essa mecânica específica no modo criativo local. Posso criar cidades, praias, florestas, mapas espaciais, NPCs decorativos, cristais, obstáculos e mudanças de câmera e iluminação. Para pedidos mais complexos, conecte uma IA real em “⚙ IA real”.'};
 }
@@ -416,7 +436,12 @@ result=await res.json();
 if(!result||typeof result!=='object'||typeof result.reply!=='string'||!result.patch||typeof result.patch!=='object'||Array.isArray(result.patch))throw Error('Formato inesperado do servidor');
 patch=result.patch;reply=result.reply.slice(0,1400);
 }else{const output=detectOffline(request);patch=output.patch;reply=output.reply}
-if(Object.keys(patch).length){saveCheckpoint();spec=normalizeSpec(patch);generate()}
+if(Object.keys(patch).length){
+ saveCheckpoint();spec=normalizeSpec(patch);
+ if(patch.campaign===true)loadChapter(0);
+ else if(Object.prototype.hasOwnProperty.call(patch,'gameMode'))spec.campaign=false;
+ generate();
+}
 message('assistant',reply);conversation.push({role:'assistant',content:reply});conversation=conversation.slice(-12);
 }catch(e){message('assistant','Não consegui conectar ao servidor de IA: '+e.message+'. Verifique a URL, a publicação do servidor e as permissões de acesso. Seu jogo anterior foi preservado.')}
 finally{button.disabled=false;button.textContent='✦ Enviar e atualizar jogo'}
@@ -903,11 +928,56 @@ function setupMission(){
  $('direction').textContent='🎯 '+hint;
  $('msg').style.display='none';
 }
+
+/* História progressiva: cada etapa tem objetivo, mundo e narrativa próprios. */
+const CHAPTERS=[
+ {name:'A Luz Perdida',mode:'collect',world:'city',time:'day',goal:5,crystals:7,lore:'A cidade ficou sem energia. Reúna cristais e restaure os circuitos.'},
+ {name:'O Caminho das Torres',mode:'race',world:'city',time:'sunset',goal:5,lore:'Atravesse cinco checkpoints para reativar as torres de comunicação.'},
+ {name:'Suprimentos na Madrugada',mode:'delivery',world:'city',time:'night',goal:3,lore:'Busque três encomendas para o abrigo e entregue-as na base azul.'},
+ {name:'Chamados da Floresta',mode:'rescue',world:'forest',time:'day',goal:4,lore:'Quatro viajantes precisam de ajuda. Encontre-os e interaja com E.'},
+ {name:'As Ruínas Esquecidas',mode:'explore',world:'forest',time:'sunset',goal:5,lore:'Descubra os cinco lugares históricos escondidos no bosque.'},
+ {name:'A Maré da Energia',mode:'time',world:'beach',time:'sunset',goal:5,crystals:8,lore:'Colete os cristais antes que o cronômetro termine.'},
+ {name:'Circuito da Estação',mode:'race',world:'space',time:'night',goal:6,lore:'Atravesse os seis sinais orbitais para abrir o próximo setor.'},
+ {name:'A Equipe Distante',mode:'rescue',world:'space',time:'night',goal:5,lore:'Cinco exploradores aguardam resgate nas proximidades da estação.'},
+ {name:'Remessas Orbitais',mode:'delivery',world:'space',time:'day',goal:4,lore:'Entregue quatro remessas de energia à base azul.'},
+ {name:'O Mapa Completo',mode:'explore',world:'city',time:'sunset',goal:6,lore:'Descubra os seis locais finais da cidade e complete a jornada.'}
+];
+function loadChapter(i){
+ const index=THREE.MathUtils.clamp(i|0,0,CHAPTERS.length-1),c=CHAPTERS[index];
+ Object.assign(spec,{campaign:true,chapterIndex:index,gameMode:c.mode,world:c.world,time:c.time,
+  missionGoal:c.goal,collectibles:c.crystals||7,npcs:Math.max(spec.npcs,c.mode==='rescue'?5:3),title:c.name});
+}
+function updateChapterUI(){
+ const active=Boolean(spec.campaign);
+ $('campaign-status').hidden=!active;
+ $('chapter-story').hidden=!active;
+ $('next-chapter').hidden=true;
+ $('campaign-progress').textContent=active?(spec.chapterIndex+1)+'/'+CHAPTERS.length:'Livre';
+ if(!active)return;
+ const c=CHAPTERS[spec.chapterIndex]||CHAPTERS[0];
+ $('campaign-status').textContent='📖 Capítulo '+(spec.chapterIndex+1)+'/'+CHAPTERS.length+' — '+c.name;
+ $('chapter-story').textContent=c.lore;
+}
+function startCampaign(){
+ saveCheckpoint();loadChapter(0);generate();
+ message('assistant','Campanha de 10 capítulos criada! Ela combina coleta, corrida, entregas, resgates e exploração. Termine cada capítulo e clique em Próxima missão.');
+}
+function nextCampaignChapter(){
+ if(!spec.campaign||!missionFinished)return;
+ if(spec.chapterIndex>=CHAPTERS.length-1){message('assistant','Você terminou a campanha inteira!');return}
+ saveCheckpoint();loadChapter(spec.chapterIndex+1);generate();
+ message('assistant','Capítulo '+(spec.chapterIndex+1)+' — '+CHAPTERS[spec.chapterIndex].name+'. '+CHAPTERS[spec.chapterIndex].lore);
+}
+
 function missionVictory(){
  if(missionFinished)return;
  missionFinished=true;
  stopMovement();
- $('msg').textContent='🏆 Missão concluída: '+(modeNames[spec.gameMode]||'objetivo')+'! Use ↻ Missão para jogar novamente.';
+ $('msg').textContent=spec.campaign
+ ?(spec.chapterIndex===CHAPTERS.length-1?'🏆 CAMPANHA CONCLUÍDA! Você venceu os 10 capítulos!':
+   '🏆 Missão concluída! Capítulo '+(spec.chapterIndex+1)+'/'+CHAPTERS.length+'. Clique em PRÓXIMA MISSÃO.')
+ :'🏆 Missão concluída: '+(modeNames[spec.gameMode]||'objetivo')+'! Use ↻ Missão para jogar novamente.';
+ $('next-chapter').hidden=!spec.campaign||spec.chapterIndex===CHAPTERS.length-1;
  $('msg').style.display='block';
  $('direction').textContent='🏆 Objetivo completo!';
  updateMissionHUD();
@@ -1185,7 +1255,7 @@ solids.push({x,z,r:1.4})
 expandDistricts(rnd);
 renderEditorProps();
 if(camera)camera.position.set(0,6,20);
-let idea=spec.title||'Meu mundo 3D';$('title').textContent=idea.length>40?idea.slice(0,38)+'…':idea;$('scene-details').textContent=({city:'Cidade',beach:'Praia',forest:'Floresta',space:'Base espacial'})[worldType]+' · '+({day:'Dia',night:'Noite',sunset:'Pôr do sol'})[spec.time];$('mode-label').textContent=spec.camera==='first'?'PRIMEIRA PESSOA':spec.camera==='iso'?'CÂMERA ISOMÉTRICA':'TERCEIRA PESSOA';$('world').value=spec.world;$('camera-mode').value=spec.camera;$('mission-mode').value=spec.gameMode;$('mission-count').value=String([3,5,8,10].reduce((a,b)=>Math.abs(b-spec.missionGoal)<Math.abs(a-spec.missionGoal)?b:a));setupMission();persist();
+let idea=spec.title||'Meu mundo 3D';$('title').textContent=idea.length>40?idea.slice(0,38)+'…':idea;$('scene-details').textContent=({city:'Cidade',beach:'Praia',forest:'Floresta',space:'Base espacial'})[worldType]+' · '+({day:'Dia',night:'Noite',sunset:'Pôr do sol'})[spec.time];$('mode-label').textContent=spec.camera==='first'?'PRIMEIRA PESSOA':spec.camera==='iso'?'CÂMERA ISOMÉTRICA':'TERCEIRA PESSOA';$('world').value=spec.world;$('camera-mode').value=spec.camera;$('mission-mode').value=spec.gameMode;$('mission-count').value=String([3,5,8,10].reduce((a,b)=>Math.abs(b-spec.missionGoal)<Math.abs(a-spec.missionGoal)?b:a));setupMission();updateChapterUI();persist();
 status.textContent='MUNDO PRONTO';$('pause-banner').classList.remove('visible');drawMinimap();updateObjective();
 }
 function start(){try{renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Number($('quality').value)===2?2:Math.min(devicePixelRatio,Number($('quality').value)));renderer.setSize(view.clientWidth,view.clientHeight);renderer.shadowMap.enabled=Number($('quality').value)>1;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.35;view.insertBefore(renderer.domElement,view.firstChild);camera=new THREE.PerspectiveCamera(65,view.clientWidth/view.clientHeight,.1,550);generate();animate()}catch(e){msg.textContent='Não foi possível iniciar o 3D: '+e.message;status.textContent='ERRO WEBGL'}}
@@ -1233,7 +1303,7 @@ function updateObjective(){
  $('direction').textContent='🧭 '+arrow+' '+labels[mode]+' a '+Math.round(dist)+' m'+interaction+deadline;
 }
 
-window.__forgeStats=()=>({mapSize:MAP_SIZE,world:worldType,score,inputs:[...pressed],objects:spec.objects.length,gameMode:spec.gameMode,selectedId,goal:['collect','time'].includes(spec.gameMode)?spec.collectibles:spec.missionGoal,missionProgress,missionCarry,missionFinished,missionTargets:missionTargets.map(t=>({x:t.x,z:t.z,done:t.done,visible:t.root.visible})),facing:player?player.rotation.y:0,movementDirection,position:player?{x:player.position.x,y:player.position.y,z:player.position.z}:null,remaining:crystals.filter(c=>!c.found).map(c=>({x:c.mesh.position.x,z:c.mesh.position.z}))});
+window.__forgeStats=()=>({mapSize:MAP_SIZE,campaign:spec.campaign,chapterIndex:spec.chapterIndex,chapterCount:CHAPTERS.length,world:worldType,score,inputs:[...pressed],objects:spec.objects.length,gameMode:spec.gameMode,selectedId,goal:['collect','time'].includes(spec.gameMode)?spec.collectibles:spec.missionGoal,missionProgress,missionCarry,missionFinished,missionTargets:missionTargets.map(t=>({x:t.x,z:t.z,done:t.done,visible:t.root.visible})),facing:player?player.rotation.y:0,movementDirection,position:player?{x:player.position.x,y:player.position.y,z:player.position.z}:null,remaining:crystals.filter(c=>!c.found).map(c=>({x:c.mesh.position.x,z:c.mesh.position.z}))});
 
 /* Testes de missão em servidor local. Não disponível no GitHub Pages público. */
 if(location.hostname==='127.0.0.1'||location.hostname==='localhost'){
@@ -1475,7 +1545,7 @@ document.querySelectorAll('[data-example]').forEach(b=>b.addEventListener('click
 
 function chooseMission(mode){
  if(!['collect','time','race','delivery','rescue','explore'].includes(mode))return;
- saveCheckpoint();spec.gameMode=mode;
+ saveCheckpoint();spec.campaign=false;spec.gameMode=mode;
  if(mode==='rescue')spec.npcs=Math.max(spec.npcs,3);
  const names={collect:'Caça aos Cristais',time:'Cristais Contra o Tempo',race:'Corrida de Checkpoints',delivery:'Jogo de Entregas',rescue:'Missão de Resgate',explore:'Expedição e Descoberta'};
  spec.title=names[mode];generate();
@@ -1483,10 +1553,13 @@ function chooseMission(mode){
 }
 $('mission-mode').addEventListener('change',()=>chooseMission($('mission-mode').value));
 $('mission-count').addEventListener('change',()=>{
- saveCheckpoint();spec.missionGoal=Number($('mission-count').value);generate();
+ saveCheckpoint();spec.campaign=false;spec.missionGoal=Number($('mission-count').value);generate();
  message('assistant','A missão agora tem '+spec.missionGoal+' etapas.');
 });
 document.querySelectorAll('[data-mission]').forEach(b=>b.addEventListener('click',()=>chooseMission(b.dataset.mission)));
+$('start-campaign').addEventListener('click',startCampaign);
+$('next-chapter').addEventListener('click',nextCampaignChapter);
+
 
 $('world').addEventListener('change',()=>{if($('world').value==='auto')return;saveCheckpoint();spec.world=$('world').value;generate();message('assistant','Cenário alterado. Você pode continuar dando comandos por mensagem.')});
 $('camera-mode').addEventListener('change',()=>{saveCheckpoint();spec.camera=$('camera-mode').value;generate();message('assistant','Câmera ajustada para '+({third:'terceira pessoa',first:'primeira pessoa',iso:'visão isométrica'})[spec.camera]+'.')});
