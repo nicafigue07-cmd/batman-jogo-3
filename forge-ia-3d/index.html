@@ -317,7 +317,7 @@ if(foundMode){
   patch.title=({race:'Corrida dos Checkpoints',delivery:'Missão de Entregas',rescue:'Equipe de Resgate',explore:'Expedição 3D',time:'Desafio Contra o Tempo',collect:'Caça aos Cristais'})[foundMode.id];
  }
 }
-const missionAmount=v.match(/\b(\d{1,2})\s*(?:checkpoints?|pontos de controle|entregas?|pacotes?|resgates?|pessoas? para resgatar|lugares?|locais?|objetivos?|missoes?)\b/);
+const missionAmount=v.match(/\b(\d{1,2})\s*(?:checkpoints?|pontos de controle|entregas?|encomendas?|pacotes?|resgates?|pessoas? para resgatar|lugares?|locais?|objetivos?|missoes?)\b/);
 const rescueAmount=foundMode?.id==='rescue'?v.match(/(?:resgatar|salvar|resgate de)\s*(\d{1,2})\s*(?:personagens?|pessoas?|habitantes?|animais?)/):null;
 const countMatch=missionAmount||rescueAmount;
 if(countMatch){patch.missionGoal=Math.min(10,Math.max(2,Number(countMatch[1])));details.push(patch.missionGoal+' etapas de missão')}
