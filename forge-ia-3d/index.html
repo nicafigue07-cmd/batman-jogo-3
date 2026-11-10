@@ -198,7 +198,7 @@ font-weight:750;font-size:13px;pointer-events:none;max-width:70%;text-align:cent
 <div class="mission-select"><label for="mission-mode">Objetivo do jogo</label><select id="mission-mode"><option value="collect">💎 Coletar cristais</option><option value="time">⏱ Coleta contra o tempo</option><option value="race">🏁 Corrida por checkpoints</option><option value="delivery">📦 Fazer entregas</option><option value="rescue">🛟 Resgatar personagens</option><option value="explore">🧭 Descobrir lugares</option></select></div>
 <div class="mission-select"><label for="mission-count">Quantidade de objetivos</label><select id="mission-count"><option value="2">2 desafios</option><option value="3">3 desafios</option><option value="4">4 desafios</option><option value="5" selected>5 desafios</option><option value="6">6 desafios</option><option value="7">7 desafios</option><option value="8">8 desafios</option><option value="9">9 desafios</option><option value="10">10 desafios</option></select></div>
 </div>
-<div class="campaign-toolbar"><button id="start-campaign">📖 Criar campanha com 10 missões</button><span id="campaign-progress">1/10</span></div>
+<div class="campaign-toolbar"><button id="start-campaign">📖 Criar campanha com 20 missões</button><span id="campaign-progress">1/20</span></div>
 <div class="mission-preset-buttons">
 <button data-mission="race">🏁 Corrida</button><button data-mission="delivery">📦 Entregas</button><button data-mission="rescue">🛟 Resgate</button><button data-mission="explore">🗺 Exploração</button>
 </div>
@@ -323,11 +323,11 @@ return o}
 
 /* Assistente local: respostas sobre o projeto, sugestões e próximas ações. */
 const help=(m)=>({
- ideas:'Você pode criar uma campanha de 10 capítulos com resgates, corrida, entregas, exploração e coleta. Também pode criar um jogo só de corrida, mudar o cenário ou adicionar casas.',
- mission:'Seu objetivo atual é '+(missionDescriptions[spec.gameMode]||'explorar')+'.'+(spec.campaign?' Capítulo '+(spec.chapterIndex+1)+' de 10.':'')+' Use o minimapa e os marcadores para se orientar.',
- map:'O mapa agora tem 290 por 290 unidades. Explore os bairros e as regiões distantes usando o minimapa. Você pode correr com Shift.',
+ ideas:'Você pode criar uma campanha de 20 capítulos com resgates, corrida, entregas, exploração e coleta. Também pode criar um jogo só de corrida, mudar o cenário ou adicionar casas.',
+ mission:'Seu objetivo atual é '+(missionDescriptions[spec.gameMode]||'explorar')+'.'+(spec.campaign?' Capítulo '+(spec.chapterIndex+1)+' de '+CHAPTERS.length+'.':'')+' Use o minimapa e os marcadores para se orientar.',
+ map:'O mapa agora tem 640 por 640 unidades. Use as viagens rápidas para visitar os bairros externos. Explore os bairros e as regiões distantes usando o minimapa. Você pode correr com Shift.',
  real:'O modo local entende comandos e oferece planos, mas NÃO é um modelo generativo como o ChatGPT. Para conversar com uma IA real que gere código, conecte um servidor HTTPS próprio em ⚙ IA real. Não coloque uma chave secreta no navegador.',
- chapter:'A campanha tem 10 capítulos. '+CHAPTERS.map((c,i)=>(i+1)+'. '+c.name+' ('+c.mode+')').join('; ')+'. Para iniciar, use o botão 📖 Criar campanha.'
+ chapter:'A campanha tem 20 capítulos. '+CHAPTERS.map((c,i)=>(i+1)+'. '+c.name+' ('+c.mode+')').join('; ')+'. Para iniciar, use o botão 📖 Criar campanha.'
 })[m];
 
 function detectOffline(request){
@@ -883,8 +883,8 @@ const missionDescriptions={
 function missionWaypoint(i,n){
  if(spec.campaign){
   const locations=worldType==='beach'
-   ?[{x:0,z:14},{x:-104,z:57},{x:105,z:78},{x:-99,z:115},{x:94,z:130},{x:0,z:111},{x:-118,z:100},{x:115,z:102},{x:0,z:65},{x:0,z:125}]
-   :[{x:-1.7,z:7},{x:-94,z:53},{x:-94,z:-94},{x:94,z:-94},{x:94,z:94},{x:0,z:-119},{x:115,z:0},{x:-115,z:0},{x:0,z:119},{x:0,z:-130}];
+   ?[{x:0,z:14},{x:-104,z:57},{x:105,z:78},{x:-150,z:170},{x:150,z:185},{x:0,z:216},{x:-225,z:225},{x:220,z:223},{x:0,z:260},{x:0,z:285}]
+   :[{x:-1.7,z:7},{x:-94,z:53},{x:-94,z:-94},{x:94,z:-94},{x:94,z:94},{x:0,z:-119},{x:215,z:0},{x:-215,z:0},{x:0,z:215},{x:0,z:-215}];
   return locations[i%locations.length];
  }
  if(worldType==='beach'){
@@ -968,7 +968,18 @@ const CHAPTERS=[
  {name:'Circuito da Estação',mode:'race',world:'space',time:'night',goal:6,lore:'Atravesse os seis sinais orbitais para abrir o próximo setor.'},
  {name:'A Equipe Distante',mode:'rescue',world:'space',time:'night',goal:5,lore:'Cinco exploradores aguardam resgate nas proximidades da estação.'},
  {name:'Remessas Orbitais',mode:'delivery',world:'space',time:'day',goal:4,lore:'Entregue quatro remessas de energia à base azul.'},
- {name:'O Mapa Completo',mode:'explore',world:'city',time:'sunset',goal:6,lore:'Descubra os seis locais finais da cidade e complete a jornada.'}
+ {name:'O Mapa Completo',mode:'explore',world:'city',time:'sunset',goal:6,lore:'Descubra os seis locais da cidade e revele o caminho para a segunda parte.'},
+ {name:'As Ruas do Norte',mode:'race',world:'city',time:'night',goal:7,lore:'Viaje pelos bairros externos e ative sete marcos para abrir as pontes.'},
+ {name:'O Mensageiro da Costa',mode:'delivery',world:'beach',time:'day',goal:5,lore:'Leve cinco suprimentos para a nova vila costeira sem deixar nenhuma entrega para trás.'},
+ {name:'O Farol e a Tempestade',mode:'explore',world:'beach',time:'sunset',goal:7,lore:'Descubra sete sinais escondidos da costa e resolva o mistério do farol.'},
+ {name:'A Trilha dos Guardiões',mode:'rescue',world:'forest',time:'night',goal:6,lore:'Seis exploradores se perderam nas regiões mais distantes da floresta. Resgate todos.'},
+ {name:'Cristais da Montanha',mode:'collect',world:'forest',time:'day',goal:8,crystals:12,lore:'Encontre os cristais espalhados pelas trilhas para alimentar o antigo abrigo.'},
+ {name:'A Corrida do Horizonte',mode:'race',world:'beach',time:'day',goal:8,lore:'Atravesse oito pontos da extensa costa para chegar à estação marítima.'},
+ {name:'A Cidade Subterrânea',mode:'explore',world:'city',time:'sunset',goal:8,lore:'Investigue oito locais de acesso às estruturas esquecidas da metrópole.'},
+ {name:'Transmissão Interestelar',mode:'delivery',world:'space',time:'night',goal:6,lore:'Distribua seis cápsulas de comunicação às bases avançadas.'},
+ {name:'Operação Reencontro',mode:'rescue',world:'city',time:'day',goal:8,lore:'Oito viajantes estão espalhados pela cidade ampliada. Reúna todos no abrigo.'},
+ {name:'As Quatro Regiões',mode:'explore',world:'space',time:'sunset',goal:10,lore:'Explore os dez marcos finais e conclua a história do mundo FORGE.'}
+
 ];
 function loadChapter(i){
  const index=THREE.MathUtils.clamp(i|0,0,CHAPTERS.length-1),c=CHAPTERS[index];
@@ -988,7 +999,7 @@ function updateChapterUI(){
 }
 function startCampaign(){
  saveCheckpoint();loadChapter(0);generate();
- message('assistant','Campanha de 10 capítulos criada! Ela combina coleta, corrida, entregas, resgates e exploração. Termine cada capítulo e clique em Próxima missão.');
+ message('assistant','Campanha de 20 capítulos criada! Ela combina coleta, corrida, entregas, resgates e exploração. Termine cada capítulo e clique em Próxima missão.');
 }
 function nextCampaignChapter(){
  if(!spec.campaign||!missionFinished)return;
@@ -1002,7 +1013,7 @@ function missionVictory(){
  missionFinished=true;
  stopMovement();
  $('msg').textContent=spec.campaign
- ?(spec.chapterIndex===CHAPTERS.length-1?'🏆 CAMPANHA CONCLUÍDA! Você venceu os 10 capítulos!':
+ ?(spec.chapterIndex===CHAPTERS.length-1?'🏆 CAMPANHA CONCLUÍDA! Você venceu os 20 capítulos!':
    '🏆 Missão concluída! Capítulo '+(spec.chapterIndex+1)+'/'+CHAPTERS.length+'. Clique em PRÓXIMA MISSÃO.')
  :'🏆 Missão concluída: '+(modeNames[spec.gameMode]||'objetivo')+'! Use ↻ Missão para jogar novamente.';
  $('next-chapter').hidden=!spec.campaign||spec.chapterIndex===CHAPTERS.length-1;
@@ -1575,7 +1586,7 @@ function talkToNPC(){
  for(const n of npcs){const d=Math.hypot(n.position.x-player.position.x,n.position.z-player.position.z);
   if(d<distance){distance=d;found=n}}
  if(found&&distance<4.5){
-  const dialogue=['O segredo é seguir os cristais verdes!','Experimente explorar os portais e plataformas!','A cidade muda quando fica de noite.','A FORGE permite construir novos lugares!'];
+  const dialogue=['O mapa tem bairros distantes. Use a viagem rápida para explorar!','Experimente explorar os portais e plataformas!','A cidade muda quando fica de noite.','A FORGE permite construir novos lugares!'];
   $('dialogue').textContent='💬 '+dialogue[(found.userData.offset||0)%dialogue.length];
   $('dialogue').hidden=false;dialogueTimer=5;
  }else{
