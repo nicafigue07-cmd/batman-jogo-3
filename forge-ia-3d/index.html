@@ -325,6 +325,157 @@ function ball(r,c,x,y,z,parent=scene){const m=new THREE.Mesh(new THREE.SphereGeo
 function trunk(x,z,forest=false){cube(.65,4,.65,0x75513e,x,2,z);ball(forest?2.4:1.7,forest?0x42865d:0x60b896,x,5,z)}
 function structure(x,z,h,c){cube(4.7,h,4.7,c,x,h/2,z);cube(5.3,.35,5.3,0x344965,x,h+.17,z);for(let f=0;f<Math.floor(h/2);f++){for(let dx of [-1.2,1.2])cube(.82,.77,.05,0xaff2f3,x+dx,1.5+f*2,z+2.39)}solids.push({x,z,r:3})}
 function chooseType(){let t=$('world').value;if(t!=='auto')return t;const v=$('prompt').value.toLowerCase();if(/praia|mar|oceano|surf|ilha/.test(v))return 'beach';if(/floresta|mata|árvore|natureza|montanha|selva/.test(v))return 'forest';if(/espaço|espacial|lua|planeta|alien/.test(v))return 'space';return 'city'}
+
+/* Objetos editáveis 3D: cada peça faz parte do projeto salvo. */
+function buildEditorProp(entity){
+ const g=new THREE.Group(),c=entity.color,metal=new THREE.MeshStandardMaterial({color:c,roughness:.52,metalness:.18});
+ const block=(w,h,d,color,x,y,z)=>{
+   const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(color));mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;g.add(mesh);return mesh;
+ };
+ const sphere=(r,color,x,y,z)=>{
+   const m=new THREE.Mesh(new THREE.IcosahedronGeometry(r,1),mat(color));m.position.set(x,y,z);m.castShadow=true;g.add(m);return m;
+ };
+ switch(entity.type){
+ case 'tree':
+   block(.7,3.5,.7,0x75503b,0,1.75,0);
+   sphere(1.65,c,0,4,0);sphere(1.25,c,-.8,3.8,0);sphere(1.15,c,.8,3.9,.4);break;
+ case 'house':
+   block(4.8,3.5,4.8,c,0,1.75,0);
+   const roof=new THREE.Mesh(new THREE.ConeGeometry(3.8,2.5,4),mat(0x884a49));roof.position.y=4.9;roof.rotation.y=Math.PI/4;roof.castShadow=true;g.add(roof);
+   block(1.1,2,.09,0x604434,0,1,2.46);
+   for(const a of [-1.55,1.55])block(.85,.8,.12,0x8addf1,a,2.55,2.47);break;
+ case 'rock':
+   sphere(1.35,c,0,1.1,0);break;
+ case 'crate':
+   block(1.6,1.6,1.6,c,0,.8,0);
+   for(const a of [-.82,.82])block(.13,1.6,.15,0x6d543e,a,.8,.82);break;
+ case 'wall':
+   block(4,2.7,.65,c,0,1.35,0);block(4.3,.25,.9,0xb8a9a2,0,2.8,0);break;
+ case 'tower':{
+   const base=new THREE.Mesh(new THREE.CylinderGeometry(2,2.4,8,8),mat(c));base.position.y=4;base.castShadow=true;g.add(base);
+   const cap=new THREE.Mesh(new THREE.ConeGeometry(2.9,2.7,8),mat(0x5c5368));cap.position.y=9.3;cap.castShadow=true;g.add(cap);
+   block(.9,2,.16,0x314458,0,1.1,2.36);break;}
+ case 'lamp':{
+   const pole=new THREE.Mesh(new THREE.CylinderGeometry(.13,.2,5,10),mat(0x525e70));pole.position.y=2.5;g.add(pole);
+   sphere(.55,0xffdf82,0,5.4,0);
+   const light=new THREE.PointLight(0xffd48a,7,10);light.position.y=5.5;g.add(light);break;}
+ case 'portal':{
+   const ring=new THREE.Mesh(new THREE.TorusGeometry(1.55,.22,10,30),new THREE.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:1.25,metalness:.28}));
+   ring.position.y=2.6;g.add(ring);
+   const base=block(4,.5,1.3,0x344a61,0,.25,0);break;}
+ case 'platform':
+   block(4,.7,4,c,0,.85,0);for(const x of [-1.6,1.6])for(const z of [-1.6,1.6])block(.35,1.2,.35,0x646e7b,x,.45,z);break;
+ }
+ g.position.set(entity.x,0,entity.z);g.scale.setScalar(entity.scale);
+ g.userData.editorId=entity.id;g.userData.editorType=entity.type;
+ scene.add(g);return g;
+}
+function renderEditorProps(){
+ customGroups=[];selectedHelper=null;
+ for(const e of (spec.objects||[])){
+   const g=buildEditorProp(e);customGroups.push(g);
+   if(['house','crate','rock','wall','tower','platform'].includes(e.type)){
+     solids.push({x:e.x,z:e.z,r:({house:2.6,crate:.9,rock:1.2,wall:1.5,tower:2.3,platform:1.6})[e.type]*e.scale,editorId:e.id});
+   }
+ }
+ if(selectedId && spec.objects.some(o=>o.id===selectedId))selectEditorObject(selectedId);
+ else selectEditorObject(null);
+ $('object-count').textContent=spec.objects.length+' objeto'+(spec.objects.length===1?'':'s');
+}
+function selectEditorObject(id){
+ selectedId=id;
+ if(selectedHelper){scene.remove(selectedHelper);selectedHelper.geometry?.dispose?.();selectedHelper.material?.dispose?.();selectedHelper=null}
+ const entity=spec.objects?.find(v=>v.id===id);
+ $('inspector').hidden=!entity;$('delete-object').disabled=!entity;
+ if(!entity)return;
+ $('selected-name').textContent='Selecionado: '+({tree:'Árvore',house:'Casa',rock:'Rocha',crate:'Caixa',wall:'Muro',tower:'Torre',lamp:'Poste',portal:'Portal',platform:'Plataforma'})[entity.type];
+ $('obj-x').value=entity.x;$('obj-z').value=entity.z;
+ $('obj-scale').value=entity.scale;$('obj-color').value=entity.color;
+ const group=customGroups.find(g=>g.userData.editorId===id);
+ if(group){selectedHelper=new THREE.BoxHelper(group,0x4effd6);scene.add(selectedHelper)}
+}
+function updateEditorField(key,val){
+ const e=spec.objects.find(o=>o.id===selectedId);if(!e)return;
+ saveCheckpoint();
+ if(key==='color'){if(/^#[0-9a-f]{6}$/i.test(val))e.color=val}
+ else e[key]=THREE.MathUtils.clamp(Number(val)||0,key==='scale'?.4:-52,key==='scale'?4:52);
+ generate();
+}
+function addEditorObject(type,where){
+ if(spec.objects.length>=80){message('assistant','Limite de 80 objetos por mundo para manter um bom desempenho.');return}
+ saveCheckpoint();
+ const id='obj-'+Date.now()+'-'+(++entityCounter);
+ const p=where||{x:(player?.position.x||0)+3,z:(player?.position.z||10)-5};
+ const entity=cleanEntity({id,type,x:p.x,z:p.z,scale:1,color:({tree:'#4aab75',house:'#d8b3a1',rock:'#a6a9b5',crate:'#bb9366',wall:'#acbbc5',tower:'#ac91af',lamp:'#ffe1a4',portal:'#63eccf',platform:'#67a7d7'})[type]});
+ if(!entity)return;
+ spec.objects.push(entity);selectedId=id;generate();message('assistant','Adicionei '+type+'! Clique em “Editar” para arrastar ou use os campos de posição e tamanho.')
+}
+function deleteEditorObject(){
+ if(!selectedId)return;saveCheckpoint();
+ spec.objects=spec.objects.filter(x=>x.id!==selectedId);selectedId=null;generate();message('assistant','Objeto excluído.')
+}
+function duplicateEditorObject(){
+ const e=spec.objects.find(o=>o.id===selectedId);if(!e||spec.objects.length>=80)return;
+ saveCheckpoint();const c={...e,id:'obj-'+Date.now()+'-'+(++entityCounter),x:THREE.MathUtils.clamp(e.x+3,-52,52),z:THREE.MathUtils.clamp(e.z+2,-52,52)};
+ spec.objects.push(c);selectedId=c.id;generate();
+}
+function undoProject(){
+ if(!changes.length){message('assistant','Não há mudanças para desfazer.');return}
+ redos.push(snapshot());spec=changes.pop();generate();message('assistant','Última alteração desfeita.')
+}
+function redoProject(){
+ if(!redos.length){message('assistant','Não há mudanças para refazer.');return}
+ changes.push(snapshot());spec=redos.pop();generate();message('assistant','Alteração refeita.')
+}
+function presetWorld(kind){
+ saveCheckpoint();selectedId=null;spec=baseSpec();
+ if(kind==='parkour'){
+   spec.world='space';spec.title='Corrida das Plataformas';spec.collectibles=12;spec.obstacles=14;spec.speed=11;spec.gameMode='time';spec.npcs=0;
+   spec.objects=Array.from({length:12},(_,i)=>cleanEntity({type:'platform',id:'park-'+i,x:(i%2?5:-5),z:38-i*7,scale:1,color:'#68a9d6'}));
+ }else if(kind==='beach'){
+   spec.world='beach';spec.title='Tesouro na Praia';spec.collectibles=10;spec.time='sunset';spec.npcs=5;spec.objects=[
+    cleanEntity({id:'beach-hut',type:'house',x:17,z:20,color:'#edbd89',scale:1}),
+    cleanEntity({id:'beach-portal',type:'portal',x:-14,z:31,color:'#4af4df',scale:1})];
+ }else{
+   spec.world='city';spec.title='Aventura na Cidade';spec.collectibles=9;spec.time='sunset';spec.npcs=8;spec.objects=[
+    cleanEntity({id:'city-tower',type:'tower',x:16,z:27,color:'#c3a7ca',scale:1.2}),
+    cleanEntity({id:'city-light',type:'lamp',x:-6,z:5,color:'#ffe1a4',scale:1})];
+ }
+ generate();message('assistant','Modelo “'+spec.title+'” criado. Personalize tudo com o chat e o editor de objetos.')
+}
+const pickRaycaster=new THREE.Raycaster(),pointerNdc=new THREE.Vector2(),groundPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0);
+function pointerRay(e){
+ const rect=renderer.domElement.getBoundingClientRect();
+ pointerNdc.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
+ pickRaycaster.setFromCamera(pointerNdc,camera);return pickRaycaster;
+}
+function editorPointerDown(e){
+ const hits=pointerRay(e).intersectObjects(customGroups,true);
+ let id=null;
+ if(hits.length){
+  let node=hits[0].object;
+  while(node && !node.userData.editorId)node=node.parent;
+  id=node?.userData.editorId||null;
+ }
+ selectEditorObject(id);
+ if(id){
+  saveCheckpoint();draggingEntity=id;view.setPointerCapture(e.pointerId);
+ }else draggingEntity=null;
+}
+function editorPointerMove(e){
+ if(!draggingEntity)return;
+ const point=new THREE.Vector3();
+ if(!pointerRay(e).ray.intersectPlane(groundPlane,point))return;
+ const entity=spec.objects.find(v=>v.id===draggingEntity);
+ const group=customGroups.find(g=>g.userData.editorId===draggingEntity);
+ if(!entity||!group)return;
+ entity.x=THREE.MathUtils.clamp(Math.round(point.x*2)/2,-52,52);
+ entity.z=THREE.MathUtils.clamp(Math.round(point.z*2)/2,-52,52);
+ group.position.set(entity.x,0,entity.z);selectedHelper?.update();
+ for(const c of solids)if(c.editorId===entity.id){c.x=entity.x;c.z=entity.z}
+ $('obj-x').value=entity.x;$('obj-z').value=entity.z;
+}
+
 function generate(){
 if(scene){scene.traverse(o=>{if(o.isMesh){o.geometry?.dispose();const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>m?.dispose())}})}worldType=spec.world||chooseType();const p=palettes[worldType],rnd=rand(43);scene=new THREE.Scene();const sky=spec.time==='night'?0x101d39:spec.time==='sunset'?0xee9a87:p.sky;scene.background=new THREE.Color(sky);scene.fog=new THREE.Fog(sky,55,135);solids=[];crystals=[];npcs=[];score=0;$('score').textContent='0/'+spec.collectibles;
 scene.add(new THREE.HemisphereLight(0xffffff,0x56606a,spec.time==='night'?.65:2.4));if(renderer)renderer.toneMappingExposure=spec.time==='night'?.97:spec.time==='sunset'?1.15:1.35;
@@ -359,6 +510,7 @@ const z=-35+(i%10)*7,x=(i%2?1:-1)*(7+(i%3)*3);
 cube(1.6,1.2,1.6,0xe5a85f,x,.6,z);
 solids.push({x,z,r:1.4})
 }
+renderEditorProps();
 if(camera)camera.position.set(0,6,20);
 let idea=spec.title||'Meu mundo 3D';$('title').textContent=idea.length>40?idea.slice(0,38)+'…':idea;$('scene-details').textContent=({city:'Cidade',beach:'Praia',forest:'Floresta',space:'Base espacial'})[worldType]+' · '+({day:'Dia',night:'Noite',sunset:'Pôr do sol'})[spec.time];$('mode-label').textContent=spec.camera==='first'?'PRIMEIRA PESSOA':spec.camera==='iso'?'CÂMERA ISOMÉTRICA':'TERCEIRA PESSOA';$('world').value=spec.world;$('camera-mode').value=spec.camera;persist();
 status.textContent='MUNDO PRONTO';msg.style.display='none';$('pause-banner').classList.remove('visible');drawMinimap();updateObjective();
@@ -420,9 +572,9 @@ renderer.render(scene,camera)}
 function jump(){if(onGround&&!paused){vertical=8.3;onGround=false}}
 window.addEventListener('keydown',e=>{if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)&&!['TEXTAREA','INPUT','SELECT'].includes(document.activeElement.tagName))e.preventDefault();if(['TEXTAREA','INPUT','SELECT'].includes(document.activeElement.tagName))return;pressed.add(e.code);if(e.code==='Space')jump();if(!e.repeat&&e.code==='KeyP')togglePause();if(!e.repeat&&e.code==='KeyR')restartMission()});
 window.addEventListener('keyup',e=>pressed.delete(e.code));
-view.addEventListener('pointerdown',e=>{if(e.target!==renderer?.domElement)return;drag={x:e.clientX,y:e.clientY};view.setPointerCapture(e.pointerId)});
-view.addEventListener('pointermove',e=>{if(!drag)return;yaw-=(e.clientX-drag.x)*.005;pitch=THREE.MathUtils.clamp(pitch+(e.clientY-drag.y)*.004,-.2,.9);drag={x:e.clientX,y:e.clientY}});
-view.addEventListener('pointerup',()=>drag=null);view.addEventListener('pointercancel',()=>drag=null);view.addEventListener('wheel',e=>{if(e.target===renderer?.domElement){e.preventDefault();zoom=THREE.MathUtils.clamp(zoom+Math.sign(e.deltaY)*.8,4,15)}},{passive:false});
+view.addEventListener('pointerdown',e=>{if(e.target!==renderer?.domElement)return;if(editMode){editorPointerDown(e);return}drag={x:e.clientX,y:e.clientY};view.setPointerCapture(e.pointerId)});
+view.addEventListener('pointermove',e=>{if(editMode){editorPointerMove(e);return}if(!drag)return;yaw-=(e.clientX-drag.x)*.005;pitch=THREE.MathUtils.clamp(pitch+(e.clientY-drag.y)*.004,-.2,.9);drag={x:e.clientX,y:e.clientY}});
+view.addEventListener('pointerup',()=>{drag=null;draggingEntity=null;persist()});view.addEventListener('pointercancel',()=>{drag=null;draggingEntity=null});view.addEventListener('wheel',e=>{if(e.target===renderer?.domElement){e.preventDefault();zoom=THREE.MathUtils.clamp(zoom+Math.sign(e.deltaY)*.8,4,15)}},{passive:false});
 document.querySelectorAll('#mobile button').forEach(b=>{const k=b.dataset.k;b.addEventListener('pointerdown',e=>{e.preventDefault();pressed.add(k);b.setPointerCapture(e.pointerId)});for(let name of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(name,()=>pressed.delete(k))});
 $('jump').addEventListener('pointerdown',e=>{e.preventDefault();jump()});$('restart-level').addEventListener('click',restartMission);$('quality').addEventListener('change',()=>{if(renderer){renderer.setPixelRatio(Math.min(devicePixelRatio,Number($('quality').value)));renderer.setSize(view.clientWidth,view.clientHeight);renderer.shadowMap.enabled=Number($('quality').value)>1}});
 
