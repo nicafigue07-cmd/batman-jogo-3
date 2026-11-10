@@ -76,6 +76,23 @@ aside .sub{margin-bottom:12px;font-size:12px;line-height:1.45}
 body[data-game-mode=true] #game-details{display:block}
 @media(max-width:900px){main{grid-template-columns:1fr}aside{height:auto;min-height:0}#viewport{height:66vh;min-height:410px}.chatlog{min-height:180px;max-height:300px}}
 @media(max-width:540px){main{padding:6px}aside{border-radius:13px;padding:12px}#viewport{min-height:350px;height:60vh}#game-details{top:60px;right:6px;font-size:10px}header{height:55px}.tag{font-size:9px}}
+
+#minimap-wrap{position:absolute;right:14px;bottom:23px;width:154px;height:154px;overflow:hidden;background:#07172bdc;border:1px solid #7decd09c;border-radius:14px;pointer-events:none;box-shadow:0 5px 24px #0007}
+#minimap{display:block;width:154px;height:154px}
+#minimap-name{position:absolute;top:7px;left:8px;color:#c8f7ec;background:#07172bd8;border-radius:5px;padding:2px 5px;font-weight:900;font-size:10px}
+#direction{position:absolute;top:90px;left:14px;background:#061730df;color:#e4f4ff;border:1px solid #427f857d;padding:8px 11px;border-radius:10px;font-size:11px;pointer-events:none}
+#direction strong{color:#76efd8}
+#pause-banner{position:absolute;inset:0;z-index:3;display:none;place-items:center;color:#dfffff;font-weight:900;font-size:24px;background:#051223b0;pointer-events:none}
+#pause-banner.visible{display:grid}
+.top-actions select{cursor:pointer;border-radius:8px;background:#172c45;color:#d8f2ff;border:1px solid #365776;padding:6px 8px;font-size:11px;font-weight:700}
+#jump{border-radius:99px}
+@media(max-width:700px),(pointer:coarse){
+ #minimap-wrap{top:100px;bottom:auto;right:8px;width:106px;height:106px}
+ #minimap{width:106px;height:106px}
+ #minimap-name{font-size:8px}
+ #direction{top:67px;left:7px;max-width:175px;font-size:10px;padding:6px}
+ #game-details{max-width:52%}
+}
 </style>
 </head>
 <body>
@@ -118,9 +135,9 @@ body[data-game-mode=true] #game-details{display:block}
 </div>
 <p class="note">🎮 WASD para andar · Espaço para pular · Arraste para girar. Este site gera protótipos 3D. A IA avançada só funciona depois de conectar um servidor.</p>
 </aside>
-<section><div class="toolbar"><strong>🎮 Editor e prévia 3D</strong><div class="top-actions"><button id="reset-camera">⟳ Câmera</button><span class="pill" id="status">CARREGANDO 3D</span></div></div>
+<section><div class="toolbar"><strong>🎮 Editor e prévia 3D</strong><div class="top-actions"><select id="quality" aria-label="Qualidade gráfica"><option value="1">Leve</option><option value="1.5" selected>Equilibrado</option><option value="2">Bonito</option></select><button id="restart-level">↻ Missão</button><button id="reset-camera">⟳ Câmera</button><span class="pill" id="status">CARREGANDO 3D</span></div></div>
 <div id="viewport"><div id="hud"><strong id="title">Meu jogo 3D</strong>💎 Cristais: <span id="score">0/7</span></div>
-<div id="game-details"><b id="mode-label">EXPLORAÇÃO 3D</b><span id="scene-details">Mundo criado pela FORGE</span></div><div id="msg">Preparando mundo 3D…</div><div class="hint">WASD / setas • Espaço: pular • Arraste: girar câmera</div>
+<div id="game-details"><b id="mode-label">EXPLORAÇÃO 3D</b><span id="scene-details">Mundo criado pela FORGE</span></div><div id="direction"><strong>🧭 Missão:</strong> encontre os cristais</div><div id="minimap-wrap"><canvas id="minimap" width="308" height="308" aria-label="Minimapa do cenário"></canvas><span id="minimap-name">MAPA</span></div><div id="pause-banner">⏸ PAUSADO</div><div id="msg">Preparando mundo 3D…</div><div class="hint">WASD: andar • Shift: correr • Espaço: pular • Arraste: câmera • R: reiniciar • P: pausar</div>
 <div id="mobile"><button data-k="KeyW">↑</button><button data-k="KeyA">←</button><button data-k="KeyS">↓</button><button data-k="KeyD">→</button></div>
 <button id="jump">PULAR</button></div>
 <footer id="notice">Protótipo 3D no navegador • Salve seu projeto regularmente • O modo IA real exige servidor configurado.</footer></section></main>
@@ -264,15 +281,42 @@ solids.push({x,z,r:1.4})
 }
 if(camera)camera.position.set(0,6,20);
 let idea=spec.title||'Meu mundo 3D';$('title').textContent=idea.length>40?idea.slice(0,38)+'…':idea;$('scene-details').textContent=({city:'Cidade',beach:'Praia',forest:'Floresta',space:'Base espacial'})[worldType]+' · '+({day:'Dia',night:'Noite',sunset:'Pôr do sol'})[spec.time];$('mode-label').textContent=spec.camera==='first'?'PRIMEIRA PESSOA':spec.camera==='iso'?'CÂMERA ISOMÉTRICA':'TERCEIRA PESSOA';$('world').value=spec.world;$('camera-mode').value=spec.camera;persist();
-status.textContent='MUNDO PRONTO';msg.style.display='none';
+status.textContent='MUNDO PRONTO';msg.style.display='none';$('pause-banner').classList.remove('visible');drawMinimap();updateObjective();
 }
 function start(){try{renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setSize(view.clientWidth,view.clientHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.35;view.insertBefore(renderer.domElement,view.firstChild);camera=new THREE.PerspectiveCamera(65,view.clientWidth/view.clientHeight,.1,220);generate();animate()}catch(e){msg.textContent='Não foi possível iniciar o 3D: '+e.message;status.textContent='ERRO WEBGL'}}
 let last=performance.now();
 
+
+function drawMinimap(){
+if(!player)return;
+const canvas=$('minimap'),ctx=canvas.getContext('2d');
+if(!ctx)return;
+const w=canvas.width,scale=w/120;
+ctx.fillStyle=worldType==='beach'?'#9d906f':worldType==='forest'?'#355742':worldType==='space'?'#353d52':'#254252';ctx.fillRect(0,0,w,w);
+if(worldType==='city'){ctx.fillStyle='#7c8799';ctx.fillRect(w/2-6*scale,0,12*scale,w)}
+if(worldType==='beach'){ctx.fillStyle='#297d95';ctx.fillRect(0,0,w,w*.42);ctx.fillStyle='#c5b28c';ctx.fillRect(0,w*.42,w,w*.58)}
+const dot=(x,z,color,r)=>{ctx.fillStyle=color;ctx.beginPath();ctx.arc(w/2+x*scale,w/2+z*scale,r,0,Math.PI*2);ctx.fill()};
+npcs.forEach(n=>dot(n.position.x,n.position.z,'#b6d2e8',3.5));
+for(const c of crystals)if(!c.found)dot(c.mesh.position.x,c.mesh.position.z,'#54ffdc',4.5);
+ctx.save();ctx.translate(w/2+player.position.x*scale,w/2+player.position.z*scale);ctx.rotate(-yaw);
+ctx.fillStyle='#ffe394';ctx.strokeStyle='#172c3b';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,-10);ctx.lineTo(8,7);ctx.lineTo(-8,7);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();
+ctx.strokeStyle='#b2f4dc87';ctx.strokeRect(1,1,w-2,w-2);
+}
+function updateObjective(){
+let nearest=null,dist=Infinity;
+for(const c of crystals){if(c.found)continue;const dx=player.position.x-c.mesh.position.x,dz=player.position.z-c.mesh.position.z,d=Math.hypot(dx,dz);if(d<dist){nearest=c;dist=d}}
+if(!nearest){$('direction').textContent='🏆 Missão concluída!';return}
+const dx=nearest.mesh.position.x-player.position.x,dz=nearest.mesh.position.z-player.position.z;
+const angle=Math.atan2(dx,-dz)-yaw;
+const difference=Math.atan2(Math.sin(angle),Math.cos(angle));
+const arrow=Math.abs(difference)<.45?'⬆':difference>0?'➡':'⬅';
+$('direction').textContent='🧭 '+arrow+' Cristal a '+Math.round(dist)+' m · '+Math.floor(elapsed/60)+':'+String(Math.floor(elapsed%60)).padStart(2,'0');
+}
+
 function togglePause(){paused=!paused;$('pause-banner').classList.toggle('visible',paused);pressed.clear()}
 function restartMission(){generate();message('assistant','Missão reiniciada. O cenário foi preservado.')}
 function animate(){requestAnimationFrame(animate);if(!renderer||!player)return;
-let now=performance.now(),dt=Math.min((now-last)/1000,.05);last=now;if(paused){renderer.render(scene,camera);return}elapsed+=dt;
+let now=performance.now(),dt=Math.min((now-last)/1000,.05);last=now;if(paused){renderer.render(scene,camera);return}elapsed+=dt;if(Math.floor(now/200)!==Math.floor((now-dt*1000)/200)){drawMinimap();updateObjective()}
 let forward=(pressed.has('KeyW')||pressed.has('ArrowUp')?1:0)-(pressed.has('KeyS')||pressed.has('ArrowDown')?1:0);
 let sideways=(pressed.has('KeyD')||pressed.has('ArrowRight')?1:0)-(pressed.has('KeyA')||pressed.has('ArrowLeft')?1:0);
 let vx=sideways*Math.cos(yaw)-forward*Math.sin(yaw),vz=-sideways*Math.sin(yaw)-forward*Math.cos(yaw);
@@ -299,7 +343,7 @@ view.addEventListener('pointerdown',e=>{if(e.target!==renderer?.domElement)retur
 view.addEventListener('pointermove',e=>{if(!drag)return;yaw-=(e.clientX-drag.x)*.005;pitch=THREE.MathUtils.clamp(pitch+(e.clientY-drag.y)*.004,-.2,.9);drag={x:e.clientX,y:e.clientY}});
 view.addEventListener('pointerup',()=>drag=null);view.addEventListener('pointercancel',()=>drag=null);view.addEventListener('wheel',e=>{if(e.target===renderer?.domElement){e.preventDefault();zoom=THREE.MathUtils.clamp(zoom+Math.sign(e.deltaY)*.8,4,15)}},{passive:false});
 document.querySelectorAll('#mobile button').forEach(b=>{const k=b.dataset.k;b.addEventListener('pointerdown',e=>{e.preventDefault();pressed.add(k);b.setPointerCapture(e.pointerId)});for(let name of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(name,()=>pressed.delete(k))});
-$('jump').addEventListener('pointerdown',e=>{e.preventDefault();jump()});
+$('jump').addEventListener('pointerdown',e=>{e.preventDefault();jump()});$('restart-level').addEventListener('click',restartMission);$('quality').addEventListener('change',()=>{if(renderer){renderer.setPixelRatio(Math.min(devicePixelRatio,Number($('quality').value)));renderer.setSize(view.clientWidth,view.clientHeight)}});
 
 window.addEventListener('resize',()=>{if(!renderer)return;let w=view.clientWidth,h=view.clientHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h)});
 
