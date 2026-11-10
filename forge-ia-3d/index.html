@@ -138,7 +138,7 @@ font-weight:750;font-size:13px;pointer-events:none;max-width:70%;text-align:cent
 </style>
 </head>
 <body>
-<header><span class="brand">⚡ FORGE <b>IA 3D PRO</b></span><span class="tag">CRIADOR DE JOGOS • VERSÃO 3.0</span></header>
+<header><span class="brand">⚡ FORGE <b>IA 3D PRO</b></span><span class="tag">CRIADOR DE JOGOS • VERSÃO 6.0</span></header>
 <main>
 <aside>
 <h1>✨ Crie jogos conversando</h1>
@@ -721,6 +721,7 @@ const water=cube(110,.13,47,0x30b8c7,0,-.02,-34);
 water.material.dispose();water.material=new THREE.MeshPhysicalMaterial({color:0x2aafc1,metalness:.17,roughness:.28,clearcoat:1,clearcoatRoughness:.12,transparent:true,opacity:.91});
 cube(110,.05,9,0xf4e6c2,0,.052,-8);
 for(let i=0;i<Math.round(20*spec.density);i++){let x=-44+rnd()*88,z=9+rnd()*37;if(Math.abs(x)<6&&z<24)z+=12;trunk(x,z)}
+trunk(-16,3);trunk(16,4);trunk(-23,8);trunk(23,8);beachUmbrella(-14,6,0xf1b47f);beachUmbrella(14,7,0x68c4df);
 for(let i=0;i<26;i++){
  const foam=cube(2+rnd()*4,.02,.1,0xc8fbfa,-52+rnd()*104,.12,-12-rnd()*26);
  foam.material.transparent=true;foam.material.opacity=.35+rnd()*.35;foam.castShadow=false;
