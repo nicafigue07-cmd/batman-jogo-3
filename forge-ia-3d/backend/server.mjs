@@ -67,7 +67,7 @@ const gameInstructions=[
  'Crie mecânicas diferentes de acordo com o pedido, não apenas um reskin do jogo existente.'
 ].join(' ');
 
-createServer(async(req,res)=>{
+export const server=createServer(async(req,res)=>{
  const origin=req.headers.origin||'', allowed=origins.has(origin);
  if(req.method==='OPTIONS'){json(res,allowed?204:403,{},allowed?origin:null);return}
  if(req.url==='/health'&&req.method==='GET'){json(res,200,{ok:true,service:'FORGE IA 3D PRO'},allowed?origin:null);return}
