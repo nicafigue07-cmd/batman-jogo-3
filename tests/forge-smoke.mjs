@@ -1,0 +1,54 @@
+
+import {chromium} from 'playwright';
+import {createServer} from 'node:http';
+import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
+const html=readFileSync(new URL('../forge-ia-3d/index.html',import.meta.url),'utf8');
+const port=8102;
+const server=createServer((req,res)=>{res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});res.end(html)});
+await new Promise(ok=>server.listen(port,'127.0.0.1',ok));
+const reports=[];
+const browser=await chromium.launch({headless:true,args:['--no-sandbox','--enable-unsafe-swiftshader','--use-gl=angle','--use-angle=swiftshader','--disable-dev-shm-usage']});
+const page=await browser.newPage({viewport:{width:1440,height:900},acceptDownloads:true});
+page.on('pageerror',e=>reports.push('PAGEERROR '+e.message));
+page.on('console',m=>{if(m.type()==='error')reports.push('CONSOLE '+m.text())});
+try {
+ await page.goto('http://127.0.0.1:'+port,{waitUntil:'domcontentloaded',timeout:45000});
+ await page.waitForTimeout(12000);
+ console.log('LOAD',JSON.stringify({title:await page.title(),status:await page.locator('#status').innerText(),hud:await page.locator('#title').innerText(),canvas:await page.locator('#viewport canvas').count(),errors:reports}));
+ if((await page.locator('#viewport canvas').count())===0)throw new Error('Sem canvas WebGL');
+ if(!(await page.locator('#status').innerText()).includes('PRONTO'))throw Error('Mundo não iniciou');
+ mkdirSync('artifacts',{recursive:true});
+ await page.screenshot({path:'artifacts/forge-before.png'});
+ await page.locator('#prompt').fill('Crie uma praia à noite com 12 cristais e 6 personagens');
+ await page.locator('#build').click();
+ await page.waitForTimeout(3000);
+ const first={chat:await page.locator('#chatlog').innerText(),score:await page.locator('#score').innerText(),scene:await page.locator('#scene-details').innerText()};
+ console.log('PROMPT',JSON.stringify(first).slice(0,900));
+ if(first.score!=='0/12')throw Error('Comando de cristais não aplicado');
+ if(!first.scene.includes('Praia')||!first.scene.includes('Noite'))throw Error('Cenário não atualizado');
+ await page.keyboard.press('KeyW');await page.keyboard.down('KeyW');await page.waitForTimeout(450);await page.keyboard.up('KeyW');
+ await page.keyboard.press('Space');await page.waitForTimeout(250);
+ await page.screenshot({path:'artifacts/forge-after.png'});
+ await page.locator('#undo').click();
+ await page.waitForTimeout(1000);
+ console.log('UNDO',await page.locator('#score').innerText());
+ if((await page.locator('#score').innerText())!=='0/7')throw Error('Desfazer falhou');
+ await page.locator('#save').click();
+ await page.locator('#new').click();
+ await page.locator('#load').click();
+ await page.waitForTimeout(1000);
+ console.log('SAVE_LOAD',await page.locator('#score').innerText());
+ await page.locator('#export').click();
+ const narrow=await browser.newPage({viewport:{width:390,height:830},isMobile:true,hasTouch:true});
+ await narrow.goto('http://127.0.0.1:'+port,{waitUntil:'domcontentloaded'});
+ await narrow.waitForTimeout(1800);
+ const mobile={width:await narrow.evaluate(()=>document.documentElement.scrollWidth),vp:390,mobileControls:await narrow.locator('#mobile').isVisible()};
+ console.log('MOBILE',JSON.stringify(mobile));
+ if(mobile.width>400)throw Error('Rolagem horizontal excessiva no celular');
+ if(!mobile.mobileControls)throw Error('Controles touch não apareceram');
+ console.log('TESTES DE JOGO FINALIZADOS COM SUCESSO');
+} catch(e){
+ console.error('FALHA',e.stack||String(e));
+ console.error('ERROS',reports);
+ process.exitCode=1;
+}finally{await browser.close();await new Promise(ok=>server.close(ok))}
