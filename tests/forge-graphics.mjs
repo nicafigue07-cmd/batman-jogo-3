@@ -33,7 +33,9 @@ try{
  assert.ok(city.particles>0&&city.contactShadows>0);
  await page.screenshot({path:'artifacts/forge-graphics-city.png'});
  console.log('GRAPHICS_CITY_OK',JSON.stringify(city));
- const beach=await setWorld('beach');
+ await setWorld('beach');
+ await page.waitForFunction(()=>window.__forgeVisualStats?.().oceanTime>=0.1,{timeout:22000});
+ const beach=await stats();
  assert.equal(beach.ocean,true);assert.equal(beach.oceanShader,true);
  assert.ok(beach.oceanTime>=0.1,'ocean does not animate');
  await page.screenshot({path:'artifacts/forge-graphics-beach.png'});
