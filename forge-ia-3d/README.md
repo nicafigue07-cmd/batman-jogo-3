@@ -1,4 +1,4 @@
-# FORGE IA 3D PRO — versão 5
+# FORGE IA 3D PRO — versão 7
 
 **Site:** https://nicafigue07-cmd.github.io/batman-jogo-3/forge-ia-3d/
 
@@ -7,14 +7,17 @@ A FORGE é um editor de protótipos 3D com Three.js. A parte gratuita funciona d
 ## Ferramentas gratuitas
 
 - Cenários de cidade, praia, floresta e base espacial; iluminação de dia, noite e pôr do sol.
-- Jogabilidade 3D com câmera, sombras, minimapa, coleção de cristais, plataformas, portais e NPCs que respondem à tecla E.
-- Corrida, salto, pausa, reinício de missão e modo contra o tempo.
+- Jogabilidade 3D com câmera, personagem que gira corretamente para a direção do deslocamento, sombras, minimapa, plataformas, portais e NPCs que respondem à tecla E.
+- Corrida, salto, pausa e reinício de missão; as teclas ficam liberadas quando o navegador perde o foco.
+- **Seis tipos de objetivo:** coletar cristais, coletar contra o tempo, passar por checkpoints na ordem, buscar/entregar encomendas, resgatar pessoas com a tecla E e descobrir lugares.
+- Cada tipo possui marcador, progresso, descrição e condição própria de vitória. Os modos de resgate e entrega incluem interação, e os outros exigem alcançar objetivos.
 - **Editor de objetos 3D**: árvores, casas, rochas, caixas, muros, torres, postes, portais e plataformas.
 - Clique para adicionar, ligar o modo editar e arrastar os objetos; alterar posição, cor e tamanho, duplicar e excluir.
 - Modelos de aventura urbana, parkour e exploração na praia.
 - Desfazer/refazer; salvar e carregar; exportar e importar o projeto JSON.
 - Exportar seu jogo HTML e jogar no navegador (internet necessária para carregar Three.js).
-- Comandos locais em português, por exemplo: "adicione 5 casas", "crie uma praia", "coloque 8 cristais".
+- Comandos locais em português, por exemplo: "adicione 5 casas", "crie uma corrida de 3 checkpoints", "faça um jogo de entregas", "resgate 3 pessoas na floresta", "descubra locais".
+- No editor, escolha **Objetivo do jogo** e **Quantidade de objetivos** ou use os atalhos de Corrida, Entregas, Resgate e Exploração.
 
 **Importante:** os comandos locais são regras, não um modelo generativo equivalente ao ChatGPT.
 
@@ -54,6 +57,6 @@ A prévia utiliza iframe com sandbox e CSP restrita. Mesmo assim, confira todo c
 
 ## Testes automatizados
 
-O fluxo de trabalho .github/workflows/testar-forge.yml verifica o backend com uma API OpenAI simulada e roda o estúdio em Chromium/Playwright com WebGL. Abrange controles, cristal coletado, pausa, minimapa, edição de objetos, modelos de mundo, importar/exportar JSON e HTML, prévia de código gerado com servidor simulado e viewport mobile.
+O fluxo de trabalho .github/workflows/testar-forge.yml verifica o backend com uma API OpenAI simulada e roda o estúdio em Chromium/Playwright com WebGL. O teste de objetivos verifica a direção do rosto e vitórias em corrida, entregas, resgates e exploração. Abrange controles, cristal coletado, pausa, minimapa, edição de objetos, modelos de mundo, importar/exportar JSON e HTML, prévia de código gerado com servidor simulado e viewport mobile.
 
 A FORGE não é um motor AAA nem substitui Unity ou Unreal. O modelo conectado ajuda a criar protótipos, mas a qualidade, os testes e a correção do código gerado ainda exigem revisão.
