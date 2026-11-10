@@ -25,7 +25,8 @@ function validate(p){
  for(const [k,min,max] of [['density',.4,2.2],['collectibles',1,40],['npcs',0,30],['obstacles',0,30],['speed',3,18]])
    if(typeof v[k]==='number'&&Number.isFinite(v[k]))out[k]=Math.min(max,Math.max(min,v[k]));
  if(typeof v.playerColor==='string'&&/^#[0-9a-f]{6}$/i.test(v.playerColor))out.playerColor=v.playerColor;
- if(['collect','time','explore'].includes(v.gameMode))out.gameMode=v.gameMode;
+ if(['collect','time','race','delivery','rescue','explore'].includes(v.gameMode))out.gameMode=v.gameMode;
+ if(typeof v.missionGoal==='number'&&Number.isFinite(v.missionGoal))out.missionGoal=Math.round(Math.max(2,Math.min(10,v.missionGoal)));
  const safeEntity=e=>{
   if(!e||typeof e!=='object'||!['tree','house','rock','crate','wall','tower','lamp','portal','platform'].includes(e.type))return null;
   const x=Number(e.x),z=Number(e.z),scale=Number(e.scale);
@@ -43,12 +44,14 @@ const instructions=[
  'Responda em português claro. Você recebe a mensagem, o estado do projeto e o histórico recente.',
  'Responda SOMENTE um objeto JSON válido {"reply":"texto para usuário","patch":{...}}.',
  'Modifique via patch apenas propriedades suportadas: world (city/beach/forest/space), time (day/night/sunset),',
- 'camera (third/first/iso), title, density (0.4-2.2), collectibles (1-40), npcs (0-30), obstacles (0-30), gameMode (collect/time/explore),',
+ 'camera (third/first/iso), title, density (0.4-2.2), collectibles (1-40), npcs (0-30), obstacles (0-30), gameMode (collect/time/race/delivery/rescue/explore), missionGoal (2-10),',
  'objectsAdd: array de 1-15 objetos: {type, x, z, scale, color}. Tipos válidos tree, house, rock, crate, wall, tower, lamp, portal, platform.',
  'Cada objeto deve ter coordenadas x/z entre -52 e 52, scale entre 0.4 e 4 e cor CSS #RRGGBB.',
  'speed (3-18), playerColor (#RRGGBB). Omita propriedades sem mudança. Para perguntas sem mudança use patch {}.',
  'Não prometa funções que esse editor ainda não implementa: carros dirigíveis, inimigos com IA, mundos AAA,',
  'multiplayer, física realista, modelos 3D personalizados, exportação para Unity/Unreal ou animações cinematográficas. Portais funcionam e plataformas suportam saltos.',
+ 'Para pedidos de corrida, use gameMode=race; entregas, delivery; resgate de pessoas, rescue; descoberta de locais, explore.',
+ 'O editor implementa vitórias diferentes para esses modos. Responda com patch funcional e o nome do objetivo no reply.',
  'Ajude com ideias e explique brevemente os limites de pedidos não suportados.'
 ].join(' ');
 
@@ -60,7 +63,7 @@ const gameInstructions=[
  'WASD, setas, espaço e botões touch. Inclua iluminação, câmera em terceira pessoa, HUD e reiniciar.',
  'A cena deve funcionar offline após carregar Three.js do CDN. Não dependa de imagens, áudios, modelos ou APIs externas.',
  'Não inclua rastreamento, dados pessoais, URLs fora do CDN acima, eval, window.parent, login ou permissões sensíveis.',
- 'Seja criativo: jogos de corrida, exploração, plataforma e aventura são permitidos. Evite conteúdo gráfico ou perigoso.',
+ 'Seja criativo: jogos de corrida, exploração, plataforma, entregas, resgate, enigmas simples e aventura são permitidos. Faça objetivos, progresso e vitória claramente distintos.',,
  'Responda EXCLUSIVAMENTE um objeto JSON com "summary" (texto resumido em português) e "html" (código completo HTML).',
  'O HTML deve iniciar com <!doctype html>, conter <html>, <head>, <body> e script type="module".',
  'Limite o jogo ao que cabe num protótipo funcional; não prometa gráficos AAA ou recursos impossíveis.',
