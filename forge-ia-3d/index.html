@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FORGE IA 3D — Estúdio Online</title>
+<meta name="theme-color" content="#0b1021">
+<style>
+:root{font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;color:#ebf4ff;background:#070c1a}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 20% 5%,#18396888,transparent 52%),#070c1a}
+header{height:65px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #293753;background:#0a1325ce}
+.brand{font-size:19px;font-weight:900;letter-spacing:.3px}.brand b{color:#60f1d0}.tag{color:#9caac4;font-size:12px}
+main{display:grid;grid-template-columns:335px minmax(0,1fr);gap:16px;padding:17px;max-width:1500px;margin:auto}
+aside{border:1px solid #2b3f5d;background:#0e1a30;border-radius:18px;padding:22px;align-self:start}
+h1{font-size:25px;letter-spacing:-1px;margin:0 0 6px}.sub{font-size:13px;color:#9fb0cf;line-height:1.6;margin:0 0 24px}
+label{display:block;font-size:13px;font-weight:750;margin:0 0 9px}
+textarea,select{background:#0a1427;border:1px solid #38516d;color:#eaf5ff;border-radius:11px;padding:13px;width:100%;font:inherit;outline:none}
+textarea{min-height:123px;resize:vertical;line-height:1.5}textarea:focus,select:focus{border-color:#67dfe2}
+.field{margin-bottom:18px}.primary,.secondary{border:0;border-radius:11px;padding:14px 12px;font:inherit;font-weight:850;cursor:pointer;width:100%}
+.primary{background:linear-gradient(110deg,#66efd4,#76bbff);color:#06253b}.primary:hover{filter:brightness(1.1)}.secondary{background:#1f3250;color:#e7f6ff;border:1px solid #405b7c;margin-top:9px}
+.note{font-size:11px;color:#8398b6;line-height:1.6;margin:20px 0 0}
+section{min-width:0;border:1px solid #2d4364;border-radius:18px;background:#0b1930;overflow:hidden}
+.toolbar{display:flex;justify-content:space-between;align-items:center;padding:13px 18px;border-bottom:1px solid #2b4262;gap:10px}
+.pill{font-size:11px;color:#62f4d5;background:#063d37;padding:6px 9px;border-radius:99px;font-weight:900}
+#viewport{height:min(72vh,710px);min-height:420px;position:relative;background:linear-gradient(#528caa,#d9c6ba)}
+#viewport canvas{display:block;width:100%;height:100%;touch-action:none}
+#msg{position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);background:#07152ade;border:1px solid #8fc0d777;border-radius:12px;padding:14px;text-align:center;font-size:14px;max-width:80%}
+#hud{position:absolute;top:14px;left:14px;background:#071730ca;border-radius:11px;padding:9px 13px;font-size:12px;pointer-events:none}
+#hud strong{font-size:16px;display:block}.hint{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);padding:9px 13px;background:#061526c5;border-radius:10px;font-size:11px;text-align:center;white-space:nowrap;pointer-events:none}
+#mobile{display:none;position:absolute;bottom:52px;left:15px;grid-template-columns:repeat(3,42px);gap:4px;touch-action:none}
+#mobile button,#jump{border:1px solid #c5fcf8a6;background:#123a5fbb;color:white;border-radius:10px;font-size:19px;height:42px;touch-action:none}
+#mobile [data-k=KeyW]{grid-column:2}#mobile [data-k=KeyA]{grid-column:1}#mobile [data-k=KeyS]{grid-column:2}#mobile [data-k=KeyD]{grid-column:3}
+#jump{display:none;position:absolute;right:15px;bottom:68px;width:75px;height:51px;font-size:12px;font-weight:900}
+footer{padding:11px 18px;color:#91a6c7;font-size:12px;border-top:1px solid #2d4262}
+@media(max-width:850px){main{grid-template-columns:1fr}header{padding:0 15px}#viewport{height:58vh;min-height:370px}aside{padding:18px}.hint{bottom:7px;font-size:10px}}
+@media(max-width:700px),(pointer:coarse){#mobile{display:grid}#jump{display:block}}
+body[data-game-mode=true] aside{display:none}body[data-game-mode=true] main{grid-template-columns:1fr}
+body[data-game-mode=true] .editor-only{display:none}
+</style>
+</head>
+<body>
+<header><span class="brand">⚡ FORGE <b>IA 3D</b></span><span class="tag">ESTÚDIO ONLINE • PROTÓTIPO 3D</span></header>
+<main>
+<aside><h1>Crie seu jogo 3D</h1><p class="sub">Descreva a ideia, escolha um cenário e jogue instantaneamente. Esta versão online usa geração procedural; a IA completa precisa de servidor.</p>
+<div class="field"><label for="prompt">Sua ideia de jogo</label><textarea id="prompt" placeholder="Ex.: Um garoto explora uma cidade japonesa e encontra cristais na praia.">Um personagem explora uma cidade 3D e coleta cristais.</textarea></div>
+<div class="field"><label for="world">Tipo de mundo</label><select id="world"><option value="auto">Detectar pelo texto</option><option value="city">Cidade com prédios</option><option value="beach">Praia e oceano</option><option value="forest">Floresta e montanhas</option><option value="space">Base espacial</option></select></div>
+<button class="primary" id="build">✨ CRIAR MUNDO 3D</button>
+<button class="secondary" id="export">⬇ Baixar jogo em HTML</button>
+<p class="note">Use <b>WASD</b> ou setas para andar, <b>espaço</b> para pular, arraste o mouse para girar a câmera. No celular há controles na tela. O arquivo exportado precisa de internet para carregar Three.js.</p>
+</aside>
+<section><div class="toolbar"><strong>🎮 Visualização do jogo 3D</strong><span class="pill" id="status">CARREGANDO 3D</span></div>
+<div id="viewport"><div id="hud"><strong id="title">Meu jogo 3D</strong>💎 Cristais: <span id="score">0/7</span></div>
+<div id="msg">Preparando mundo 3D…</div><div class="hint">WASD / setas • Espaço: pular • Arraste: girar câmera</div>
+<div id="mobile"><button data-k="KeyW">↑</button><button data-k="KeyA">←</button><button data-k="KeyS">↓</button><button data-k="KeyD">→</button></div>
+<button id="jump">PULAR</button></div>
+<footer id="notice">Funciona no navegador com WebGL. Se a cena não aparecer, experimente Chrome ou Edge atualizado.</footer></section></main>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js';
+const view=document.getElementById('viewport'),msg=document.getElementById('msg'),status=document.getElementById('status');
+let renderer,scene,camera,player,ground,crystals=[],solids=[],clock=new THREE.Clock(),vertical=0,onGround=true,score=0,worldType='city',yaw=0.4,pitch=0.34,drag=null;
+const pressed=new Set();
+const standalone=document.body.dataset.gameMode==='true';
+const $=id=>document.getElementById(id);
+const mat=(c)=>new THREE.MeshStandardMaterial({color:c,roughness:.85,metalness:0.05});
+const palettes={city:{sky:0x9ac7ef,ground:0xb3c8c2},beach:{sky:0x8ddbea,ground:0xefdcad},forest:{sky:0x9ed7d0,ground:0x8dc17f},space:{sky:0x131b37,ground:0x555970}};
+function rand(seed){let n=seed;return ()=>{n=(n*1664525+1013904223)>>>0;return n/4294967296}}
+function cube(w,h,d,c,x,y,z,parent=scene){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(c));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}
+function ball(r,c,x,y,z,parent=scene){const m=new THREE.Mesh(new THREE.SphereGeometry(r,12,9),mat(c));m.position.set(x,y,z);m.castShadow=true;parent.add(m);return m}
+function trunk(x,z,forest=false){cube(.65,4,.65,0x75513e,x,2,z);ball(forest?2.4:1.7,forest?0x42865d:0x60b896,x,5,z)}
+function structure(x,z,h,c){cube(4.7,h,4.7,c,x,h/2,z);cube(5.3,.35,5.3,0x344965,x,h+.17,z);for(let f=0;f<Math.floor(h/2);f++){for(let dx of [-1.2,1.2])cube(.82,.77,.05,0xaff2f3,x+dx,1.5+f*2,z+2.39)}solids.push({x,z,r:3})}
+function chooseType(){let t=$('world').value;if(t!=='auto')return t;const v=$('prompt').value.toLowerCase();if(/praia|mar|oceano|surf|ilha/.test(v))return 'beach';if(/floresta|mata|árvore|natureza|montanha|selva/.test(v))return 'forest';if(/espaço|espacial|lua|planeta|alien/.test(v))return 'space';return 'city'}
+function generate(){
+worldType=standalone?(document.body.dataset.exportType||chooseType()):chooseType();const p=palettes[worldType],rnd=rand(43);scene=new THREE.Scene();scene.background=new THREE.Color(p.sky);scene.fog=new THREE.Fog(p.sky,55,135);solids=[];crystals=[];score=0;$('score').textContent='0/7';
+scene.add(new THREE.HemisphereLight(0xffffff,0x56606a,2.4));
+let sun=new THREE.DirectionalLight(0xffffff,2.1);sun.position.set(-12,20,14);scene.add(sun);
+ground=cube(116,.5,116,p.ground,0,-.34,0);
+if(worldType==='city'){
+cube(10,.03,115,0x7f899d,0,0,0);
+for(let z=-44;z<=44;z+=8){cube(.15,.03,2,0xf2e5b2,0,.035,z)}
+for(let i=0;i<38;i++){let x=(i%2?1:-1)*(10+rnd()*34),z=-49+rnd()*98;structure(x,z,5+rnd()*11,[0x8caac0,0xcca6a4,0xa9b0d4,0xb6d2c1][i%4])}
+for(let i=0;i<18;i++)trunk((i%2?7:-7),-43+i*5);
+}else if(worldType==='beach'){
+cube(110,.12,45,0x30b8c7,0,-.01,-34);cube(110,.09,8,0xf8e5b1,0,.04,-7);
+for(let i=0;i<29;i++){let x=-45+rnd()*90,z=6+rnd()*39;trunk(x,z);if(i%4===0)cube(3,.7,4,0xc49272,x,.4,z+3)}
+for(let i=0;i<15;i++){let x=-44+i*6;ball(1.2,0xe8faff,x,.13,-8)}
+}else if(worldType==='forest'){
+for(let i=0;i<85;i++){let x=-50+rnd()*100,z=-50+rnd()*100;if(Math.abs(x)<5&&Math.abs(z)<26)continue;trunk(x,z,true)}
+for(let i=0;i<17;i++)ball(2+rnd()*4,0x5b8e75,-45+rnd()*90,1+rnd()*2,-45+rnd()*90);
+}else{
+for(let i=0;i<28;i++){let x=-46+rnd()*92,z=-46+rnd()*92;ball(.6+rnd()*2,0x80859a,x,.5,z)}
+for(let i=0;i<12;i++){let x=-39+rnd()*78,z=-39+rnd()*78;cube(4,3.6,4,0xc6d5e9,x,1.8,z);ball(2.2,0x6ca2c2,x,4,z);solids.push({x,z,r:3.5})}
+}
+player=new THREE.Group();cube(.78,1.35,.46,0x27a8c1,0,1.3,0,player);ball(.44,0xf2c49d,0,2.27,0,player);cube(.33,.85,.36,0x26334f,-.23,.46,0,player);cube(.33,.85,.36,0x26334f,.23,.46,0,player);cube(.22,.9,.35,0x27a8c1,-.53,1.3,0,player);cube(.22,.9,.35,0x27a8c1,.53,1.3,0,player);scene.add(player);player.position.set(0,.1,12);vertical=0;onGround=true;
+for(let i=0;i<7;i++){let z=-24+i*8,x=i%2===0?-3.5:3.5;const c=new THREE.Mesh(new THREE.OctahedronGeometry(.7),new THREE.MeshStandardMaterial({color:0x5bffdf,emissive:0x2ab9ae,emissiveIntensity:.5}));c.position.set(x,1.5,z);scene.add(c);crystals.push({mesh:c,found:false})}
+if(camera)camera.position.set(0,6,20);
+let idea=($('prompt').value.trim()||'Mundo 3D');$('title').textContent=idea.length>40?idea.slice(0,38)+'…':idea;
+status.textContent='MUNDO PRONTO';msg.style.display='none';
+}
+function start(){try{renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));renderer.setSize(view.clientWidth,view.clientHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;view.insertBefore(renderer.domElement,view.firstChild);camera=new THREE.PerspectiveCamera(65,view.clientWidth/view.clientHeight,.1,220);generate();animate()}catch(e){msg.textContent='Não foi possível iniciar o 3D: '+e.message;status.textContent='ERRO WEBGL'}}
+let last=performance.now();
+function animate(){requestAnimationFrame(animate);if(!renderer||!player)return;
+let now=performance.now(),dt=Math.min((now-last)/1000,.05);last=now;
+let forward=(pressed.has('KeyW')||pressed.has('ArrowUp')?1:0)-(pressed.has('KeyS')||pressed.has('ArrowDown')?1:0);
+let sideways=(pressed.has('KeyD')||pressed.has('ArrowRight')?1:0)-(pressed.has('KeyA')||pressed.has('ArrowLeft')?1:0);
+let vx=sideways*Math.cos(yaw)-forward*Math.sin(yaw),vz=-sideways*Math.sin(yaw)-forward*Math.cos(yaw);
+let len=Math.hypot(vx,vz);if(len>0){vx/=len;vz/=len;player.rotation.y=Math.atan2(vx,vz);let px=player.position.x+vx*dt*8,pz=player.position.z+vz*dt*8;let blocked=solids.some(b=>Math.hypot(px-b.x,pz-b.z)<b.r+0.45);if(!blocked){player.position.x=THREE.MathUtils.clamp(px,-53,53);player.position.z=THREE.MathUtils.clamp(pz,-53,53)}}
+vertical-=dt*19;player.position.y+=vertical*dt;if(player.position.y<=0){player.position.y=0;vertical=0;onGround=true}
+crystals.forEach((c,i)=>{if(c.found)return;c.mesh.rotation.y+=dt*1.4;c.mesh.position.y=1.5+Math.sin(now/450+i)*.25;if(player.position.distanceTo(c.mesh.position)<1.75){c.found=true;scene.remove(c.mesh);score++;$('score').textContent=score+'/7';if(score===7){msg.textContent='🏆 Você encontrou todos os cristais! Clique em CRIAR MUNDO 3D para jogar novamente.';msg.style.display='block'}}});
+let d=8,cy=Math.cos(pitch),sx=player.position.x,sz=player.position.z,ey=player.position.y+1.5;
+let target=new THREE.Vector3(sx+d*Math.sin(yaw)*cy,ey+3+d*Math.sin(pitch),sz+d*Math.cos(yaw)*cy);camera.position.lerp(target,.14);camera.lookAt(sx,ey,sz);
+renderer.render(scene,camera)}
+function jump(){if(onGround){vertical=8.3;onGround=false}}
+window.addEventListener('keydown',e=>{if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)&&!['TEXTAREA','INPUT','SELECT'].includes(document.activeElement.tagName))e.preventDefault();if(['TEXTAREA','INPUT','SELECT'].includes(document.activeElement.tagName))return;pressed.add(e.code);if(e.code==='Space')jump()});
+window.addEventListener('keyup',e=>pressed.delete(e.code));
+view.addEventListener('pointerdown',e=>{if(e.target!==renderer?.domElement)return;drag={x:e.clientX,y:e.clientY};view.setPointerCapture(e.pointerId)});
+view.addEventListener('pointermove',e=>{if(!drag)return;yaw-=(e.clientX-drag.x)*.005;pitch=THREE.MathUtils.clamp(pitch+(e.clientY-drag.y)*.004,-.2,.9);drag={x:e.clientX,y:e.clientY}});
+view.addEventListener('pointerup',()=>drag=null);
+document.querySelectorAll('#mobile button').forEach(b=>{const k=b.dataset.k;b.addEventListener('pointerdown',e=>{e.preventDefault();pressed.add(k);b.setPointerCapture(e.pointerId)});for(let name of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(name,()=>pressed.delete(k))});
+$('jump').addEventListener('pointerdown',e=>{e.preventDefault();jump()});
+$('build').addEventListener('click',generate);
+$('export').addEventListener('click',()=>{const clone=document.documentElement.cloneNode(true);clone.querySelector('body').dataset.gameMode='true';clone.querySelector('body').dataset.exportType=chooseType();clone.querySelector('#prompt').textContent=$('prompt').value;clone.querySelector('#world').value=$('world').value;clone.querySelector('#msg').textContent='Carregando jogo…';clone.querySelector('#msg').style.display='';clone.querySelector('canvas')?.remove();const data=new Blob(['<!doctype html>'+clone.outerHTML],{type:'text/html;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(data);a.download='meu-jogo-3d.html';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000)});
+window.addEventListener('resize',()=>{if(!renderer)return;let w=view.clientWidth,h=view.clientHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h)});
+if(standalone){$('prompt').value=document.body.dataset.exportIdea||$('prompt').textContent}
+start();
+</script>
+</body></html>
