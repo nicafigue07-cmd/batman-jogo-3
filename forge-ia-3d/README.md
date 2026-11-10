@@ -1,14 +1,14 @@
-# FORGE IA 3D PRO — versão 9
+# FORGE IA 3D PRO — versão 10
 
 **Site:** https://nicafigue07-cmd.github.io/batman-jogo-3/forge-ia-3d/
 
-A FORGE é um editor de protótipos 3D com Three.js. A parte gratuita funciona diretamente no navegador. O modo de geração por IA real exige um servidor e chave de API, que não são fornecidos pelo GitHub Pages.
+A FORGE é um editor de protótipos 3D com Three.js. A versão 10 ampliou o terreno para **640 × 640 unidades** (mais de 4,8 vezes a área anterior de 290 × 290), com regiões adicionais e navegação rápida. A parte gratuita funciona diretamente no navegador. O modo de geração por IA real exige um servidor e chave de API, que não são fornecidos pelo GitHub Pages.
 
 ## Ferramentas gratuitas
 
 - Cenários de cidade, praia, floresta e base espacial; iluminação de dia, noite e pôr do sol.
 - **Mapa ampliado:** 290 × 290 unidades, 6,25 vezes a área anterior (116 × 116). Bairros exteriores e estradas, trilhas de floresta, praias estendidas e postos espaciais construídos com instancing para preservar desempenho.
-- **Campanha de 10 capítulos:** missões com objetivos e lore diferentes (coleta, corrida, entregas, resgates e exploração), botão “Próxima missão” e progresso salvo no navegador.
+- **campanha de 20 capítulos:** missões com objetivos e lore diferentes (coleta, corrida, entregas, resgates e exploração), botão “Próxima missão” e progresso salvo no navegador.
 - O botão “📖 Criar campanha com 10 missões” reinicia a história. Para criar uma missão isolada, selecione um objetivo; isso desativa o modo campanha.
 - **Chat local mais útil:** responde dúvidas sobre a missão, o mapa e os capítulos, sugere possibilidades e aceita pedidos como “crie uma campanha com 10 missões”. Continua sendo um interpretador de comandos, não uma IA generativa equivalente ao ChatGPT.
 - **Visual v8:** água com ondas e variações de cor produzidas por shader, textura procedural de asfalto, nuvens em movimento, partículas ambientais, sombras suaves sob os personagens e avatar 3D mais arredondado com roupas e articulações.
@@ -18,6 +18,10 @@ A FORGE é um editor de protótipos 3D com Three.js. A parte gratuita funciona d
 - Corrida, salto, pausa e reinício de missão; as teclas ficam liberadas quando o navegador perde o foco.
 - **Seis tipos de objetivo:** coletar cristais, coletar contra o tempo, passar por checkpoints na ordem, buscar/entregar encomendas, resgatar pessoas com a tecla E e descobrir lugares.
 - Cada tipo possui marcador, progresso, descrição e condição própria de vitória. Os modos de resgate e entrega incluem interação, e os outros exigem alcançar objetivos.
+- **Campanha com 20 capítulos:** fases de coleta, corrida, entrega, resgate e exploração conectadas por uma história, com diário dos capítulos e progressão salva no navegador.
+- **Mapa aberto de 640 × 640:** cidade com bairros externos, floresta expandida, praia estendida e instalações espaciais distantes.
+- **Viagem rápida:** opções de Centro, Norte, Sul, Leste, Oeste ou perto do próximo objetivo.
+- **Ajuda contextual:** no chat local, “Planeje meu jogo” descreve o jogo atual, sua missão e sugestões concretas. Ainda é um interpretador por regras, não IA generativa como o ChatGPT.
 - **Editor de objetos 3D**: árvores, casas, rochas, caixas, muros, torres, postes, portais e plataformas.
 - Clique para adicionar, ligar o modo editar e arrastar os objetos; alterar posição, cor e tamanho, duplicar e excluir.
 - Modelos de aventura urbana, parkour e exploração na praia.
@@ -64,6 +68,6 @@ A prévia utiliza iframe com sandbox e CSP restrita. Mesmo assim, confira todo c
 
 ## Testes automatizados
 
-O fluxo de trabalho .github/workflows/testar-forge.yml verifica o backend com uma API OpenAI simulada e roda o estúdio em Chromium/Playwright com WebGL. O teste `tests/forge-campaign.mjs` percorre os dez capítulos e confere mapa, progresso, salvamento, reinício e comportamento do chat local. O teste `tests/forge-graphics.mjs` confere oceanos animados, materiais do solo, partículas, nuvens, sombras e perfis gráficos, gerando capturas por cenário. O teste de objetivos verifica a direção do rosto e vitórias em corrida, entregas, resgates e exploração. Abrange controles, cristal coletado, pausa, minimapa, edição de objetos, modelos de mundo, importar/exportar JSON e HTML, prévia de código gerado com servidor simulado e viewport mobile.
+O fluxo de trabalho .github/workflows/testar-forge.yml verifica o backend com uma API OpenAI simulada e roda o estúdio em Chromium/Playwright com WebGL. O teste `tests/forge-campaign.mjs` percorre os dez capítulos e confere mapa, progresso, salvamento, reinício e comportamento do chat local. O teste `tests/forge-graphics.mjs` confere oceanos animados, materiais do solo, partículas, nuvens, sombras e perfis gráficos, gerando capturas por cenário. O teste de objetivos verifica a direção do rosto e vitórias em corrida, entregas, resgates e exploração. O teste da campanha verifica as 20 fases, viagens rápidas e progresso restaurado depois de recarregar. Abrange controles, cristal coletado, pausa, minimapa, edição de objetos, modelos de mundo, importar/exportar JSON e HTML, prévia de código gerado com servidor simulado e viewport mobile.
 
 A FORGE não é um motor AAA nem substitui Unity ou Unreal. O modelo conectado ajuda a criar protótipos, mas a qualidade, os testes e a correção do código gerado ainda exigem revisão.
