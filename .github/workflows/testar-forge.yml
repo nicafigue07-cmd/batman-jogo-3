@@ -5,6 +5,7 @@ on:
     paths:
       - 'forge-ia-3d/**'
       - 'tests/forge-smoke.mjs'
+      - 'tests/forge-objectives.mjs'
       - '.github/workflows/testar-forge.yml'
   workflow_dispatch:
 permissions:
@@ -24,6 +25,7 @@ jobs:
       - run: npm ci
       - run: node tests/forge-backend.mjs
       - run: node tests/forge-smoke.mjs
+      - run: node tests/forge-objectives.mjs
       - if: always()
         uses: actions/upload-artifact@v4
         with:
