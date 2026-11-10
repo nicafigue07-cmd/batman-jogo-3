@@ -19,6 +19,32 @@ try {
  if(!(await page.locator('#status').innerText()).includes('PRONTO'))throw Error('Mundo não iniciou');
  mkdirSync('artifacts',{recursive:true});
  await page.screenshot({path:'artifacts/forge-before.png'});
+
+ // Regressão: personagem parado não deve mover sem teclas, nem após soltar/alternar abas.
+ const coords=()=>page.evaluate(()=>window.__forgeStats().position);
+ const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
+ const idleStart=await coords();
+ await page.waitForTimeout(1200);
+ const idleEnd=await coords();
+ if(distance(idleStart,idleEnd)>.02)throw Error('PERSONAGEM ANDA SOZINHO: movimento sem entrada');
+ await page.keyboard.down('KeyW');await page.waitForTimeout(550);await page.keyboard.up('KeyW');
+ const released=await coords();await page.waitForTimeout(900);
+ if(distance(released,await coords())>.03)throw Error('Movimento continua após keyup');
+ await page.keyboard.down('KeyW');await page.waitForTimeout(300);
+ await page.evaluate(()=>window.dispatchEvent(new Event('blur')));
+ const blurred=await coords();await page.waitForTimeout(700);
+ if(distance(blurred,await coords())>.03)throw Error('Movimento continua após perder foco');
+ await page.keyboard.up('KeyW');
+ await page.locator('#stop-player').click();
+ if((await page.evaluate(()=>window.__forgeStats().inputs)).length)throw Error('Botão Parar não limpou entradas');
+ await page.locator('#prompt').fill('WASD andando?');
+ const typing=await coords();await page.waitForTimeout(600);
+ if(distance(typing,await coords())>.03)throw Error('Digitar no editor move personagem');
+ await page.locator('#prompt').clear();
+ await page.locator('#viewport canvas').first().click({position:{x:520,y:360}});
+ await page.keyboard.press('KeyR');await page.waitForTimeout(350);
+ console.log('INPUT_IDLE_OK',JSON.stringify({idle:distance(idleStart,idleEnd),released:true,blurred:true,stop:true,typing:true}));
+
  // Jogabilidade real: mover o personagem até o primeiro cristal.
  const initial=await page.evaluate(()=>window.__forgeStats?.());
  if(!initial||initial.remaining.length!==7)throw Error('Estado de jogo indisponível');
@@ -149,6 +175,13 @@ try {
  await narrow.waitForTimeout(1800);
  const mobile={width:await narrow.evaluate(()=>document.documentElement.scrollWidth),vp:390,mobileControls:await narrow.locator('#mobile').isVisible()};
  console.log('MOBILE',JSON.stringify(mobile));
+
+ await narrow.locator('#mobile button[data-k="KeyW"]').tap();
+ await narrow.waitForTimeout(550);
+ const touchStopped=await narrow.evaluate(()=>window.__forgeStats?.());
+ if(!touchStopped||touchStopped.inputs.length)throw Error('Controle touch ficou pressionado depois do toque');
+ console.log('TOUCH_RELEASE_OK',JSON.stringify({held:touchStopped.inputs}));
+
  if(mobile.width>400)throw Error('Rolagem horizontal excessiva no celular');
  if(!mobile.mobileControls)throw Error('Controles touch não apareceram');
  console.log('TESTES DE JOGO FINALIZADOS COM SUCESSO');
