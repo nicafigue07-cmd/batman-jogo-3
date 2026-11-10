@@ -22,6 +22,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: node tests/forge-backend.mjs
       - run: node tests/forge-smoke.mjs
       - if: always()
         uses: actions/upload-artifact@v4
