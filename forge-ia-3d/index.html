@@ -95,6 +95,8 @@ body[data-game-mode=true] #game-details{display:block}
 }
 
 #quality{width:112px;min-width:112px;max-width:112px;flex:none}
+#stop-player{border-color:#76e4d2;color:#bbfff2}
+#mobile button.down{background:#1c9385;border-color:#acffed}
 @media(min-width:850px){.toolbar .top-actions{flex-wrap:nowrap}}
 @media(max-width:700px){#quality{width:95px;min-width:95px}}
 
@@ -200,7 +202,7 @@ font-weight:750;font-size:13px;pointer-events:none;max-width:70%;text-align:cent
 </div>
 <p class="note">🎮 WASD para andar · Espaço para pular · Arraste para girar. Este site gera protótipos 3D. A IA avançada só funciona depois de conectar um servidor.</p>
 </aside>
-<section><div class="toolbar"><strong>🎮 Editor e prévia 3D</strong><div class="top-actions"><select id="quality" aria-label="Qualidade gráfica"><option value="1">Leve</option><option value="1.5" selected>Equilibrado</option><option value="2">Bonito</option></select><button id="restart-level">↻ Missão</button><button id="reset-camera">⟳ Câmera</button><span class="pill" id="status">CARREGANDO 3D</span></div></div>
+<section><div class="toolbar"><strong>🎮 Editor e prévia 3D</strong><div class="top-actions"><select id="quality" aria-label="Qualidade gráfica"><option value="1">Leve</option><option value="1.5" selected>Equilibrado</option><option value="2">Bonito</option></select><button id="stop-player" title="Parar qualquer movimento do personagem">■ Parar</button><button id="restart-level">↻ Missão</button><button id="reset-camera">⟳ Câmera</button><span class="pill" id="status">CARREGANDO 3D</span></div></div>
 <div id="viewport"><div id="hud"><strong id="title">Meu jogo 3D</strong>💎 Cristais: <span id="score">0/7</span></div>
 <div id="game-details"><b id="mode-label">EXPLORAÇÃO 3D</b><span id="scene-details">Mundo criado pela FORGE</span></div><div id="direction"><strong>🧭 Missão:</strong> encontre os cristais</div><div id="dialogue" hidden></div><div id="minimap-wrap"><canvas id="minimap" width="308" height="308" aria-label="Minimapa do cenário"></canvas><span id="minimap-name">MAPA</span></div><div id="pause-banner">⏸ PAUSADO</div><div id="generated-panel" hidden><div class="generated-head"><strong id="generated-title">Novo jogo da IA</strong><div><button id="download-generated">⬇ Baixar jogo</button><button id="close-generated">✕ Voltar</button></div></div><iframe id="generated-frame" title="Prévia de minijogo 3D criado pela IA" sandbox="allow-scripts" referrerpolicy="no-referrer"></iframe></div><div id="msg">Preparando mundo 3D…</div><div class="hint">WASD: andar • Shift: correr • Espaço: pular • Arraste: câmera • R: reiniciar • P: pausar</div>
 <div id="mobile"><button data-k="KeyW">↑</button><button data-k="KeyA">←</button><button data-k="KeyS">↓</button><button data-k="KeyD">→</button></div>
@@ -220,6 +222,12 @@ catch(firstError){
 const view=document.getElementById('viewport'),msg=document.getElementById('msg'),status=document.getElementById('status');
 let renderer,scene,camera,player,ground,crystals=[],solids=[],clock=new THREE.Clock(),vertical=0,onGround=true,score=0,worldType='city',yaw=0.4,pitch=0.34,drag=null;let elapsed=0,paused=false,zoom=8,sunLight=null;
 const pressed=new Set();
+const movementCodes=new Set(['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','ShiftLeft','ShiftRight']);
+function stopMovement(){pressed.clear();drag=null;draggingEntity=null;document.querySelectorAll('#mobile button').forEach(b=>b.classList.remove('down'))}
+window.addEventListener('blur',stopMovement);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)stopMovement()});
+document.addEventListener('focusin',e=>{if(e.target.closest?.('aside, .toolbar'))stopMovement()});
+
 
 const baseSpec=()=>({world:'city',time:'day',density:1,collectibles:7,npcs:2,obstacles:0,camera:'third',speed:8,playerColor:'#27a8c1',title:'Meu mundo 3D',gameMode:'collect',objects:[]});
 let spec=(()=>{try{return {...baseSpec(),...JSON.parse(decodeURIComponent(document.body.dataset.exportSpec||''))}}catch{return baseSpec()}})();
@@ -524,6 +532,7 @@ function editorPointerMove(e){
 
 let portalCooldown=0,dialogueTimer=0;
 function generate(){
+stopMovement();
 if(scene){scene.traverse(o=>{if(o.isMesh){o.geometry?.dispose();const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>m?.dispose())}})}worldType=spec.world||chooseType();const p=palettes[worldType],rnd=rand(43);scene=new THREE.Scene();const sky=spec.time==='night'?0x101d39:spec.time==='sunset'?0xee9a87:p.sky;scene.background=new THREE.Color(sky);scene.fog=new THREE.Fog(sky,55,135);solids=[];crystals=[];npcs=[];score=0;$('score').textContent='0/'+spec.collectibles;
 scene.add(new THREE.HemisphereLight(0xffffff,0x56606a,spec.time==='night'?.65:2.4));if(renderer)renderer.toneMappingExposure=spec.time==='night'?.97:spec.time==='sunset'?1.15:1.35;
 let sun=new THREE.DirectionalLight(spec.time==='sunset'?0xffb280:0xffffff,spec.time==='night'?.38:2.1);sun.position.set(-12,20,14);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-55;sun.shadow.camera.right=55;sun.shadow.camera.top=55;sun.shadow.camera.bottom=-55;sun.shadow.normalBias=.017;scene.add(sun);sunLight=sun;if(spec.time==='night'){const moon=ball(3.2,0xe2efff,-34,23,-46);moon.material=new THREE.MeshBasicMaterial({color:0xe4efff})}
@@ -593,13 +602,13 @@ const remaining=spec.gameMode==='time'?(' · ⏱ '+Math.max(0,180-Math.floor(ela
 $('direction').textContent='🧭 '+arrow+' Cristal a '+Math.round(dist)+' m'+remaining+' · '+Math.floor(elapsed/60)+':'+String(Math.floor(elapsed%60)).padStart(2,'0');
 }
 
-window.__forgeStats=()=>({world:worldType,score,objects:spec.objects.length,gameMode:spec.gameMode,selectedId,goal:spec.collectibles,position:player?{x:player.position.x,y:player.position.y,z:player.position.z}:null,remaining:crystals.filter(c=>!c.found).map(c=>({x:c.mesh.position.x,z:c.mesh.position.z}))});
-function togglePause(){paused=!paused;$('pause-banner').textContent='⏸ PAUSADO';$('pause-banner').classList.toggle('visible',paused);pressed.clear()}
-function restartMission(){generate();message('assistant','Missão reiniciada. O cenário foi preservado.')}
+window.__forgeStats=()=>({world:worldType,score,inputs:[...pressed],objects:spec.objects.length,gameMode:spec.gameMode,selectedId,goal:spec.collectibles,position:player?{x:player.position.x,y:player.position.y,z:player.position.z}:null,remaining:crystals.filter(c=>!c.found).map(c=>({x:c.mesh.position.x,z:c.mesh.position.z}))});
+function togglePause(){paused=!paused;$('pause-banner').textContent='⏸ PAUSADO';$('pause-banner').classList.toggle('visible',paused);stopMovement()}
+function restartMission(){stopMovement();generate();message('assistant','Missão reiniciada. O cenário foi preservado.')}
 function animate(){requestAnimationFrame(animate);if(!renderer||!player)return;
 let now=performance.now(),dt=Math.min((now-last)/1000,.05);last=now;if(dialogueTimer===0&&$('dialogue'))$('dialogue').hidden=true;if(paused){renderer.render(scene,camera);return}elapsed+=dt;portalCooldown=Math.max(0,portalCooldown-dt);dialogueTimer=Math.max(0,dialogueTimer-dt);if(Math.floor(now/200)!==Math.floor((now-dt*1000)/200)){drawMinimap();updateObjective()}
-let forward=(pressed.has('KeyW')||pressed.has('ArrowUp')?1:0)-(pressed.has('KeyS')||pressed.has('ArrowDown')?1:0);
-let sideways=(pressed.has('KeyD')||pressed.has('ArrowRight')?1:0)-(pressed.has('KeyA')||pressed.has('ArrowLeft')?1:0);
+let forward=(!editMode && !document.hidden && (pressed.has('KeyW')||pressed.has('ArrowUp'))?1:0)-(!editMode && !document.hidden && (pressed.has('KeyS')||pressed.has('ArrowDown'))?1:0);
+let sideways=(!editMode && !document.hidden && (pressed.has('KeyD')||pressed.has('ArrowRight'))?1:0)-(!editMode && !document.hidden && (pressed.has('KeyA')||pressed.has('ArrowLeft'))?1:0);
 let vx=sideways*Math.cos(yaw)-forward*Math.sin(yaw),vz=-sideways*Math.sin(yaw)-forward*Math.cos(yaw);
 let len=Math.hypot(vx,vz);if(len>0){vx/=len;vz/=len;player.rotation.y=Math.atan2(vx,vz);let sprint=pressed.has('ShiftLeft')||pressed.has('ShiftRight');let speed=spec.speed*(sprint?1.6:1)*(worldType==='beach'&&player.position.z<-13?.6:1);let px=player.position.x+vx*dt*speed,pz=player.position.z+vz*dt*speed;let blocked=solids.some(b=>Math.hypot(px-b.x,pz-b.z)<b.r+0.45);if(!blocked){player.position.x=THREE.MathUtils.clamp(px,-53,53);player.position.z=THREE.MathUtils.clamp(pz,-53,53)}}
 const oldY=player.position.y;
@@ -657,12 +666,25 @@ function talkToNPC(){
 }
 
 function jump(){if(onGround&&!paused){vertical=8.3;onGround=false}}
-window.addEventListener('keydown',e=>{if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)&&!['TEXTAREA','INPUT','SELECT'].includes(document.activeElement.tagName))e.preventDefault();if(['TEXTAREA','INPUT','SELECT'].includes(document.activeElement.tagName))return;pressed.add(e.code);if(e.code==='Space')jump();if(!e.repeat&&e.code==='KeyP')togglePause();if(!e.repeat&&e.code==='KeyR')restartMission();if(!e.repeat&&e.code==='KeyE')talkToNPC()});
-window.addEventListener('keyup',e=>pressed.delete(e.code));
-view.addEventListener('pointerdown',e=>{if(e.target!==renderer?.domElement)return;if(editMode){editorPointerDown(e);return}drag={x:e.clientX,y:e.clientY};view.setPointerCapture(e.pointerId)});
+window.addEventListener('keydown',e=>{
+ const active=document.activeElement;
+ if(active?.closest?.('input, textarea, select, button, [contenteditable=true]'))return;
+ if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
+ if(movementCodes.has(e.code) && !paused && !editMode)pressed.add(e.code);
+ if(e.code==='Space'&&!e.repeat)jump();
+ if(e.code==='KeyP'&&!e.repeat)togglePause();
+ if(e.code==='KeyR'&&!e.repeat)restartMission();
+ if(e.code==='KeyE'&&!e.repeat)talkToNPC();
+ if(e.code==='Escape')stopMovement();
+});
+window.addEventListener('keyup',e=>{pressed.delete(e.code)});
+window.addEventListener('pointercancel',()=>{if(!draggingEntity)stopMovement()});
+window.addEventListener('pagehide',stopMovement);
+$('stop-player').addEventListener('click',()=>{stopMovement();message('assistant','Movimento interrompido. Solte as teclas e use WASD ou as setas para andar.')});
+view.addEventListener('pointerdown',e=>{if(e.target!==renderer?.domElement)return;if(editMode){stopMovement();editorPointerDown(e);return}drag={x:e.clientX,y:e.clientY};view.setPointerCapture(e.pointerId)});
 view.addEventListener('pointermove',e=>{if(editMode){editorPointerMove(e);return}if(!drag)return;yaw-=(e.clientX-drag.x)*.005;pitch=THREE.MathUtils.clamp(pitch+(e.clientY-drag.y)*.004,-.2,.9);drag={x:e.clientX,y:e.clientY}});
 view.addEventListener('pointerup',()=>{drag=null;draggingEntity=null;persist()});view.addEventListener('pointercancel',()=>{drag=null;draggingEntity=null});view.addEventListener('wheel',e=>{if(e.target===renderer?.domElement){e.preventDefault();zoom=THREE.MathUtils.clamp(zoom+Math.sign(e.deltaY)*.8,4,15)}},{passive:false});
-document.querySelectorAll('#mobile button').forEach(b=>{const k=b.dataset.k;b.addEventListener('pointerdown',e=>{e.preventDefault();pressed.add(k);b.setPointerCapture(e.pointerId)});for(let name of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(name,()=>pressed.delete(k))});
+document.querySelectorAll('#mobile button').forEach(b=>{const k=b.dataset.k;b.addEventListener('pointerdown',e=>{e.preventDefault();if(paused||editMode)return;pressed.add(k);b.classList.add('down');b.setPointerCapture(e.pointerId)});for(const name of ['pointerup','pointercancel','pointerleave','lostpointercapture'])b.addEventListener(name,()=>{pressed.delete(k);b.classList.remove('down')})});
 $('jump').addEventListener('pointerdown',e=>{e.preventDefault();jump()});$('restart-level').addEventListener('click',restartMission);$('quality').addEventListener('change',()=>{if(renderer){renderer.setPixelRatio(Math.min(devicePixelRatio,Number($('quality').value)));renderer.setSize(view.clientWidth,view.clientHeight);renderer.shadowMap.enabled=Number($('quality').value)>1}});
 
 window.addEventListener('resize',()=>{if(!renderer)return;let w=view.clientWidth,h=view.clientHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h)});
