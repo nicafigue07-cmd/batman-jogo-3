@@ -196,7 +196,7 @@ font-weight:750;font-size:13px;pointer-events:none;max-width:70%;text-align:cent
 <div><label for="world">Cenário</label><select id="world"><option value="auto">Automático</option><option value="city">Cidade</option><option value="beach">Praia</option><option value="forest">Floresta</option><option value="space">Espaço</option></select></div>
 <div><label for="camera-mode">Câmera</label><select id="camera-mode"><option value="third">Terceira pessoa</option><option value="first">Primeira pessoa</option><option value="iso">Isométrica</option></select></div>
 <div class="mission-select"><label for="mission-mode">Objetivo do jogo</label><select id="mission-mode"><option value="collect">💎 Coletar cristais</option><option value="time">⏱ Coleta contra o tempo</option><option value="race">🏁 Corrida por checkpoints</option><option value="delivery">📦 Fazer entregas</option><option value="rescue">🛟 Resgatar personagens</option><option value="explore">🧭 Descobrir lugares</option></select></div>
-<div class="mission-select"><label for="mission-count">Quantidade de objetivos</label><select id="mission-count"><option value="3">3 desafios</option><option value="5" selected>5 desafios</option><option value="8">8 desafios</option><option value="10">10 desafios</option></select></div>
+<div class="mission-select"><label for="mission-count">Quantidade de objetivos</label><select id="mission-count"><option value="2">2 desafios</option><option value="3">3 desafios</option><option value="4">4 desafios</option><option value="5" selected>5 desafios</option><option value="6">6 desafios</option><option value="7">7 desafios</option><option value="8">8 desafios</option><option value="9">9 desafios</option><option value="10">10 desafios</option></select></div>
 </div>
 <div class="campaign-toolbar"><button id="start-campaign">📖 Criar campanha com 10 missões</button><span id="campaign-progress">1/10</span></div>
 <div class="mission-preset-buttons">
@@ -216,8 +216,8 @@ font-weight:750;font-size:13px;pointer-events:none;max-width:70%;text-align:cent
 <div class="editor-row"><button id="edit-mode" aria-pressed="false">🖱 Editar: desligado</button><button id="delete-object" disabled>Excluir selecionado</button></div>
 <div id="inspector" hidden><strong id="selected-name">Objeto selecionado</strong>
 <div class="editor-fields">
-<label>X <input id="obj-x" type="number" min="-52" max="52" step=".5"></label>
-<label>Z <input id="obj-z" type="number" min="-52" max="52" step=".5"></label>
+<label>X <input id="obj-x" type="number" min="-138" max="138" step=".5"></label>
+<label>Z <input id="obj-z" type="number" min="-138" max="138" step=".5"></label>
 <label>Tamanho <input id="obj-scale" type="number" min=".4" max="4" step=".1"></label>
 <label>Cor <input id="obj-color" type="color" value="#73cbbb"></label>
 </div>
@@ -1283,7 +1283,7 @@ solids.push({x,z,r:1.4})
 expandDistricts(rnd);
 renderEditorProps();
 if(camera)camera.position.set(0,6,20);
-let idea=spec.title||'Meu mundo 3D';$('title').textContent=idea.length>40?idea.slice(0,38)+'…':idea;$('scene-details').textContent=({city:'Cidade',beach:'Praia',forest:'Floresta',space:'Base espacial'})[worldType]+' · '+({day:'Dia',night:'Noite',sunset:'Pôr do sol'})[spec.time];$('mode-label').textContent=spec.camera==='first'?'PRIMEIRA PESSOA':spec.camera==='iso'?'CÂMERA ISOMÉTRICA':'TERCEIRA PESSOA';$('world').value=spec.world;$('camera-mode').value=spec.camera;$('mission-mode').value=spec.gameMode;$('mission-count').value=String([3,5,8,10].reduce((a,b)=>Math.abs(b-spec.missionGoal)<Math.abs(a-spec.missionGoal)?b:a));setupMission();updateChapterUI();persist();
+let idea=spec.title||'Meu mundo 3D';$('title').textContent=idea.length>40?idea.slice(0,38)+'…':idea;$('scene-details').textContent=({city:'Cidade',beach:'Praia',forest:'Floresta',space:'Base espacial'})[worldType]+' · '+({day:'Dia',night:'Noite',sunset:'Pôr do sol'})[spec.time];$('mode-label').textContent=spec.camera==='first'?'PRIMEIRA PESSOA':spec.camera==='iso'?'CÂMERA ISOMÉTRICA':'TERCEIRA PESSOA';$('world').value=spec.world;$('camera-mode').value=spec.camera;$('mission-mode').value=spec.gameMode;$('mission-count').value=String(spec.missionGoal);setupMission();updateChapterUI();persist();
 status.textContent='MUNDO PRONTO';$('pause-banner').classList.remove('visible');drawMinimap();updateObjective();
 }
 function start(){try{renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Number($('quality').value)===2?2:Math.min(devicePixelRatio,Number($('quality').value)));renderer.setSize(view.clientWidth,view.clientHeight);renderer.shadowMap.enabled=Number($('quality').value)>1;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.35;view.insertBefore(renderer.domElement,view.firstChild);camera=new THREE.PerspectiveCamera(65,view.clientWidth/view.clientHeight,.1,550);generate();animate()}catch(e){msg.textContent='Não foi possível iniciar o 3D: '+e.message;status.textContent='ERRO WEBGL'}}
