@@ -162,6 +162,9 @@ font-weight:750;font-size:13px;pointer-events:none;max-width:70%;text-align:cent
 
 .campaign-toolbar{display:flex;align-items:center;gap:8px;margin:10px 0 3px}
 .campaign-toolbar button{flex:1;padding:10px 8px;font-size:12px;font-weight:850;background:linear-gradient(105deg,#095f71,#187b74);color:#e7fffa;border:1px solid #79e5cf;border-radius:9px;cursor:pointer}
+.travel-toolbar{margin:10px 0;display:grid;gap:5px}
+.travel-toolbar label{color:#92ded4;font-size:11px;font-weight:800}
+.travel-toolbar select{background:#112d45;color:#e5fffa;border:1px solid #4c9b9d;border-radius:9px;padding:10px;max-width:100%;font-weight:700}
 #campaign-progress{font-size:11px;color:#91eacb;font-weight:850;min-width:28px}
 .chapter-status{position:absolute;top:65px;left:50%;transform:translateX(-50%);max-width:68%;background:#071e32de;border:1px solid #7adcc8aa;border-radius:9px;padding:6px 12px;z-index:3;font-weight:850;font-size:12px;text-align:center;pointer-events:none}
 .chapter-story{position:absolute;bottom:44px;left:12px;max-width:48%;background:#081b2ec9;padding:6px 11px;border-radius:8px;font-size:11px;line-height:1.5;color:#dceff5;z-index:2;pointer-events:none}
@@ -186,6 +189,8 @@ font-weight:750;font-size:13px;pointer-events:none;max-width:70%;text-align:cent
 <button class="chip" data-example="Crie uma praia ensolarada com muitos coqueiros">🏝️ Praia</button>
 <button class="chip" data-example="Faça uma floresta com 15 cristais e obstáculos">🌲 Aventura</button>
 <button class="chip" data-example="Mude para câmera em primeira pessoa e aumente a velocidade">🎥 Câmera FPS</button>
+<button class="chip" data-example="Crie uma campanha com 20 missões e uma história">📖 20 missões</button>
+<button class="chip" data-example="Quero um jogo de resgate com 8 personagens na floresta">🛟 Resgate</button>
 </div>
 <div class="chatbox">
 <label for="prompt">Mensagem para a FORGE</label>
@@ -199,6 +204,18 @@ font-weight:750;font-size:13px;pointer-events:none;max-width:70%;text-align:cent
 <div class="mission-select"><label for="mission-count">Quantidade de objetivos</label><select id="mission-count"><option value="2">2 desafios</option><option value="3">3 desafios</option><option value="4">4 desafios</option><option value="5" selected>5 desafios</option><option value="6">6 desafios</option><option value="7">7 desafios</option><option value="8">8 desafios</option><option value="9">9 desafios</option><option value="10">10 desafios</option></select></div>
 </div>
 <div class="campaign-toolbar"><button id="start-campaign">📖 Criar campanha com 20 missões</button><span id="campaign-progress">1/20</span></div>
+<div class="travel-toolbar">
+  <label for="travel-destination">🧭 Explorar mapa de 640 × 640</label>
+  <select id="travel-destination" aria-label="Viagem rápida pelo mundo 3D">
+    <option value="">Viagem rápida — escolha a região</option>
+    <option value="center">🏠 Região central</option>
+    <option value="north">⬆ Região norte</option>
+    <option value="south">⬇ Região sul</option>
+    <option value="east">➡ Região leste</option>
+    <option value="west">⬅ Região oeste</option>
+    <option value="target">🎯 Perto do próximo objetivo</option>
+  </select>
+</div>
 <div class="mission-preset-buttons">
 <button data-mission="race">🏁 Corrida</button><button data-mission="delivery">📦 Entregas</button><button data-mission="rescue">🛟 Resgate</button><button data-mission="explore">🗺 Exploração</button>
 </div>
@@ -323,9 +340,9 @@ return o}
 
 /* Assistente local: respostas sobre o projeto, sugestões e próximas ações. */
 const help=(m)=>({
- ideas:'Você pode criar uma campanha de 20 capítulos com resgates, corrida, entregas, exploração e coleta. Também pode criar um jogo só de corrida, mudar o cenário ou adicionar casas.',
+ ideas:'Posso montar uma campanha de 20 capítulos com personagens, resgates, corridas, entregas, exploração e coleta. Descreva um jogo: cenário, objetivo, quantos personagens e iluminação. Exemplos: “Crie uma floresta noturna com 5 resgates”; “Faça uma corrida com 8 checkpoints”; “Crie uma campanha com 20 missões”. Para mecânicas totalmente inéditas, é necessário conectar o servidor de IA generativa.',
  mission:'Seu objetivo atual é '+(missionDescriptions[spec.gameMode]||'explorar')+'.'+(spec.campaign?' Capítulo '+(spec.chapterIndex+1)+' de '+CHAPTERS.length+'.':'')+' Use o minimapa e os marcadores para se orientar.',
- map:'O mapa agora tem 640 por 640 unidades. Use as viagens rápidas para visitar os bairros externos. Explore os bairros e as regiões distantes usando o minimapa. Você pode correr com Shift.',
+ map:'O mapa tem 640 × 640 unidades, com centro e quatro regiões distantes. Use 🧭 Viagem rápida para ir ao norte, sul, leste, oeste ou ao próximo objetivo. Você também pode correr com Shift.',
  real:'O modo local entende comandos e oferece planos, mas NÃO é um modelo generativo como o ChatGPT. Para conversar com uma IA real que gere código, conecte um servidor HTTPS próprio em ⚙ IA real. Não coloque uma chave secreta no navegador.',
  chapter:'A campanha tem 20 capítulos. '+CHAPTERS.map((c,i)=>(i+1)+'. '+c.name+' ('+c.mode+')').join('; ')+'. Para iniciar, use o botão 📖 Criar campanha.'
 })[m];
@@ -342,7 +359,7 @@ if(has(/(?:como e a ia|voce e uma ia|igual ao chatgpt|igual a voce|conectar ia r
  return {patch:{},reply:help('real')};
 if(has(/(?:quais sao os capitulos|quantas missoes|resumo da historia|lore do jogo)/))
  return {patch:{},reply:help('chapter')};
-if(has(/(?:qual tamanho do mapa|como chegar longe|o mapa e grande|quero mapa maior)/))
+if(has(/(?:qual tamanho do mapa|como chegar longe|o mapa e grande|quero mapa maior|viagem rapida|como ir para outra regiao)/))
  return {patch:{},reply:help('map')};
 if(has(/(nova|novo|crie|criar|quero|faz|faca|mude|troque|coloque|cen[aá]rio|ambiente|mundo|mapa)/)){mentions=true}
 if(has(/praia|oceano|mar\b|surf|ilha|coqueiro/)){patch.world='beach';details.push('praia com mar e coqueiros')}
@@ -433,7 +450,7 @@ else if(has(/coletar cristais|coleta de cristais|modo coleta/)&&!foundMode){patc
 if(has(/reset|recomecar|limpar tudo/)){return {patch:baseSpec(),reply:'Reiniciei o cenário com as configurações iniciais.'}}
 if(has(/campanha|historia com|lore com|varias missoes|muitas missoes|(?:6|7|8|9|10|12|15|20) missoes/)){
  patch.campaign=true;patch.chapterIndex=0;
- details.push('campanha de 10 capítulos conectados pela história');
+ details.push('campanha de 20 capítulos conectados pela história');
 }
 if(mentions&&Object.keys(patch).length===0){
  return {patch:{},reply:'Posso planejar essa ideia, mas ainda não sei criar essa mecânica nova no modo local. Sugiro começar com um dos seis objetivos, adicionar objetos e montar uma campanha. Para gerar código 3D novo com IA, configure o servidor em ⚙ IA real.'};
@@ -1746,6 +1763,46 @@ $('mission-count').addEventListener('change',()=>{
  message('assistant','A missão agora tem '+spec.missionGoal+' etapas.');
 });
 document.querySelectorAll('[data-mission]').forEach(b=>b.addEventListener('click',()=>chooseMission(b.dataset.mission)));
+
+function travelToRegion(destination){
+ if(!player)return;
+ const regions={
+  center:{x:0,z:12,label:'Região central'},
+  north:{x:0,z:-240,label:'Região norte'},
+  south:{x:0,z:240,label:'Região sul'},
+  east:{x:240,z:0,label:'Região leste'},
+  west:{x:-240,z:0,label:'Região oeste'}
+ };
+ const target=nextMissionTarget?.();
+ let p=regions[destination];
+ if(destination==='target'){
+  if(['collect','time'].includes(spec.gameMode)){
+   const available=crystals.find(c=>!c.found);
+   if(available)p={x:available.mesh.position.x+4,z:available.mesh.position.z+6,label:'Perto do cristal'};
+  }else if(target)p={x:target.x+4,z:target.z+6,label:'Perto do objetivo'};
+ }
+ if(!p){message('assistant','Ainda não há objetivo disponível nesta missão.');return}
+ stopMovement();
+ let x=THREE.MathUtils.clamp(p.x,-MAP_HALF+6,MAP_HALF-6);
+ let z=THREE.MathUtils.clamp(p.z,-MAP_HALF+6,MAP_HALF-6);
+ for(let i=0;i<16;i++){
+  if(!solids.some(b=>Math.hypot(x-b.x,z-b.z)<b.r+1.2))break;
+  x=THREE.MathUtils.clamp(x+3,-MAP_HALF+6,MAP_HALF-6);
+  z=THREE.MathUtils.clamp(z+3,-MAP_HALF+6,MAP_HALF-6);
+ }
+ player.position.set(x,0,z);
+ vertical=0;onGround=true;
+ if(player.userData.groundShadow)player.userData.groundShadow.position.set(x,.1,z);
+ camera.position.set(x+7,7,z+11);
+ updateObjective();drawMinimap();
+ message('assistant','Viagem rápida: '+p.label+'. Coordenadas X '+Math.round(x)+' e Z '+Math.round(z)+'. Continue a exploração.');
+}
+$('travel-destination').addEventListener('change',()=>{
+ const destination=$('travel-destination').value;
+ $('travel-destination').value='';
+ if(destination)travelToRegion(destination)
+});
+
 $('start-campaign').addEventListener('click',startCampaign);
 $('next-chapter').addEventListener('click',nextCampaignChapter);
 
