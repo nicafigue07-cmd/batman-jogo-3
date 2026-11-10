@@ -783,6 +783,12 @@ clone.querySelector('body').dataset.gameMode='true';
 clone.querySelector('body').dataset.exportType=spec.world;
 clone.querySelector('body').dataset.exportSpec=encodeURIComponent(JSON.stringify(spec));
 clone.querySelector('#generated-panel')?.remove();clone.querySelector('canvas')?.remove();
+for(const id of ['access-token','endpoint','prompt']){
+ const el=clone.querySelector('#'+id);
+ if(el){el.value='';el.removeAttribute('value');if(el.tagName==='TEXTAREA')el.textContent=''}
+}
+const history=clone.querySelector('#chatlog');if(history)history.textContent='';
+const advanced=clone.querySelector('#advanced');if(advanced)advanced.hidden=true;
 const gameMessage=clone.querySelector('#msg');gameMessage.textContent='Carregando jogo 3D...';gameMessage.style.display='';
 const a=document.createElement('a');const blob=new Blob(['<!doctype html>'+clone.outerHTML],{type:'text/html;charset=utf-8'});a.href=URL.createObjectURL(blob);a.download='jogo-3d-forge.html';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);
 message('assistant','Jogo exportado para HTML. O arquivo precisa de internet para carregar o motor 3D.')
