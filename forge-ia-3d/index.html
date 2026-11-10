@@ -320,10 +320,30 @@ if(Array.isArray(input.objectsAdd)){
 }
 if(!Array.isArray(o.objects))o.objects=[];
 return o}
+
+/* Assistente local: respostas sobre o projeto, sugestões e próximas ações. */
+const help=(m)=>({
+ ideas:'Você pode criar uma campanha de 10 capítulos com resgates, corrida, entregas, exploração e coleta. Também pode criar um jogo só de corrida, mudar o cenário ou adicionar casas.',
+ mission:'Seu objetivo atual é '+(missionDescriptions[spec.gameMode]||'explorar')+'.'+(spec.campaign?' Capítulo '+(spec.chapterIndex+1)+' de 10.':'')+' Use o minimapa e os marcadores para se orientar.',
+ map:'O mapa agora tem 290 por 290 unidades. Explore os bairros e as regiões distantes usando o minimapa. Você pode correr com Shift.',
+ real:'O modo local entende comandos e oferece planos, mas NÃO é um modelo generativo como o ChatGPT. Para conversar com uma IA real que gere código, conecte um servidor HTTPS próprio em ⚙ IA real. Não coloque uma chave secreta no navegador.',
+ chapter:'A campanha tem 10 capítulos. '+CHAPTERS.map((c,i)=>(i+1)+'. '+c.name+' ('+c.mode+')').join('; ')+'. Para iniciar, use o botão 📖 Criar campanha.'
+})[m];
+
 function detectOffline(request){
 const v=request.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 let patch={},details=[],mentions=false;
 function has(re){return re.test(v)}
+if(has(/(?:o que voce faz|como funciona|me ajude|comandos disponiveis|me de ideias|sugira um jogo|o que posso criar)/))
+ return {patch:{},reply:help('ideas')};
+if(has(/(?:qual a missao|o que preciso fazer|qual meu objetivo|proxima etapa|como jogar)/))
+ return {patch:{},reply:help('mission')};
+if(has(/(?:como e a ia|voce e uma ia|igual ao chatgpt|igual a voce|conectar ia real|ia de verdade)/))
+ return {patch:{},reply:help('real')};
+if(has(/(?:quais sao os capitulos|quantas missoes|resumo da historia|lore do jogo)/))
+ return {patch:{},reply:help('chapter')};
+if(has(/(?:qual tamanho do mapa|como chegar longe|o mapa e grande|quero mapa maior)/))
+ return {patch:{},reply:help('map')};
 if(has(/(nova|novo|crie|criar|quero|faz|faca|mude|troque|coloque|cen[aá]rio|ambiente|mundo|mapa)/)){mentions=true}
 if(has(/praia|oceano|mar\b|surf|ilha|coqueiro/)){patch.world='beach';details.push('praia com mar e coqueiros')}
 else if(has(/floresta|selva|mata|arvore|bosque|natureza/)){patch.world='forest';details.push('floresta explorável')}
@@ -415,7 +435,9 @@ if(has(/campanha|historia com|lore com|varias missoes|muitas missoes|(?:6|7|8|9|
  patch.campaign=true;patch.chapterIndex=0;
  details.push('campanha de 10 capítulos conectados pela história');
 }
-if(mentions&&Object.keys(patch).length===0){patch.title=request.slice(0,65);details.push('nome do projeto atualizado')}
+if(mentions&&Object.keys(patch).length===0){
+ return {patch:{},reply:'Posso planejar essa ideia, mas ainda não sei criar essa mecânica nova no modo local. Sugiro começar com um dos seis objetivos, adicionar objetos e montar uma campanha. Para gerar código 3D novo com IA, configure o servidor em ⚙ IA real.'};
+}
 return {patch,reply:details.length?'Pronto! Atualizei: '+details.join(', ')+'. Você pode pedir mais mudanças sem perder as anteriores.': 'Entendi sua ideia! Ainda não consigo gerar essa mecânica específica no modo criativo local. Posso criar cidades, praias, florestas, mapas espaciais, NPCs decorativos, cristais, obstáculos e mudanças de câmera e iluminação. Para pedidos mais complexos, conecte uma IA real em “⚙ IA real”.'};
 }
 async function applyPrompt(request){
@@ -859,6 +881,12 @@ const missionDescriptions={
  explore:'Descubra todos os marcos luminosos pelo cenário'
 };
 function missionWaypoint(i,n){
+ if(spec.campaign){
+  const locations=worldType==='beach'
+   ?[{x:0,z:14},{x:-104,z:57},{x:105,z:78},{x:-99,z:115},{x:94,z:130},{x:0,z:111},{x:-118,z:100},{x:115,z:102},{x:0,z:65},{x:0,z:125}]
+   :[{x:-1.7,z:7},{x:-94,z:53},{x:-94,z:-94},{x:94,z:-94},{x:94,z:94},{x:0,z:-119},{x:115,z:0},{x:-115,z:0},{x:0,z:119},{x:0,z:-130}];
+  return locations[i%locations.length];
+ }
  if(worldType==='beach'){
   return {x:i%3===0?0:i%2===0?-3.2:3.2,z:11+(i+1)*(33/(n+1))};
  }
@@ -916,7 +944,7 @@ function setupMission(){
     missionTargets.push(missionBeacon(x,z,i%2?0xffcf68:0x63eed5))}
  }else if(mode==='delivery'){
    missionTargets.push(missionBeacon(-2.8,4,0xf1bc73,'package'));
-   missionTargets.push(missionBeacon(worldType==='beach'?4:0,worldType==='beach'?40:-34,0x6ad7ff,'package'));
+   missionTargets.push(missionBeacon(worldType==='beach'?4:0,worldType==='beach'?(spec.campaign?115:40):(spec.campaign?-105:-34),0x6ad7ff,'package'));
    missionTargets[1].root.visible=false;
  }else if(mode==='rescue'||mode==='explore'){
    for(let i=0;i<spec.missionGoal;i++){const {x,z}=missionWaypoint(i,spec.missionGoal);
@@ -1077,7 +1105,7 @@ function expandDistricts(r){
   const dummy=new THREE.Object3D();
   for(let i=0;i<qty;i++){
    let x=-135+r()*270,z=-135+r()*270;
-   if(Math.abs(x)<9&&Math.abs(z)<54)x=x>0?14:-14;
+   if(Math.abs(x)<9)x=x>0?15:-15;
    const k=.8+r()*.85;
    dummy.scale.set(k,k,k);dummy.position.set(x,1.5*k,z);dummy.updateMatrix();trunks.setMatrixAt(i,dummy.matrix);
    dummy.position.y=4*k;dummy.updateMatrix();crowns.setMatrixAt(i,dummy.matrix);
