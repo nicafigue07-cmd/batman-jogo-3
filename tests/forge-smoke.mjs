@@ -101,6 +101,31 @@ try {
  await page.waitForTimeout(500);
  if((await page.evaluate(()=>window.__forgeStats().objects))!==1)throw Error('Importação de projeto JSON falhou');
  console.log('EDITOR_OK',JSON.stringify({objects:1,mode:park.gameMode,import:true,export:true}));
+
+ // Integração de geração completa: API simulada, sem utilizar chave ou gastar créditos.
+ const fakeHtml='<!doctype html><html><head><title>Jogo teste</title></head><body><canvas></canvas><script type="module">document.body.dataset.game="yes"</script></body></html>'+('<!-- code generation mock -->'.repeat(70));
+ await page.route('https://mock.example/api/game',async(route)=>{
+   const headers={'Access-Control-Allow-Origin':'http://127.0.0.1:'+port,'Access-Control-Allow-Headers':'authorization,content-type','Access-Control-Allow-Methods':'POST,OPTIONS'};
+   if(route.request().method()==='OPTIONS')return route.fulfill({status:204,headers});
+   return route.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify({summary:'Minijogo 3D de teste',html:fakeHtml})});
+ });
+ await page.locator('#settings').click();
+ await page.locator('#endpoint').fill('https://mock.example/api/forge');
+ await page.locator('#access-token').fill('falso-apenas-para-teste');
+ await page.locator('#connect').click();
+ await page.locator('#prompt').fill('Gere um novo jogo 3D');
+ await page.locator('#generate-full').click();
+ await page.locator('#generated-panel').waitFor({state:'visible',timeout:15000});
+ if(await page.locator('#generated-frame').getAttribute('sandbox')!=='allow-scripts')throw Error('Prévia de código precisa estar isolada');
+ await page.frameLocator('#generated-frame').locator('body[data-game="yes"]').waitFor({state:'attached',timeout:10000});
+ const genDownload=page.waitForEvent('download',{timeout:15000});
+ await page.locator('#download-generated').click();
+ const generated=await genDownload;
+ if(!readFileSync(await generated.path(),'utf8').includes('Jogo teste'))throw Error('Download de jogo programado pela IA falhou');
+ await page.locator('#close-generated').click();
+ if(await page.locator('#generated-panel').isVisible())throw Error('Falha em voltar ao editor após ver prévia de IA');
+ console.log('AI_CODE_PREVIEW_OK',JSON.stringify({mocked:true,sandboxed:true,download:true}));
+
  await page.screenshot({path:'artifacts/forge-editor.png'});
 
  const narrow=await browser.newPage({viewport:{width:390,height:830},isMobile:true,hasTouch:true});
