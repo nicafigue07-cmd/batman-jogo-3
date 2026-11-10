@@ -86,6 +86,9 @@ body[data-game-mode=true] #game-details{display:block}
 #pause-banner.visible{display:grid}
 .top-actions select{cursor:pointer;border-radius:8px;background:#172c45;color:#d8f2ff;border:1px solid #365776;padding:6px 8px;font-size:11px;font-weight:700}
 #jump{border-radius:99px}
+#interact{display:none;position:absolute;right:15px;bottom:132px;width:86px;height:48px;border:1px solid #b7fff1;border-radius:99px;background:#116a78c7;color:white;font-weight:800;touch-action:none}
+.mission-select{min-width:0}.mission-preset-buttons{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}.mission-preset-buttons button{background:#18364e;border:1px solid #3c6d75;border-radius:8px;color:#b6f9e9;font-size:10px;font-weight:800;padding:8px 2px;cursor:pointer}
+@media(max-width:700px),(pointer:coarse){#interact{display:block}}
 @media(max-width:700px),(pointer:coarse){
  #minimap-wrap{top:100px;bottom:auto;right:8px;width:106px;height:106px}
  #minimap{width:106px;height:106px}
@@ -138,14 +141,14 @@ font-weight:750;font-size:13px;pointer-events:none;max-width:70%;text-align:cent
 </style>
 </head>
 <body>
-<header><span class="brand">⚡ FORGE <b>IA 3D PRO</b></span><span class="tag">CRIADOR DE JOGOS • VERSÃO 6.0</span></header>
+<header><span class="brand">⚡ FORGE <b>IA 3D PRO</b></span><span class="tag">CRIADOR DE JOGOS • VERSÃO 7.0</span></header>
 <main>
 <aside>
 <h1>✨ Crie jogos conversando</h1>
 <p class="sub">Diga o que quer e melhore o jogo em etapas. O modo gratuito entende comandos de construção; conecte um servidor para usar um modelo de IA real.</p>
 <div id="online-mode">● Modo criativo local</div>
 <div id="chatlog" class="chatlog" role="log" aria-live="polite">
-<div class="message assistant"><span class="role">FORGE · ASSISTENTE</span>Olá! Eu crio e melhoro mundos 3D. Experimente: “Crie uma cidade à noite com 4 personagens e 12 cristais”. O que vamos construir?</div>
+<div class="message assistant"><span class="role">FORGE · ASSISTENTE</span>Descreva um jogo com um objetivo: “Crie uma corrida por 5 checkpoints”, “Faça um jogo de entregas na cidade” ou “Quero resgatar personagens na floresta”. O modo local monta a missão; IA generativa real exige o servidor conectado.</div>
 </div>
 <div class="examples">
 <button class="chip" data-example="Crie uma cidade japonesa à noite com 5 personagens">🌃 Cidade japonesa</button>
@@ -161,6 +164,11 @@ font-weight:750;font-size:13px;pointer-events:none;max-width:70%;text-align:cent
 <div class="studio-options">
 <div><label for="world">Cenário</label><select id="world"><option value="auto">Automático</option><option value="city">Cidade</option><option value="beach">Praia</option><option value="forest">Floresta</option><option value="space">Espaço</option></select></div>
 <div><label for="camera-mode">Câmera</label><select id="camera-mode"><option value="third">Terceira pessoa</option><option value="first">Primeira pessoa</option><option value="iso">Isométrica</option></select></div>
+<div class="mission-select"><label for="mission-mode">Objetivo do jogo</label><select id="mission-mode"><option value="collect">💎 Coletar cristais</option><option value="time">⏱ Coleta contra o tempo</option><option value="race">🏁 Corrida por checkpoints</option><option value="delivery">📦 Fazer entregas</option><option value="rescue">🛟 Resgatar personagens</option><option value="explore">🧭 Descobrir lugares</option></select></div>
+<div class="mission-select"><label for="mission-count">Quantidade de objetivos</label><select id="mission-count"><option value="3">3 desafios</option><option value="5" selected>5 desafios</option><option value="8">8 desafios</option><option value="10">10 desafios</option></select></div>
+</div>
+<div class="mission-preset-buttons">
+<button data-mission="race">🏁 Corrida</button><button data-mission="delivery">📦 Entregas</button><button data-mission="rescue">🛟 Resgate</button><button data-mission="explore">🗺 Exploração</button>
 </div>
 
 <details id="object-editor">
@@ -203,10 +211,10 @@ font-weight:750;font-size:13px;pointer-events:none;max-width:70%;text-align:cent
 <p class="note">🎮 WASD para andar · Espaço para pular · Arraste para girar. Este site gera protótipos 3D. A IA avançada só funciona depois de conectar um servidor.</p>
 </aside>
 <section><div class="toolbar"><strong>🎮 Editor e prévia 3D</strong><div class="top-actions"><select id="quality" aria-label="Qualidade gráfica"><option value="1">Leve</option><option value="1.5" selected>Equilibrado</option><option value="2">Bonito</option></select><button id="stop-player" title="Parar qualquer movimento do personagem">■ Parar</button><button id="restart-level">↻ Missão</button><button id="reset-camera">⟳ Câmera</button><span class="pill" id="status">CARREGANDO 3D</span></div></div>
-<div id="viewport"><div id="hud"><strong id="title">Meu jogo 3D</strong>💎 Cristais: <span id="score">0/7</span></div>
-<div id="game-details"><b id="mode-label">EXPLORAÇÃO 3D</b><span id="scene-details">Mundo criado pela FORGE</span></div><div id="direction"><strong>🧭 Missão:</strong> encontre os cristais</div><div id="dialogue" hidden></div><div id="minimap-wrap"><canvas id="minimap" width="308" height="308" aria-label="Minimapa do cenário"></canvas><span id="minimap-name">MAPA</span></div><div id="pause-banner">⏸ PAUSADO</div><div id="generated-panel" hidden><div class="generated-head"><strong id="generated-title">Novo jogo da IA</strong><div><button id="download-generated">⬇ Baixar jogo</button><button id="close-generated">✕ Voltar</button></div></div><iframe id="generated-frame" title="Prévia de minijogo 3D criado pela IA" sandbox="allow-scripts" referrerpolicy="no-referrer"></iframe></div><div id="msg">Preparando mundo 3D…</div><div class="hint">WASD: andar • Shift: correr • Espaço: pular • Arraste: câmera • R: reiniciar • P: pausar</div>
+<div id="viewport"><div id="hud"><strong id="title">Meu jogo 3D</strong><span id="goal-name">💎 Cristais</span>: <span id="score">0/7</span></div>
+<div id="game-details"><b id="mode-label">EXPLORAÇÃO 3D</b><span id="scene-details">Mundo criado pela FORGE</span></div><div id="direction"><strong>🧭 Missão:</strong> encontre os cristais</div><div id="dialogue" hidden></div><div id="minimap-wrap"><canvas id="minimap" width="308" height="308" aria-label="Minimapa do cenário"></canvas><span id="minimap-name">MAPA</span></div><div id="pause-banner">⏸ PAUSADO</div><div id="generated-panel" hidden><div class="generated-head"><strong id="generated-title">Novo jogo da IA</strong><div><button id="download-generated">⬇ Baixar jogo</button><button id="close-generated">✕ Voltar</button></div></div><iframe id="generated-frame" title="Prévia de minijogo 3D criado pela IA" sandbox="allow-scripts" referrerpolicy="no-referrer"></iframe></div><div id="msg">Preparando mundo 3D…</div><div class="hint">WASD: mover • Shift: correr • Espaço: pular • E: interagir • R: reiniciar • P: pausar</div>
 <div id="mobile"><button data-k="KeyW">↑</button><button data-k="KeyA">←</button><button data-k="KeyS">↓</button><button data-k="KeyD">→</button></div>
-<button id="jump">PULAR</button></div>
+<button id="jump">PULAR</button><button id="interact" aria-label="Interagir com objetivo ou personagem">INTERAGIR</button></div>
 <footer id="notice">Protótipo 3D no navegador • Salve seu projeto regularmente • O modo IA real exige servidor configurado.</footer></section></main>
 <script type="module">
 let THREE;
@@ -229,7 +237,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)stopMovemen
 document.addEventListener('focusin',e=>{if(e.target.closest?.('aside, .toolbar'))stopMovement()});
 
 
-const baseSpec=()=>({world:'city',time:'day',density:1,collectibles:7,npcs:2,obstacles:0,camera:'third',speed:8,playerColor:'#27a8c1',title:'Meu mundo 3D',gameMode:'collect',objects:[]});
+const baseSpec=()=>({world:'city',time:'day',density:1,collectibles:7,npcs:2,obstacles:0,camera:'third',speed:8,playerColor:'#27a8c1',title:'Meu mundo 3D',gameMode:'collect',missionGoal:5,objects:[]});
 let spec=(()=>{try{return {...baseSpec(),...JSON.parse(decodeURIComponent(document.body.dataset.exportSpec||''))}}catch{return baseSpec()}})();
 let changes=[],redos=[],conversation=[],apiEndpoint='',accessToken='',npcs=[],npcClock=0;
 let editMode=false,selectedId=null,customGroups=[],selectedHelper=null,draggingEntity=null;
@@ -266,7 +274,8 @@ if(Number.isFinite(Number(input.obstacles)))o.obstacles=Math.round(clamp(input.o
 if(Number.isFinite(Number(input.density)))o.density=clamp(input.density,.4,2.2);
 if(Number.isFinite(Number(input.speed)))o.speed=clamp(input.speed,3,18);
 if(typeof input.playerColor==='string'&&/^#[a-f0-9]{6}$/i.test(input.playerColor))o.playerColor=input.playerColor;
-if(['collect','time','explore'].includes(input.gameMode))o.gameMode=input.gameMode;
+if(['collect','time','race','delivery','rescue','explore'].includes(input.gameMode))o.gameMode=input.gameMode;
+if(Number.isFinite(Number(input.missionGoal)))o.missionGoal=Math.round(clamp(input.missionGoal,2,10));
 if(Array.isArray(input.objects))o.objects=input.objects.slice(0,80).map(cleanEntity).filter(Boolean);
 if(Array.isArray(input.objectsAdd)){
  const base=Array.isArray(o.objects)?o.objects:[];
@@ -289,6 +298,28 @@ else if(has(/de dia|ensolarad|amanhecer|claro/)){patch.time='day';details.push('
 if(has(/primeira pessoa|camera fps|visao fps/)){patch.camera='first';details.push('câmera em primeira pessoa')}
 else if(has(/isometrica|vista de cima|camera de cima/)){patch.camera='iso';details.push('câmera isométrica')}
 else if(has(/terceira pessoa|camera atras/)){patch.camera='third';details.push('câmera em terceira pessoa')}
+
+// Interpretador de objetivos: cria regras de vitória diferentes, não apenas muda a aparência do mapa.
+const missionMatchers=[
+ {id:'race',re:/(?:corrida(?: de | por | com | ate | a )?|checkpoints?|pontos de controle|linha de chegada|circuito|voltas? na pista|chegar primeiro)/},
+ {id:'delivery',re:/(?:entregas?|entregar|delivery|encomendas?|pacotes?|correios?|transportar cargas?)/},
+ {id:'rescue',re:/(?:resgat(?:e|ar|ando)|salvar (?:os |as |um |uma )?(?:personagens?|pessoas?|habitantes?|animais?)|socorr(?:er|o)|ajudar moradores)/},
+ {id:'explore',re:/(?:explora(?:r|cao|ndo)|descobr(?:ir|ir lugares|imento)|visitar locais|pontos turisticos|encontrar lugares|mapear o mundo)/},
+ {id:'time',re:/(?:contra o tempo|desafio cronometrado|coletar antes do tempo acabar)/},
+ {id:'collect',re:/(?:coletar (?:moedas|cristais|itens|tesouros)|caca ao tesouro|pegar (?:as )?moedas|juntar cristais)/}
+];
+const foundMode=missionMatchers.find(m=>m.re.test(v));
+if(foundMode){
+ patch.gameMode=foundMode.id;
+ const names={race:'corrida por checkpoints',delivery:'entregas de pacotes',rescue:'resgate de personagens',explore:'exploração de lugares',time:'coleta cronometrada',collect:'coleta de cristais'};
+ details.push('objetivo: '+names[foundMode.id]);
+ if(/(?:crie|faz|faca|quero|jogo|jogar|desenvolva|gere|monte)/.test(v)&&!/(?:somente|sem mudar)/.test(v)){
+  patch.title=({race:'Corrida dos Checkpoints',delivery:'Missão de Entregas',rescue:'Equipe de Resgate',explore:'Expedição 3D',time:'Desafio Contra o Tempo',collect:'Caça aos Cristais'})[foundMode.id];
+ }
+}
+const missionAmount=v.match(/\b(\d{1,2})\s*(?:checkpoints?|pontos de controle|entregas?|pacotes?|resgates?|pessoas? para resgatar|lugares?|locais?|objetivos?|missoes?)\b/);
+if(missionAmount){patch.missionGoal=Math.min(10,Math.max(2,Number(missionAmount[1])));details.push(patch.missionGoal+' etapas de missão')}
+
 const numberNear=(re)=>{const m=v.match(re);return m?Number(m[1]):null}
 const chr=numberNear(/\b(\d{1,2})\s*(personagens?|npcs?|pessoas?|habitantes?)/);
 if(chr!==null){patch.npcs=chr;details.push(chr+' personagens no cenário')}
@@ -304,7 +335,7 @@ if(has(/mais arvores|mais predios|mais detalh|mais objetos|maior|grande/)){patch
 else if(has(/menos objetos|mais leve|otimiz|melhor fps|mais simples/)){patch.density=Math.max(.4,spec.density-.4);details.push('menos objetos para melhorar o desempenho')}
 const speed=numberNear(/\b(?:velocidade|speed)\s*(?:de|para|:)?\s*(\d{1,2})/);
 if(speed!==null){patch.speed=speed;details.push('velocidade ajustada')}
-else if(has(/mais rapido|aumente a velocidade|correr|corrida/)){patch.speed=Math.min(18,spec.speed+3);details.push('personagem mais rápido')}
+else if(has(/mais rapido|aumente a velocidade|correr mais rapido/)){patch.speed=Math.min(18,spec.speed+3);details.push('personagem mais rápido')}
 else if(has(/mais devagar|reduza a velocidade/)){patch.speed=Math.max(3,spec.speed-2);details.push('personagem mais lento')}
 if(has(/vermelh/)){patch.playerColor='#d95363';details.push('personagem vermelho')}
 else if(has(/azul/)){patch.playerColor='#3b9ff4';details.push('personagem azul')}
@@ -336,9 +367,9 @@ for(const item of objectDictionary){
  }));
  details.push(n+' objetos do tipo '+item.type);break;
 }
-if(has(/contra o tempo|corrida contra o tempo|cronometro|desafio de tempo/)){patch.gameMode='time';details.push('missão contra o tempo')}
-else if(has(/explorar livremente|modo livre|sem missao/)){patch.gameMode='explore';details.push('exploração livre')}
-else if(has(/coletar cristais|coleta de cristais|modo coleta/)){patch.gameMode='collect';details.push('missão de coleta')}
+if(has(/contra o tempo|corrida contra o tempo|cronometro|desafio de tempo/)&&!foundMode){patch.gameMode='time';details.push('missão contra o tempo')}
+else if(has(/explorar livremente|modo livre|sem missao/)&&!foundMode){patch.gameMode='explore';details.push('descobrir lugares')}
+else if(has(/coletar cristais|coleta de cristais|modo coleta/)&&!foundMode){patch.gameMode='collect';details.push('missão de coleta')}
 
 if(has(/reset|recomecar|limpar tudo/)){return {patch:baseSpec(),reply:'Reiniciei o cenário com as configurações iniciais.'}}
 if(mentions&&Object.keys(patch).length===0){patch.title=request.slice(0,65);details.push('nome do projeto atualizado')}
@@ -793,7 +824,7 @@ solids.push({x,z,r:1.4})
 }
 renderEditorProps();
 if(camera)camera.position.set(0,6,20);
-let idea=spec.title||'Meu mundo 3D';$('title').textContent=idea.length>40?idea.slice(0,38)+'…':idea;$('scene-details').textContent=({city:'Cidade',beach:'Praia',forest:'Floresta',space:'Base espacial'})[worldType]+' · '+({day:'Dia',night:'Noite',sunset:'Pôr do sol'})[spec.time];$('mode-label').textContent=spec.camera==='first'?'PRIMEIRA PESSOA':spec.camera==='iso'?'CÂMERA ISOMÉTRICA':'TERCEIRA PESSOA';$('world').value=spec.world;$('camera-mode').value=spec.camera;persist();
+let idea=spec.title||'Meu mundo 3D';$('title').textContent=idea.length>40?idea.slice(0,38)+'…':idea;$('scene-details').textContent=({city:'Cidade',beach:'Praia',forest:'Floresta',space:'Base espacial'})[worldType]+' · '+({day:'Dia',night:'Noite',sunset:'Pôr do sol'})[spec.time];$('mode-label').textContent=spec.camera==='first'?'PRIMEIRA PESSOA':spec.camera==='iso'?'CÂMERA ISOMÉTRICA':'TERCEIRA PESSOA';$('world').value=spec.world;$('camera-mode').value=spec.camera;$('mission-mode').value=spec.gameMode;$('mission-count').value=String([3,5,8,10].reduce((a,b)=>Math.abs(b-spec.missionGoal)<Math.abs(a-spec.missionGoal)?b:a));persist();
 status.textContent='MUNDO PRONTO';msg.style.display='none';$('pause-banner').classList.remove('visible');drawMinimap();updateObjective();
 }
 function start(){try{renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio,Number($('quality').value)));renderer.setSize(view.clientWidth,view.clientHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.35;view.insertBefore(renderer.domElement,view.firstChild);camera=new THREE.PerspectiveCamera(65,view.clientWidth/view.clientHeight,.1,220);generate();animate()}catch(e){msg.textContent='Não foi possível iniciar o 3D: '+e.message;status.textContent='ERRO WEBGL'}}
@@ -835,7 +866,7 @@ let now=performance.now(),dt=Math.min((now-last)/1000,.05);last=now;if(dialogueT
 let forward=(!editMode && !document.hidden && (pressed.has('KeyW')||pressed.has('ArrowUp'))?1:0)-(!editMode && !document.hidden && (pressed.has('KeyS')||pressed.has('ArrowDown'))?1:0);
 let sideways=(!editMode && !document.hidden && (pressed.has('KeyD')||pressed.has('ArrowRight'))?1:0)-(!editMode && !document.hidden && (pressed.has('KeyA')||pressed.has('ArrowLeft'))?1:0);
 let vx=sideways*Math.cos(yaw)-forward*Math.sin(yaw),vz=-sideways*Math.sin(yaw)-forward*Math.cos(yaw);
-let len=Math.hypot(vx,vz);if(len>0){vx/=len;vz/=len;player.rotation.y=Math.atan2(vx,vz);let sprint=pressed.has('ShiftLeft')||pressed.has('ShiftRight');let speed=spec.speed*(sprint?1.6:1)*(worldType==='beach'&&player.position.z<-13?.6:1);let px=player.position.x+vx*dt*speed,pz=player.position.z+vz*dt*speed;let blocked=solids.some(b=>Math.hypot(px-b.x,pz-b.z)<b.r+0.45);if(!blocked){player.position.x=THREE.MathUtils.clamp(px,-53,53);player.position.z=THREE.MathUtils.clamp(pz,-53,53)}}
+let len=Math.hypot(vx,vz);if(len>0){vx/=len;vz/=len;player.rotation.y=Math.atan2(-vx,-vz);let sprint=pressed.has('ShiftLeft')||pressed.has('ShiftRight');let speed=spec.speed*(sprint?1.6:1)*(worldType==='beach'&&player.position.z<-13?.6:1);let px=player.position.x+vx*dt*speed,pz=player.position.z+vz*dt*speed;let blocked=solids.some(b=>Math.hypot(px-b.x,pz-b.z)<b.r+0.45);if(!blocked){player.position.x=THREE.MathUtils.clamp(px,-53,53);player.position.z=THREE.MathUtils.clamp(pz,-53,53)}}
 const oldY=player.position.y;
 vertical-=dt*19;player.position.y+=vertical*dt;onGround=false;
 let floor=0;
