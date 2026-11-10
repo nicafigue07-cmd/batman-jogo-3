@@ -1,4 +1,4 @@
-# FORGE IA 3D PRO — versão 7
+# FORGE IA 3D PRO — versão 8
 
 **Site:** https://nicafigue07-cmd.github.io/batman-jogo-3/forge-ia-3d/
 
@@ -7,6 +7,9 @@ A FORGE é um editor de protótipos 3D com Three.js. A parte gratuita funciona d
 ## Ferramentas gratuitas
 
 - Cenários de cidade, praia, floresta e base espacial; iluminação de dia, noite e pôr do sol.
+- **Visual v8:** água com ondas e variações de cor produzidas por shader, textura procedural de asfalto, nuvens em movimento, partículas ambientais, sombras suaves sob os personagens e avatar 3D mais arredondado com roupas e articulações.
+- Qualidade gráfica ajustável: **Leve** (sem sombras dinâmicas), **Equilibrado** ou **Ultra** (maior resolução de sombras e pixels). Gráficos mais altos exigem mais da placa de vídeo.
+- Os efeitos são gerados com Three.js; o site ainda não possui modelos 3D de qualidade AAA nem materiais fotográficos profissionais.
 - Jogabilidade 3D com câmera, personagem que gira corretamente para a direção do deslocamento, sombras, minimapa, plataformas, portais e NPCs que respondem à tecla E.
 - Corrida, salto, pausa e reinício de missão; as teclas ficam liberadas quando o navegador perde o foco.
 - **Seis tipos de objetivo:** coletar cristais, coletar contra o tempo, passar por checkpoints na ordem, buscar/entregar encomendas, resgatar pessoas com a tecla E e descobrir lugares.
@@ -57,6 +60,6 @@ A prévia utiliza iframe com sandbox e CSP restrita. Mesmo assim, confira todo c
 
 ## Testes automatizados
 
-O fluxo de trabalho .github/workflows/testar-forge.yml verifica o backend com uma API OpenAI simulada e roda o estúdio em Chromium/Playwright com WebGL. O teste de objetivos verifica a direção do rosto e vitórias em corrida, entregas, resgates e exploração. Abrange controles, cristal coletado, pausa, minimapa, edição de objetos, modelos de mundo, importar/exportar JSON e HTML, prévia de código gerado com servidor simulado e viewport mobile.
+O fluxo de trabalho .github/workflows/testar-forge.yml verifica o backend com uma API OpenAI simulada e roda o estúdio em Chromium/Playwright com WebGL. O teste `tests/forge-graphics.mjs` confere oceanos animados, materiais do solo, partículas, nuvens, sombras e perfis gráficos, gerando capturas por cenário. O teste de objetivos verifica a direção do rosto e vitórias em corrida, entregas, resgates e exploração. Abrange controles, cristal coletado, pausa, minimapa, edição de objetos, modelos de mundo, importar/exportar JSON e HTML, prévia de código gerado com servidor simulado e viewport mobile.
 
 A FORGE não é um motor AAA nem substitui Unity ou Unreal. O modelo conectado ajuda a criar protótipos, mas a qualidade, os testes e a correção do código gerado ainda exigem revisão.
