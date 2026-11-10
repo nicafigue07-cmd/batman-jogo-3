@@ -1296,7 +1296,13 @@ const canvas=$('minimap'),ctx=canvas.getContext('2d');
 if(!ctx)return;
 const w=canvas.width,scale=w/MAP_SIZE;
 ctx.fillStyle=worldType==='beach'?'#9d906f':worldType==='forest'?'#355742':worldType==='space'?'#353d52':'#254252';ctx.fillRect(0,0,w,w);
-if(worldType==='city'){ctx.fillStyle='#7c8799';ctx.fillRect(w/2-6*scale,0,12*scale,w)}
+if(worldType==='city'){
+ ctx.fillStyle='#7c8799';ctx.fillRect(w/2-6*scale,0,12*scale,w);
+ for(const street of [-94,94]){
+  ctx.fillRect(0,w/2+street*scale,w,9*scale);
+  ctx.fillRect(w/2+street*scale-4*scale,0,9*scale,w);
+ }
+}
 if(worldType==='beach'){ctx.fillStyle='#297d95';ctx.fillRect(0,0,w,w*.42);ctx.fillStyle='#c5b28c';ctx.fillRect(0,w*.42,w,w*.58)}
 const dot=(x,z,color,r)=>{ctx.fillStyle=color;ctx.beginPath();ctx.arc(w/2+x*scale,w/2+z*scale,r,0,Math.PI*2);ctx.fill()};
 npcs.forEach(n=>dot(n.position.x,n.position.z,'#b6d2e8',3.5));
@@ -1344,6 +1350,19 @@ if(location.hostname==='127.0.0.1'||location.hostname==='localhost'){
   asphalt:worldType==='city'&&!!scene.children.find(o=>o.isMesh&&o.material?.map?.repeat?.y===13),
   shadowRes:sunLight?.shadow?.mapSize?.x||0
  });
+
+ window.__forgeTestFinishChapter=()=>{
+  if(['collect','time'].includes(spec.gameMode)){
+   for(const c of crystals){c.found=true;c.mesh.visible=false}
+   score=spec.collectibles;
+  }else{
+   for(const t of missionTargets){t.done=true;t.root.visible=false}
+   missionProgress=spec.missionGoal;missionCarry=false;
+  }
+  updateMissionHUD();missionVictory();
+  return {campaign:spec.campaign,chapter:spec.chapterIndex,mode:spec.gameMode,finished:missionFinished};
+ };
+
  window.__forgeTestReach=()=>{
   const t=nextMissionTarget();if(!t||!player)return null;
   player.position.set(t.x,0,t.z);
