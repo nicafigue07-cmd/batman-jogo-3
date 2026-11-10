@@ -7,6 +7,7 @@ on:
       - 'tests/forge-smoke.mjs'
       - 'tests/forge-objectives.mjs'
       - 'tests/forge-graphics.mjs'
+      - 'tests/forge-campaign.mjs'
       - '.github/workflows/testar-forge.yml'
   workflow_dispatch:
 permissions:
@@ -28,6 +29,7 @@ jobs:
       - run: node tests/forge-smoke.mjs
       - run: node tests/forge-objectives.mjs
       - run: node tests/forge-graphics.mjs
+      - run: node tests/forge-campaign.mjs
       - if: always()
         uses: actions/upload-artifact@v4
         with:
