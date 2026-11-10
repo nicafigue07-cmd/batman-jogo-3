@@ -123,6 +123,16 @@ body[data-game-mode=true] #object-editor{display:none}
 background:#102b43ed;border:1px solid #60d5b6;border-radius:12px;color:#e7faff;padding:12px 17px;
 font-weight:750;font-size:13px;pointer-events:none;max-width:70%;text-align:center;box-shadow:0 8px 25px #0006}
 #dialogue[hidden]{display:none}
+
+/* Prévia isolada para código gerado por modelo: sem permissões de origem */
+#generated-panel{position:absolute;inset:0;z-index:14;background:#091424;display:flex;flex-direction:column}
+#generated-panel[hidden]{display:none}
+.generated-head{display:flex;justify-content:space-between;align-items:center;gap:9px;min-height:53px;padding:10px 13px;background:#152a43;border-bottom:1px solid #42607b}
+.generated-head strong{font-size:13px}
+.generated-head div{display:flex;gap:7px}
+.generated-head button{border:1px solid #598ba1;border-radius:8px;padding:9px;background:#193c52;color:#e7faff;font-weight:750;cursor:pointer}
+#generated-frame{flex:1;border:0;width:100%;height:100%;background:#0c1526}
+@media(max-width:650px){.generated-head{flex-wrap:wrap}.generated-head button{font-size:11px;padding:7px}}
 </style>
 </head>
 <body>
@@ -185,14 +195,14 @@ font-weight:750;font-size:13px;pointer-events:none;max-width:70%;text-align:cent
 <strong>Conectar um modelo de IA real</strong>
 <p>Informe a URL HTTPS do seu próprio servidor com API protegida. Nunca coloque a chave da OpenAI aqui ou no código do site.</p>
 <input type="url" id="endpoint" placeholder="https://seu-servidor.com/api/forge" autocomplete="off"><label for="access-token" style="margin:9px 0 5px">Senha de acesso ao servidor (não é a chave da OpenAI)</label><input type="password" id="access-token" placeholder="Sua senha privada do servidor" autocomplete="off">
-<button id="connect" class="optbtn">Salvar endereço do servidor</button>
+<button id="connect" class="optbtn">Salvar endereço do servidor</button><button id="generate-full" class="optbtn">🚀 Gerar um jogo novo com código de IA</button><p>Essa função precisa do servidor com API configurado. Pode gerar custos. Teste primeiro o jogo antes de baixar.</p>
 <button id="disconnect" class="optbtn">Voltar ao modo local</button>
 </div>
 <p class="note">🎮 WASD para andar · Espaço para pular · Arraste para girar. Este site gera protótipos 3D. A IA avançada só funciona depois de conectar um servidor.</p>
 </aside>
 <section><div class="toolbar"><strong>🎮 Editor e prévia 3D</strong><div class="top-actions"><select id="quality" aria-label="Qualidade gráfica"><option value="1">Leve</option><option value="1.5" selected>Equilibrado</option><option value="2">Bonito</option></select><button id="restart-level">↻ Missão</button><button id="reset-camera">⟳ Câmera</button><span class="pill" id="status">CARREGANDO 3D</span></div></div>
 <div id="viewport"><div id="hud"><strong id="title">Meu jogo 3D</strong>💎 Cristais: <span id="score">0/7</span></div>
-<div id="game-details"><b id="mode-label">EXPLORAÇÃO 3D</b><span id="scene-details">Mundo criado pela FORGE</span></div><div id="direction"><strong>🧭 Missão:</strong> encontre os cristais</div><div id="dialogue" hidden></div><div id="minimap-wrap"><canvas id="minimap" width="308" height="308" aria-label="Minimapa do cenário"></canvas><span id="minimap-name">MAPA</span></div><div id="pause-banner">⏸ PAUSADO</div><div id="msg">Preparando mundo 3D…</div><div class="hint">WASD: andar • Shift: correr • Espaço: pular • Arraste: câmera • R: reiniciar • P: pausar</div>
+<div id="game-details"><b id="mode-label">EXPLORAÇÃO 3D</b><span id="scene-details">Mundo criado pela FORGE</span></div><div id="direction"><strong>🧭 Missão:</strong> encontre os cristais</div><div id="dialogue" hidden></div><div id="minimap-wrap"><canvas id="minimap" width="308" height="308" aria-label="Minimapa do cenário"></canvas><span id="minimap-name">MAPA</span></div><div id="pause-banner">⏸ PAUSADO</div><div id="generated-panel" hidden><div class="generated-head"><strong id="generated-title">Novo jogo da IA</strong><div><button id="download-generated">⬇ Baixar jogo</button><button id="close-generated">✕ Voltar</button></div></div><iframe id="generated-frame" title="Prévia de minijogo 3D criado pela IA" sandbox="allow-scripts" referrerpolicy="no-referrer"></iframe></div><div id="msg">Preparando mundo 3D…</div><div class="hint">WASD: andar • Shift: correr • Espaço: pular • Arraste: câmera • R: reiniciar • P: pausar</div>
 <div id="mobile"><button data-k="KeyW">↑</button><button data-k="KeyA">←</button><button data-k="KeyS">↓</button><button data-k="KeyD">→</button></div>
 <button id="jump">PULAR</button></div>
 <footer id="notice">Protótipo 3D no navegador • Salve seu projeto regularmente • O modo IA real exige servidor configurado.</footer></section></main>
@@ -217,6 +227,7 @@ let changes=[],redos=[],conversation=[],apiEndpoint='',accessToken='',npcs=[],np
 let editMode=false,selectedId=null,customGroups=[],selectedHelper=null,draggingEntity=null;
 const allowedTypes=new Set(['tree','house','rock','crate','wall','tower','lamp','portal','platform']);
 let entityCounter=0;
+let generatedHTML='',previewWasPaused=false;
 let savedSpec=null;
 try{apiEndpoint=localStorage.getItem('forge3d_api_endpoint')||'';accessToken=sessionStorage.getItem('forge3d_access_token')||'';savedSpec=JSON.parse(localStorage.getItem('forge3d_project')||'null')}catch{}
 const clamp=(v,min,max)=>Math.min(max,Math.max(min,Number(v)||0));
@@ -698,6 +709,56 @@ window.addEventListener('keydown',e=>{
  if(editMode&&e.key==='Delete'){e.preventDefault();deleteEditorObject()}
 });
 
+
+/* A IA de código só funciona com um servidor externo que guarda a chave em segredo. */
+function previewGenerated(html){
+ const csp="default-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'; connect-src 'none'; script-src 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com; style-src 'unsafe-inline'; img-src data: blob:; font-src data:";
+ const escaped=csp.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+ const meta='<meta http-equiv="Content-Security-Policy" content="'+escaped+'">';
+ const code=/<head[^>]*>/i.test(html)?html.replace(/<head[^>]*>/i,x=>x+meta):meta+html;
+ $('generated-frame').srcdoc=code;
+ previewWasPaused=paused;paused=true;$('generated-panel').hidden=false;
+}
+async function generateFullGame(){
+ if(!apiEndpoint||!accessToken){
+  $('advanced').hidden=false;
+  message('assistant','Para gerar código novo com uma IA real, conecte primeiro seu servidor HTTPS e a senha de acesso. A chave da API não pode ser colocada no site público.');
+  return;
+ }
+ const route=apiEndpoint.replace(/\/api\/forge\/?$/i,'/api/game');
+ if(route===apiEndpoint){message('assistant','A URL do servidor deve terminar em /api/forge.');return}
+ const userPrompt=$('prompt').value.trim()||('Crie um jogo 3D divertido no tema '+spec.title+', com '+spec.world+' e controles fáceis.');
+ const btn=$('generate-full');btn.disabled=true;btn.textContent='🧠 Programando o jogo...';
+ try{
+  const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),115000);
+  let data;
+  try{
+   const res=await fetch(route,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+accessToken},
+    body:JSON.stringify({message:userPrompt,project:snapshot(),history:conversation.slice(-8)}),signal:ctrl.signal});
+   data=await res.json();
+   if(!res.ok)throw Error(data.error||('HTTP '+res.status));
+  }finally{clearTimeout(timer)}
+  if(typeof data.html!=='string'||data.html.length<1000||data.html.length>180000||!/<html\b/i.test(data.html))
+   throw Error('O servidor não retornou um HTML válido');
+  generatedHTML=data.html;
+  $('generated-title').textContent=String(data.summary||'Novo minijogo 3D').slice(0,95);
+  previewGenerated(generatedHTML);
+  message('assistant','Novo protótipo de jogo gerado! Ele está em uma prévia isolada. Teste os controles e depois clique em “Baixar jogo”.');
+ }catch(e){message('assistant','Não foi possível gerar um jogo completo: '+e.message+' Seu projeto no editor não foi alterado.')}
+ finally{btn.disabled=false;btn.textContent='🚀 Gerar um jogo novo com código de IA'}
+}
+$('generate-full').addEventListener('click',generateFullGame);
+$('close-generated').addEventListener('click',()=>{
+ $('generated-panel').hidden=true;$('generated-frame').srcdoc='';
+ if(!previewWasPaused)paused=false;
+});
+$('download-generated').addEventListener('click',()=>{
+ if(!generatedHTML)return;
+ const blob=new Blob([generatedHTML],{type:'text/html;charset=utf-8'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='meu-novo-jogo-3d.html';a.click();
+ setTimeout(()=>URL.revokeObjectURL(a.href),3000);
+});
+
 $('build').addEventListener('click',()=>applyPrompt($('prompt').value));
 $('prompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();applyPrompt($('prompt').value)}});
 document.querySelectorAll('[data-example]').forEach(b=>b.addEventListener('click',()=>applyPrompt(b.dataset.example)));
@@ -721,7 +782,7 @@ const clone=document.documentElement.cloneNode(true);
 clone.querySelector('body').dataset.gameMode='true';
 clone.querySelector('body').dataset.exportType=spec.world;
 clone.querySelector('body').dataset.exportSpec=encodeURIComponent(JSON.stringify(spec));
-clone.querySelector('canvas')?.remove();
+clone.querySelector('#generated-panel')?.remove();clone.querySelector('canvas')?.remove();
 const gameMessage=clone.querySelector('#msg');gameMessage.textContent='Carregando jogo 3D...';gameMessage.style.display='';
 const a=document.createElement('a');const blob=new Blob(['<!doctype html>'+clone.outerHTML],{type:'text/html;charset=utf-8'});a.href=URL.createObjectURL(blob);a.download='jogo-3d-forge.html';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);
 message('assistant','Jogo exportado para HTML. O arquivo precisa de internet para carregar o motor 3D.')
