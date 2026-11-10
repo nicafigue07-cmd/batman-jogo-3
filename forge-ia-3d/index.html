@@ -127,7 +127,7 @@ body[data-game-mode=true] #game-details{display:block}
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js';
 const view=document.getElementById('viewport'),msg=document.getElementById('msg'),status=document.getElementById('status');
-let renderer,scene,camera,player,ground,crystals=[],solids=[],clock=new THREE.Clock(),vertical=0,onGround=true,score=0,worldType='city',yaw=0.4,pitch=0.34,drag=null;
+let renderer,scene,camera,player,ground,crystals=[],solids=[],clock=new THREE.Clock(),vertical=0,onGround=true,score=0,worldType='city',yaw=0.4,pitch=0.34,drag=null;let elapsed=0,paused=false,zoom=8,sunLight=null;
 const pressed=new Set();
 
 const baseSpec=()=>({world:'city',time:'day',density:1,collectibles:7,npcs:2,obstacles:0,camera:'third',speed:8,playerColor:'#27a8c1',title:'Meu mundo 3D'});
@@ -231,7 +231,7 @@ function chooseType(){let t=$('world').value;if(t!=='auto')return t;const v=$('p
 function generate(){
 if(scene){scene.traverse(o=>{if(o.isMesh){o.geometry?.dispose();const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>m?.dispose())}})}worldType=spec.world||chooseType();const p=palettes[worldType],rnd=rand(43);scene=new THREE.Scene();const sky=spec.time==='night'?0x101d39:spec.time==='sunset'?0xee9a87:p.sky;scene.background=new THREE.Color(sky);scene.fog=new THREE.Fog(sky,55,135);solids=[];crystals=[];npcs=[];score=0;$('score').textContent='0/'+spec.collectibles;
 scene.add(new THREE.HemisphereLight(0xffffff,0x56606a,spec.time==='night'?.9:2.4));
-let sun=new THREE.DirectionalLight(spec.time==='sunset'?0xffb280:0xffffff,spec.time==='night'?.55:2.1);sun.position.set(-12,20,14);scene.add(sun);
+let sun=new THREE.DirectionalLight(spec.time==='sunset'?0xffb280:0xffffff,spec.time==='night'?.65:2.1);sun.position.set(-12,20,14);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-55;sun.shadow.camera.right=55;sun.shadow.camera.top=55;sun.shadow.camera.bottom=-55;sun.shadow.normalBias=.017;scene.add(sun);sunLight=sun;if(spec.time==='night'){const moon=ball(3.2,0xe2efff,-34,23,-46);moon.material=new THREE.MeshBasicMaterial({color:0xe4efff})}
 ground=cube(116,.5,116,p.ground,0,-.34,0);
 if(worldType==='city'){
 cube(10,.03,115,0x7f899d,0,0,0);
@@ -249,13 +249,13 @@ for(let i=0;i<17;i++)ball(2+rnd()*4,0x5b8e75,-45+rnd()*90,1+rnd()*2,-45+rnd()*90
 for(let i=0;i<28;i++){let x=-46+rnd()*92,z=-46+rnd()*92;ball(.6+rnd()*2,0x80859a,x,.5,z)}
 for(let i=0;i<12;i++){let x=-39+rnd()*78,z=-39+rnd()*78;cube(4,3.6,4,0xc6d5e9,x,1.8,z);ball(2.2,0x6ca2c2,x,4,z);solids.push({x,z,r:3.5})}
 }
-player=new THREE.Group();cube(.78,1.35,.46,spec.playerColor,0,1.3,0,player);ball(.44,0xf2c49d,0,2.27,0,player);cube(.33,.85,.36,0x26334f,-.23,.46,0,player);cube(.33,.85,.36,0x26334f,.23,.46,0,player);cube(.22,.9,.35,spec.playerColor,-.53,1.3,0,player);cube(.22,.9,.35,spec.playerColor,.53,1.3,0,player);scene.add(player);player.position.set(0,.1,12);vertical=0;onGround=true;
-for(let i=0;i<spec.collectibles;i++){let z=-40+(i%11)*7.5,x=(Math.floor(i/11)%2===0?-1:1)*(2.5+(i%3)*2);const c=new THREE.Mesh(new THREE.OctahedronGeometry(.7),new THREE.MeshStandardMaterial({color:0x5bffdf,emissive:0x2ab9ae,emissiveIntensity:.5}));c.position.set(x,1.5,z);scene.add(c);crystals.push({mesh:c,found:false})}
+player=new THREE.Group();cube(.78,1.35,.46,spec.playerColor,0,1.3,0,player);ball(.44,0xf2c49d,0,2.27,0,player);const hair=ball(.46,0x252e3c,0,2.51,.025,player);hair.scale.set(1,.39,1);cube(.38,.56,.12,0x4d6b92,0,1.42,.31,player);for(const ex of [-.14,.14])ball(.045,0x293744,ex,2.31,-.4,player);cube(.33,.85,.36,0x26334f,-.23,.46,0,player);cube(.33,.85,.36,0x26334f,.23,.46,0,player);cube(.22,.9,.35,spec.playerColor,-.53,1.3,0,player);cube(.22,.9,.35,spec.playerColor,.53,1.3,0,player);scene.add(player);player.position.set(0,.1,12);vertical=0;onGround=true;elapsed=0;paused=false;
+for(let i=0;i<spec.collectibles;i++){let z=worldType==='beach'?3+(i%10)*4.7:-40+(i%11)*7.5,x=(Math.floor(i/11)%2===0?-1:1)*(2.5+(i%3)*2);if(worldType==='beach')x=(i%2===0?-1:1)*(4+(i%4)*1.8);const c=new THREE.Mesh(new THREE.OctahedronGeometry(.7),new THREE.MeshStandardMaterial({color:0x5bffdf,emissive:0x2ab9ae,emissiveIntensity:.5}));c.position.set(x,1.5,z);scene.add(c);crystals.push({mesh:c,found:false})}
 for(let i=0;i<spec.npcs;i++){
-const x=-42+rnd()*84,z=-42+rnd()*84;const npc=new THREE.Group();
+const x=-42+rnd()*84,z=worldType==='beach'?3+rnd()*44:-42+rnd()*84;const npc=new THREE.Group();
 cube(.7,1.15,.5,[0xe39172,0x87a7ed,0xeac568,0x8cca88][i%4],0,1.1,0,npc);
 ball(.39,0xeac7a3,0,2,0,npc);cube(.25,.7,.3,0x2a3556,-.19,.35,0,npc);cube(.25,.7,.3,0x2a3556,.19,.35,0,npc);
-npc.position.set(x,0,z);npc.userData.offset=i;scene.add(npc);npcs.push(npc)
+npc.position.set(x,0,z);npc.userData.offset=i;npc.userData.homeX=x;npc.userData.homeZ=z;scene.add(npc);npcs.push(npc)
 }
 for(let i=0;i<spec.obstacles;i++){
 const z=-35+(i%10)*7,x=(i%2?1:-1)*(7+(i%3)*3);
@@ -266,18 +266,21 @@ if(camera)camera.position.set(0,6,20);
 let idea=spec.title||'Meu mundo 3D';$('title').textContent=idea.length>40?idea.slice(0,38)+'…':idea;$('scene-details').textContent=({city:'Cidade',beach:'Praia',forest:'Floresta',space:'Base espacial'})[worldType]+' · '+({day:'Dia',night:'Noite',sunset:'Pôr do sol'})[spec.time];$('mode-label').textContent=spec.camera==='first'?'PRIMEIRA PESSOA':spec.camera==='iso'?'CÂMERA ISOMÉTRICA':'TERCEIRA PESSOA';$('world').value=spec.world;$('camera-mode').value=spec.camera;persist();
 status.textContent='MUNDO PRONTO';msg.style.display='none';
 }
-function start(){try{renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));renderer.setSize(view.clientWidth,view.clientHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;view.insertBefore(renderer.domElement,view.firstChild);camera=new THREE.PerspectiveCamera(65,view.clientWidth/view.clientHeight,.1,220);generate();animate()}catch(e){msg.textContent='Não foi possível iniciar o 3D: '+e.message;status.textContent='ERRO WEBGL'}}
+function start(){try{renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setSize(view.clientWidth,view.clientHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.35;view.insertBefore(renderer.domElement,view.firstChild);camera=new THREE.PerspectiveCamera(65,view.clientWidth/view.clientHeight,.1,220);generate();animate()}catch(e){msg.textContent='Não foi possível iniciar o 3D: '+e.message;status.textContent='ERRO WEBGL'}}
 let last=performance.now();
+
+function togglePause(){paused=!paused;$('pause-banner').classList.toggle('visible',paused);pressed.clear()}
+function restartMission(){generate();message('assistant','Missão reiniciada. O cenário foi preservado.')}
 function animate(){requestAnimationFrame(animate);if(!renderer||!player)return;
-let now=performance.now(),dt=Math.min((now-last)/1000,.05);last=now;
+let now=performance.now(),dt=Math.min((now-last)/1000,.05);last=now;if(paused){renderer.render(scene,camera);return}elapsed+=dt;
 let forward=(pressed.has('KeyW')||pressed.has('ArrowUp')?1:0)-(pressed.has('KeyS')||pressed.has('ArrowDown')?1:0);
 let sideways=(pressed.has('KeyD')||pressed.has('ArrowRight')?1:0)-(pressed.has('KeyA')||pressed.has('ArrowLeft')?1:0);
 let vx=sideways*Math.cos(yaw)-forward*Math.sin(yaw),vz=-sideways*Math.sin(yaw)-forward*Math.cos(yaw);
-let len=Math.hypot(vx,vz);if(len>0){vx/=len;vz/=len;player.rotation.y=Math.atan2(vx,vz);let px=player.position.x+vx*dt*spec.speed,pz=player.position.z+vz*dt*spec.speed;let blocked=solids.some(b=>Math.hypot(px-b.x,pz-b.z)<b.r+0.45);if(!blocked){player.position.x=THREE.MathUtils.clamp(px,-53,53);player.position.z=THREE.MathUtils.clamp(pz,-53,53)}}
+let len=Math.hypot(vx,vz);if(len>0){vx/=len;vz/=len;player.rotation.y=Math.atan2(vx,vz);let sprint=pressed.has('ShiftLeft')||pressed.has('ShiftRight');let speed=spec.speed*(sprint?1.6:1)*(worldType==='beach'&&player.position.z<-13?.6:1);let px=player.position.x+vx*dt*speed,pz=player.position.z+vz*dt*speed;let blocked=solids.some(b=>Math.hypot(px-b.x,pz-b.z)<b.r+0.45);if(!blocked){player.position.x=THREE.MathUtils.clamp(px,-53,53);player.position.z=THREE.MathUtils.clamp(pz,-53,53)}}
 vertical-=dt*19;player.position.y+=vertical*dt;if(player.position.y<=0){player.position.y=0;vertical=0;onGround=true}
-crystals.forEach((c,i)=>{if(c.found)return;c.mesh.rotation.y+=dt*1.4;c.mesh.position.y=1.5+Math.sin(now/450+i)*.25;if(player.position.distanceTo(c.mesh.position)<1.75){c.found=true;scene.remove(c.mesh);score++;$('score').textContent=score+'/7';if(score===spec.collectibles){msg.textContent='🏆 Parabéns! Todos os cristais coletados. Escreva uma melhoria ou clique em Novo.';msg.style.display='block'}}});
-npcs.forEach(n=>{n.rotation.y+=dt*.15;});
-let d=8,cy=Math.cos(pitch),sx=player.position.x,sz=player.position.z,ey=player.position.y+1.5;
+crystals.forEach((c,i)=>{if(c.found)return;c.mesh.rotation.y+=dt*1.4;c.mesh.position.y=1.5+Math.sin(now/450+i)*.25;if(player.position.distanceTo(c.mesh.position)<1.75){c.found=true;scene.remove(c.mesh);score++;$('score').textContent=score+'/'+spec.collectibles;if(score===spec.collectibles){msg.textContent='🏆 Parabéns! Todos os cristais coletados. Escreva uma melhoria ou clique em Novo.';msg.style.display='block'}}});
+npcs.forEach(n=>{const j=n.userData.offset||0,t=elapsed*.3+j*1.5;n.rotation.y=Math.sin(t)*.38;n.position.x=n.userData.homeX+Math.sin(t)*1.1;n.position.z=n.userData.homeZ+Math.cos(t)*.5;n.position.y=Math.sin(elapsed*4+j)*.035;});
+let d=zoom,cy=Math.cos(pitch),sx=player.position.x,sz=player.position.z,ey=player.position.y+1.5;
 if(spec.camera==='first'){
 player.visible=false;
 const eye=new THREE.Vector3(sx,ey+.45,sz);
@@ -289,12 +292,12 @@ const target=spec.camera==='iso'?new THREE.Vector3(sx+10,ey+16,sz+11):new THREE.
 camera.position.lerp(target,.14);camera.lookAt(sx,ey,sz);
 }
 renderer.render(scene,camera)}
-function jump(){if(onGround){vertical=8.3;onGround=false}}
-window.addEventListener('keydown',e=>{if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)&&!['TEXTAREA','INPUT','SELECT'].includes(document.activeElement.tagName))e.preventDefault();if(['TEXTAREA','INPUT','SELECT'].includes(document.activeElement.tagName))return;pressed.add(e.code);if(e.code==='Space')jump()});
+function jump(){if(onGround&&!paused){vertical=8.3;onGround=false}}
+window.addEventListener('keydown',e=>{if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)&&!['TEXTAREA','INPUT','SELECT'].includes(document.activeElement.tagName))e.preventDefault();if(['TEXTAREA','INPUT','SELECT'].includes(document.activeElement.tagName))return;pressed.add(e.code);if(e.code==='Space')jump();if(e.code==='KeyP')togglePause();if(e.code==='KeyR')restartMission()});
 window.addEventListener('keyup',e=>pressed.delete(e.code));
 view.addEventListener('pointerdown',e=>{if(e.target!==renderer?.domElement)return;drag={x:e.clientX,y:e.clientY};view.setPointerCapture(e.pointerId)});
 view.addEventListener('pointermove',e=>{if(!drag)return;yaw-=(e.clientX-drag.x)*.005;pitch=THREE.MathUtils.clamp(pitch+(e.clientY-drag.y)*.004,-.2,.9);drag={x:e.clientX,y:e.clientY}});
-view.addEventListener('pointerup',()=>drag=null);
+view.addEventListener('pointerup',()=>drag=null);view.addEventListener('pointercancel',()=>drag=null);view.addEventListener('wheel',e=>{if(e.target===renderer?.domElement){e.preventDefault();zoom=THREE.MathUtils.clamp(zoom+Math.sign(e.deltaY)*.8,4,15)}},{passive:false});
 document.querySelectorAll('#mobile button').forEach(b=>{const k=b.dataset.k;b.addEventListener('pointerdown',e=>{e.preventDefault();pressed.add(k);b.setPointerCapture(e.pointerId)});for(let name of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(name,()=>pressed.delete(k))});
 $('jump').addEventListener('pointerdown',e=>{e.preventDefault();jump()});
 
@@ -309,7 +312,7 @@ $('undo').addEventListener('click',()=>{if(changes.length){spec=changes.pop();ge
 $('save').addEventListener('click',()=>{persist();message('assistant','Projeto salvo neste navegador!')});
 $('load').addEventListener('click',()=>{try{const o=JSON.parse(localStorage.getItem('forge3d_project')||'null');if(!o?.spec)throw Error();changes.push(snapshot());spec=normalizeSpec(o.spec);generate();message('assistant','Projeto salvo carregado!')}catch{message('assistant','Não encontrei um projeto salvo neste navegador.')}})
 $('new').addEventListener('click',()=>{changes.push(snapshot());spec=baseSpec();conversation=[];generate();message('assistant','Novo projeto criado. Vamos desenvolver um jogo 3D!')});
-$('reset-camera').addEventListener('click',()=>{yaw=.4;pitch=.34;msg.style.display='none';message('assistant','Câmera centralizada.')});
+$('reset-camera').addEventListener('click',()=>{yaw=.4;pitch=.34;zoom=8;msg.style.display='none';message('assistant','Câmera centralizada.')});
 $('settings').addEventListener('click',()=>{$('advanced').hidden=!$('advanced').hidden});
 $('endpoint').value=apiEndpoint;$('access-token').value=accessToken;
 $('connect').addEventListener('click',()=>{
