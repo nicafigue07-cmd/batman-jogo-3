@@ -462,7 +462,7 @@ function newOcean(){
    "gl_Position=projectionMatrix*viewMatrix*wp;}"
   ].join('\n'),
   fragmentShader:[
-   "precision mediump float;",
+   "precision highp float;",
    "uniform float uTime;uniform float uDay;",
    "varying vec2 vUv;varying vec3 vPos;",
    "void main(){",
