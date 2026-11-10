@@ -960,9 +960,8 @@ cube(1.6,1.2,1.6,0xe5a85f,x,.6,z);
 solids.push({x,z,r:1.4})
 }
 renderEditorProps();
-setupMission();
 if(camera)camera.position.set(0,6,20);
-let idea=spec.title||'Meu mundo 3D';$('title').textContent=idea.length>40?idea.slice(0,38)+'…':idea;$('scene-details').textContent=({city:'Cidade',beach:'Praia',forest:'Floresta',space:'Base espacial'})[worldType]+' · '+({day:'Dia',night:'Noite',sunset:'Pôr do sol'})[spec.time];$('mode-label').textContent=spec.camera==='first'?'PRIMEIRA PESSOA':spec.camera==='iso'?'CÂMERA ISOMÉTRICA':'TERCEIRA PESSOA';$('world').value=spec.world;$('camera-mode').value=spec.camera;$('mission-mode').value=spec.gameMode;$('mission-count').value=String([3,5,8,10].reduce((a,b)=>Math.abs(b-spec.missionGoal)<Math.abs(a-spec.missionGoal)?b:a));persist();
+let idea=spec.title||'Meu mundo 3D';$('title').textContent=idea.length>40?idea.slice(0,38)+'…':idea;$('scene-details').textContent=({city:'Cidade',beach:'Praia',forest:'Floresta',space:'Base espacial'})[worldType]+' · '+({day:'Dia',night:'Noite',sunset:'Pôr do sol'})[spec.time];$('mode-label').textContent=spec.camera==='first'?'PRIMEIRA PESSOA':spec.camera==='iso'?'CÂMERA ISOMÉTRICA':'TERCEIRA PESSOA';$('world').value=spec.world;$('camera-mode').value=spec.camera;$('mission-mode').value=spec.gameMode;$('mission-count').value=String([3,5,8,10].reduce((a,b)=>Math.abs(b-spec.missionGoal)<Math.abs(a-spec.missionGoal)?b:a));setupMission();persist();
 status.textContent='MUNDO PRONTO';$('pause-banner').classList.remove('visible');drawMinimap();updateObjective();
 }
 function start(){try{renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio,Number($('quality').value)));renderer.setSize(view.clientWidth,view.clientHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.35;view.insertBefore(renderer.domElement,view.firstChild);camera=new THREE.PerspectiveCamera(65,view.clientWidth/view.clientHeight,.1,220);generate();animate()}catch(e){msg.textContent='Não foi possível iniciar o 3D: '+e.message;status.textContent='ERRO WEBGL'}}
@@ -980,23 +979,37 @@ if(worldType==='beach'){ctx.fillStyle='#297d95';ctx.fillRect(0,0,w,w*.42);ctx.fi
 const dot=(x,z,color,r)=>{ctx.fillStyle=color;ctx.beginPath();ctx.arc(w/2+x*scale,w/2+z*scale,r,0,Math.PI*2);ctx.fill()};
 npcs.forEach(n=>dot(n.position.x,n.position.z,'#b6d2e8',3.5));
 for(const c of crystals)if(!c.found)dot(c.mesh.position.x,c.mesh.position.z,'#54ffdc',4.5);
+for(let i=0;i<missionTargets.length;i++){
+ const t=missionTargets[i];if(t.done)continue;
+ const selected=(spec.gameMode==='race'&&i===missionProgress)||(spec.gameMode==='delivery'&&i===(missionCarry?1:0));
+ dot(t.x,t.z,selected?'#ffe196':'#f5a8ca',selected?8:5.5);
+}
 ctx.save();ctx.translate(w/2+player.position.x*scale,w/2+player.position.z*scale);ctx.rotate(-yaw);
 ctx.fillStyle='#ffe394';ctx.strokeStyle='#172c3b';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,-10);ctx.lineTo(8,7);ctx.lineTo(-8,7);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();
 ctx.strokeStyle='#b2f4dc87';ctx.strokeRect(1,1,w-2,w-2);
 }
 function updateObjective(){
-let nearest=null,dist=Infinity;
-for(const c of crystals){if(c.found)continue;const dx=player.position.x-c.mesh.position.x,dz=player.position.z-c.mesh.position.z,d=Math.hypot(dx,dz);if(d<dist){nearest=c;dist=d}}
-if(!nearest){$('direction').textContent='🏆 Missão concluída!';return}
-const dx=nearest.mesh.position.x-player.position.x,dz=nearest.mesh.position.z-player.position.z;
-const angle=Math.atan2(dx,-dz)-yaw;
-const difference=Math.atan2(Math.sin(angle),Math.cos(angle));
-const arrow=Math.abs(difference)<.45?'⬆':difference>0?'➡':'⬅';
-const remaining=spec.gameMode==='time'?(' · ⏱ '+Math.max(0,180-Math.floor(elapsed))+'s'):'';
-$('direction').textContent='🧭 '+arrow+' Cristal a '+Math.round(dist)+' m'+remaining+' · '+Math.floor(elapsed/60)+':'+String(Math.floor(elapsed%60)).padStart(2,'0');
+ if(!player)return;
+ if(missionFinished){$('direction').textContent='🏆 Objetivo completo!';return}
+ const mode=spec.gameMode;
+ let target=null,dist=Infinity;
+ if(mode==='collect'||mode==='time'){
+  for(const c of crystals){if(c.found)continue;const d=Math.hypot(player.position.x-c.mesh.position.x,player.position.z-c.mesh.position.z);
+   if(d<dist){target={x:c.mesh.position.x,z:c.mesh.position.z};dist=d}}
+ }else{target=nextMissionTarget();
+  if(target)dist=Math.hypot(target.x-player.position.x,target.z-player.position.z)}
+ if(!target){$('direction').textContent='🏆 Missão concluída!';return}
+ const dx=target.x-player.position.x,dz=target.z-player.position.z;
+ const angle=Math.atan2(dx,-dz)-yaw;
+ const difference=Math.atan2(Math.sin(angle),Math.cos(angle));
+ const arrow=Math.abs(difference)<.45?'⬆':difference>0?'➡':'⬅';
+ const labels={collect:'Cristal',time:'Cristal',race:'Checkpoint '+(missionProgress+1),delivery:missionCarry?'Entregar pacote':'Pegar pacote',rescue:'Pessoa para resgatar',explore:'Local para descobrir'};
+ const interaction=((mode==='delivery'||mode==='rescue')&&dist<3.5)?' · APERTE E':'';
+ const deadline=mode==='time'?(' · ⏱ '+Math.max(0,180-Math.floor(elapsed))+'s'):'';
+ $('direction').textContent='🧭 '+arrow+' '+labels[mode]+' a '+Math.round(dist)+' m'+interaction+deadline;
 }
 
-window.__forgeStats=()=>({world:worldType,score,inputs:[...pressed],objects:spec.objects.length,gameMode:spec.gameMode,selectedId,goal:spec.collectibles,position:player?{x:player.position.x,y:player.position.y,z:player.position.z}:null,remaining:crystals.filter(c=>!c.found).map(c=>({x:c.mesh.position.x,z:c.mesh.position.z}))});
+window.__forgeStats=()=>({world:worldType,score,inputs:[...pressed],objects:spec.objects.length,gameMode:spec.gameMode,selectedId,goal:['collect','time'].includes(spec.gameMode)?spec.collectibles:spec.missionGoal,missionProgress,missionCarry,missionFinished,missionTargets:missionTargets.map(t=>({x:t.x,z:t.z,done:t.done,visible:t.root.visible})),facing:player?player.rotation.y:0,movementDirection,position:player?{x:player.position.x,y:player.position.y,z:player.position.z}:null,remaining:crystals.filter(c=>!c.found).map(c=>({x:c.mesh.position.x,z:c.mesh.position.z}))});
 function togglePause(){paused=!paused;$('pause-banner').textContent='⏸ PAUSADO';$('pause-banner').classList.toggle('visible',paused);stopMovement()}
 function restartMission(){stopMovement();generate();message('assistant','Missão reiniciada. O cenário foi preservado.')}
 function animate(){requestAnimationFrame(animate);if(!renderer||!player)return;
@@ -1004,7 +1017,7 @@ let now=performance.now(),dt=Math.min((now-last)/1000,.05);last=now;if(dialogueT
 let forward=(!editMode && !document.hidden && (pressed.has('KeyW')||pressed.has('ArrowUp'))?1:0)-(!editMode && !document.hidden && (pressed.has('KeyS')||pressed.has('ArrowDown'))?1:0);
 let sideways=(!editMode && !document.hidden && (pressed.has('KeyD')||pressed.has('ArrowRight'))?1:0)-(!editMode && !document.hidden && (pressed.has('KeyA')||pressed.has('ArrowLeft'))?1:0);
 let vx=sideways*Math.cos(yaw)-forward*Math.sin(yaw),vz=-sideways*Math.sin(yaw)-forward*Math.cos(yaw);
-let len=Math.hypot(vx,vz);if(len>0){vx/=len;vz/=len;player.rotation.y=Math.atan2(-vx,-vz);let sprint=pressed.has('ShiftLeft')||pressed.has('ShiftRight');let speed=spec.speed*(sprint?1.6:1)*(worldType==='beach'&&player.position.z<-13?.6:1);let px=player.position.x+vx*dt*speed,pz=player.position.z+vz*dt*speed;let blocked=solids.some(b=>Math.hypot(px-b.x,pz-b.z)<b.r+0.45);if(!blocked){player.position.x=THREE.MathUtils.clamp(px,-53,53);player.position.z=THREE.MathUtils.clamp(pz,-53,53)}}
+let len=Math.hypot(vx,vz);movementDirection={x:0,z:0};if(len>0){vx/=len;vz/=len;movementDirection={x:vx,z:vz};player.rotation.y=Math.atan2(-vx,-vz);let sprint=pressed.has('ShiftLeft')||pressed.has('ShiftRight');let speed=spec.speed*(sprint?1.6:1)*(worldType==='beach'&&player.position.z<-13?.6:1);let px=player.position.x+vx*dt*speed,pz=player.position.z+vz*dt*speed;let blocked=solids.some(b=>Math.hypot(px-b.x,pz-b.z)<b.r+0.45);if(!blocked){player.position.x=THREE.MathUtils.clamp(px,-53,53);player.position.z=THREE.MathUtils.clamp(pz,-53,53)}}
 const oldY=player.position.y;
 vertical-=dt*19;player.position.y+=vertical*dt;onGround=false;
 let floor=0;
@@ -1028,7 +1041,7 @@ if(!editMode && portalCooldown===0){
   portalCooldown=3;$('direction').textContent='🌀 Portal atravessado!';}
 }
 if(spec.gameMode==='time'&&elapsed>=180&&score<spec.collectibles){
- paused=true;pressed.clear();$('pause-banner').textContent='⏱ TEMPO ESGOTADO — R PARA REINICIAR';
+ paused=true;stopMovement();$('pause-banner').textContent='⏱ TEMPO ESGOTADO — R PARA REINICIAR';
  $('pause-banner').classList.add('visible');
 }
 
@@ -1180,6 +1193,22 @@ $('download-generated').addEventListener('click',()=>{
 $('build').addEventListener('click',()=>applyPrompt($('prompt').value));
 $('prompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();applyPrompt($('prompt').value)}});
 document.querySelectorAll('[data-example]').forEach(b=>b.addEventListener('click',()=>applyPrompt(b.dataset.example)));
+
+function chooseMission(mode){
+ if(!['collect','time','race','delivery','rescue','explore'].includes(mode))return;
+ saveCheckpoint();spec.gameMode=mode;
+ if(mode==='rescue')spec.npcs=Math.max(spec.npcs,3);
+ const names={collect:'Caça aos Cristais',time:'Cristais Contra o Tempo',race:'Corrida de Checkpoints',delivery:'Jogo de Entregas',rescue:'Missão de Resgate',explore:'Expedição e Descoberta'};
+ spec.title=names[mode];generate();
+ message('assistant','Criei “'+names[mode]+'” com '+(mode==='collect'||mode==='time'?spec.collectibles:spec.missionGoal)+' objetivos. '+missionDescriptions[mode]+'. Teste agora os controles.');
+}
+$('mission-mode').addEventListener('change',()=>chooseMission($('mission-mode').value));
+$('mission-count').addEventListener('change',()=>{
+ saveCheckpoint();spec.missionGoal=Number($('mission-count').value);generate();
+ message('assistant','A missão agora tem '+spec.missionGoal+' etapas.');
+});
+document.querySelectorAll('[data-mission]').forEach(b=>b.addEventListener('click',()=>chooseMission(b.dataset.mission)));
+
 $('world').addEventListener('change',()=>{if($('world').value==='auto')return;saveCheckpoint();spec.world=$('world').value;generate();message('assistant','Cenário alterado. Você pode continuar dando comandos por mensagem.')});
 $('camera-mode').addEventListener('change',()=>{saveCheckpoint();spec.camera=$('camera-mode').value;generate();message('assistant','Câmera ajustada para '+({third:'terceira pessoa',first:'primeira pessoa',iso:'visão isométrica'})[spec.camera]+'.')});
 $('undo').addEventListener('click',()=>{undoProject()});
