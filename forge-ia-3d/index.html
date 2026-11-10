@@ -138,10 +138,31 @@ font-weight:750;font-size:13px;pointer-events:none;max-width:70%;text-align:cent
 .generated-head button{border:1px solid #598ba1;border-radius:8px;padding:9px;background:#193c52;color:#e7faff;font-weight:750;cursor:pointer}
 #generated-frame{flex:1;border:0;width:100%;height:100%;background:#0c1526}
 @media(max-width:650px){.generated-head{flex-wrap:wrap}.generated-head button{font-size:11px;padding:7px}}
+
+/* FORGE v8 — legibilidade e acabamento visual do estúdio */
+#viewport{background:linear-gradient(160deg,#5c99be,#c5ded9);isolation:isolate}
+#viewport:after{content:"";position:absolute;inset:0;pointer-events:none;
+ background:radial-gradient(ellipse at 50% 30%,transparent 46%,rgba(4,16,31,.26) 100%);z-index:1}
+#viewport>canvas{position:relative;z-index:0}
+#hud,#game-details,#direction,#minimap-wrap,.hint,#mobile,#jump,#interact,#msg,#dialogue,#pause-banner,#generated-panel{z-index:2}
+#hud,#game-details,#direction{background:linear-gradient(145deg,rgba(8,22,41,.91),rgba(19,49,67,.83));
+ border:1px solid rgba(160,231,224,.21);box-shadow:0 8px 25px rgba(2,11,21,.22);
+ backdrop-filter:blur(6px)}
+#hud{padding:11px 14px;letter-spacing:.1px}
+#hud strong{font-size:15px;line-height:1.4;letter-spacing:.12px;color:#f4ffff}
+#score{font-weight:900;font-variant-numeric:tabular-nums;color:#92ffe4}
+#game-details b{color:#9cffe2;letter-spacing:1px}
+#status{letter-spacing:.5px;border:1px solid #65c9ad40}
+#minimap-wrap{box-shadow:0 8px 22px #03111fa6}
+#viewport .hint{border:1px solid #b3f4e43d}
+#quality{background:#0d243b;color:#dff9f3}
+#generated-panel{z-index:14}
+@media(max-width:600px){#hud{padding:8px 10px}#game-details{padding:7px 9px}#direction{padding:7px}}
+
 </style>
 </head>
 <body>
-<header><span class="brand">⚡ FORGE <b>IA 3D PRO</b></span><span class="tag">CRIADOR DE JOGOS • VERSÃO 7.0</span></header>
+<header><span class="brand">⚡ FORGE <b>IA 3D PRO</b></span><span class="tag">CRIADOR DE JOGOS • VERSÃO 8.0</span></header>
 <main>
 <aside>
 <h1>✨ Crie jogos conversando</h1>
@@ -210,7 +231,7 @@ font-weight:750;font-size:13px;pointer-events:none;max-width:70%;text-align:cent
 </div>
 <p class="note">🎮 WASD para andar · Espaço para pular · Arraste para girar. Este site gera protótipos 3D. A IA avançada só funciona depois de conectar um servidor.</p>
 </aside>
-<section><div class="toolbar"><strong>🎮 Editor e prévia 3D</strong><div class="top-actions"><select id="quality" aria-label="Qualidade gráfica"><option value="1">Leve</option><option value="1.5" selected>Equilibrado</option><option value="2">Bonito</option></select><button id="stop-player" title="Parar qualquer movimento do personagem">■ Parar</button><button id="restart-level">↻ Missão</button><button id="reset-camera">⟳ Câmera</button><span class="pill" id="status">CARREGANDO 3D</span></div></div>
+<section><div class="toolbar"><strong>🎮 Editor e prévia 3D</strong><div class="top-actions"><select id="quality" aria-label="Qualidade gráfica"><option value="1">Leve (FPS)</option><option value="1.5" selected>Equilibrado</option><option value="2">Ultra (2×)</option></select><button id="stop-player" title="Parar qualquer movimento do personagem">■ Parar</button><button id="restart-level">↻ Missão</button><button id="reset-camera">⟳ Câmera</button><span class="pill" id="status">CARREGANDO 3D</span></div></div>
 <div id="viewport"><div id="hud"><strong id="title">Meu jogo 3D</strong><span id="goal-name">💎 Cristais</span>: <span id="score">0/7</span></div>
 <div id="game-details"><b id="mode-label">EXPLORAÇÃO 3D</b><span id="scene-details">Mundo criado pela FORGE</span></div><div id="direction"><strong>🧭 Missão:</strong> encontre os cristais</div><div id="dialogue" hidden></div><div id="minimap-wrap"><canvas id="minimap" width="308" height="308" aria-label="Minimapa do cenário"></canvas><span id="minimap-name">MAPA</span></div><div id="pause-banner">⏸ PAUSADO</div><div id="generated-panel" hidden><div class="generated-head"><strong id="generated-title">Novo jogo da IA</strong><div><button id="download-generated">⬇ Baixar jogo</button><button id="close-generated">✕ Voltar</button></div></div><iframe id="generated-frame" title="Prévia de minijogo 3D criado pela IA" sandbox="allow-scripts" referrerpolicy="no-referrer"></iframe></div><div id="msg">Preparando mundo 3D…</div><div class="hint">WASD: mover • Shift: correr • Espaço: pular • E: interagir • R: reiniciar • P: pausar</div>
 <div id="mobile"><button data-k="KeyW">↑</button><button data-k="KeyA">←</button><button data-k="KeyS">↓</button><button data-k="KeyD">→</button></div>
@@ -946,7 +967,7 @@ function generate(){
 stopMovement();
 if(scene){scene.traverse(o=>{if(o.isMesh||o.isPoints){o.geometry?.dispose();const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>{m?.map?.dispose?.();m?.dispose?.()})}})}ambientWaves=[];clouds=[];contactShadows=[];atmosphere=null;oceanMaterial=null;waterMesh=null;worldType=spec.world||chooseType();const p=palettes[worldType],rnd=rand(43);scene=new THREE.Scene();const sky=spec.time==='night'?0x101d39:spec.time==='sunset'?0xee9a87:p.sky;scene.background=new THREE.Color(sky);scene.fog=new THREE.Fog(sky,55,135);solids=[];crystals=[];npcs=[];score=0;$('score').textContent='0/'+spec.collectibles;
 scene.add(new THREE.HemisphereLight(0xffffff,0x56606a,spec.time==='night'?.65:2.4));if(renderer)renderer.toneMappingExposure=spec.time==='night'?.97:spec.time==='sunset'?1.15:1.35;
-let sun=new THREE.DirectionalLight(spec.time==='sunset'?0xffb280:0xffffff,spec.time==='night'?.38:2.1);sun.position.set(-12,20,14);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-55;sun.shadow.camera.right=55;sun.shadow.camera.top=55;sun.shadow.camera.bottom=-55;sun.shadow.normalBias=.017;scene.add(sun);sunLight=sun;if(spec.time==='night'){const moon=ball(3.2,0xe2efff,-34,23,-46);moon.material=new THREE.MeshBasicMaterial({color:0xe4efff})}
+let sun=new THREE.DirectionalLight(spec.time==='sunset'?0xffb280:0xffffff,spec.time==='night'?.38:2.1);sun.position.set(-12,20,14);sun.castShadow=Number($('quality').value)>1;const shadowRes=Number($('quality').value)>=2?2048:1024;sun.shadow.mapSize.set(shadowRes,shadowRes);sun.shadow.camera.left=-55;sun.shadow.camera.right=55;sun.shadow.camera.top=55;sun.shadow.camera.bottom=-55;sun.shadow.normalBias=.017;scene.add(sun);sunLight=sun;if(spec.time==='night'){const moon=ball(3.2,0xe2efff,-34,23,-46);moon.material=new THREE.MeshBasicMaterial({color:0xe4efff})}
 skyWorld(worldType,spec.time,rnd);
 ground=cube(116,.5,116,p.ground,0,-.34,0);
 ground.material.color.setHex(0xffffff);
@@ -1059,7 +1080,7 @@ if(camera)camera.position.set(0,6,20);
 let idea=spec.title||'Meu mundo 3D';$('title').textContent=idea.length>40?idea.slice(0,38)+'…':idea;$('scene-details').textContent=({city:'Cidade',beach:'Praia',forest:'Floresta',space:'Base espacial'})[worldType]+' · '+({day:'Dia',night:'Noite',sunset:'Pôr do sol'})[spec.time];$('mode-label').textContent=spec.camera==='first'?'PRIMEIRA PESSOA':spec.camera==='iso'?'CÂMERA ISOMÉTRICA':'TERCEIRA PESSOA';$('world').value=spec.world;$('camera-mode').value=spec.camera;$('mission-mode').value=spec.gameMode;$('mission-count').value=String([3,5,8,10].reduce((a,b)=>Math.abs(b-spec.missionGoal)<Math.abs(a-spec.missionGoal)?b:a));setupMission();persist();
 status.textContent='MUNDO PRONTO';$('pause-banner').classList.remove('visible');drawMinimap();updateObjective();
 }
-function start(){try{renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio,Number($('quality').value)));renderer.setSize(view.clientWidth,view.clientHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.35;view.insertBefore(renderer.domElement,view.firstChild);camera=new THREE.PerspectiveCamera(65,view.clientWidth/view.clientHeight,.1,220);generate();animate()}catch(e){msg.textContent='Não foi possível iniciar o 3D: '+e.message;status.textContent='ERRO WEBGL'}}
+function start(){try{renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio,Number($('quality').value)));renderer.setSize(view.clientWidth,view.clientHeight);renderer.shadowMap.enabled=Number($('quality').value)>1;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.35;view.insertBefore(renderer.domElement,view.firstChild);camera=new THREE.PerspectiveCamera(65,view.clientWidth/view.clientHeight,.1,220);generate();animate()}catch(e){msg.textContent='Não foi possível iniciar o 3D: '+e.message;status.textContent='ERRO WEBGL'}}
 let last=performance.now();
 
 
@@ -1108,6 +1129,15 @@ window.__forgeStats=()=>({world:worldType,score,inputs:[...pressed],objects:spec
 
 /* Testes de missão em servidor local. Não disponível no GitHub Pages público. */
 if(location.hostname==='127.0.0.1'||location.hostname==='localhost'){
+ window.__forgeVisualStats=()=>({
+  scene:worldType,quality:Number($('quality').value),ocean:!!waterMesh,
+  oceanShader:oceanMaterial?.isShaderMaterial||false,
+  oceanTime:oceanMaterial?.uniforms?.uTime.value||0,
+  particles:atmosphere?.geometry?.attributes?.position?.count||0,
+  clouds:clouds.length,contactShadows:contactShadows.length,
+  asphalt:worldType==='city'&&!!scene.children.find(o=>o.isMesh&&o.material?.map?.repeat?.y===13),
+  shadowRes:sunLight?.shadow?.mapSize?.x||0
+ });
  window.__forgeTestReach=()=>{
   const t=nextMissionTarget();if(!t||!player)return null;
   player.position.set(t.x,0,t.z);
@@ -1218,7 +1248,24 @@ view.addEventListener('pointerdown',e=>{if(e.target!==renderer?.domElement)retur
 view.addEventListener('pointermove',e=>{if(editMode){editorPointerMove(e);return}if(!drag)return;yaw-=(e.clientX-drag.x)*.005;pitch=THREE.MathUtils.clamp(pitch+(e.clientY-drag.y)*.004,-.2,.9);drag={x:e.clientX,y:e.clientY}});
 view.addEventListener('pointerup',()=>{drag=null;draggingEntity=null;persist()});view.addEventListener('pointercancel',()=>{drag=null;draggingEntity=null});view.addEventListener('wheel',e=>{if(e.target===renderer?.domElement){e.preventDefault();zoom=THREE.MathUtils.clamp(zoom+Math.sign(e.deltaY)*.8,4,15)}},{passive:false});
 document.querySelectorAll('#mobile button').forEach(b=>{const k=b.dataset.k;b.addEventListener('pointerdown',e=>{e.preventDefault();if(paused||editMode)return;pressed.add(k);b.classList.add('down');b.setPointerCapture(e.pointerId)});for(const name of ['pointerup','pointercancel','pointerleave','lostpointercapture'])b.addEventListener(name,()=>{pressed.delete(k);b.classList.remove('down')})});
-$('jump').addEventListener('pointerdown',e=>{e.preventDefault();jump()});$('interact').addEventListener('pointerdown',e=>{e.preventDefault();talkToNPC()});$('restart-level').addEventListener('click',restartMission);$('quality').addEventListener('change',()=>{if(renderer){renderer.setPixelRatio(Math.min(devicePixelRatio,Number($('quality').value)));renderer.setSize(view.clientWidth,view.clientHeight);renderer.shadowMap.enabled=Number($('quality').value)>1}});
+$('jump').addEventListener('pointerdown',e=>{e.preventDefault();jump()});$('interact').addEventListener('pointerdown',e=>{e.preventDefault();talkToNPC()});$('restart-level').addEventListener('click',restartMission);$('quality').addEventListener('change',()=>{
+ if(!renderer)return;
+ const level=Number($('quality').value);
+ renderer.setPixelRatio(Math.min(devicePixelRatio,level));
+ renderer.setSize(view.clientWidth,view.clientHeight);
+ renderer.shadowMap.enabled=level>1;
+ if(sunLight){
+  sunLight.castShadow=level>1;
+  const resolution=level>=2?2048:1024;
+  if(sunLight.shadow.mapSize.x!==resolution){
+   sunLight.shadow.map?.dispose();
+   sunLight.shadow.map=null;
+   sunLight.shadow.mapSize.set(resolution,resolution);
+  }
+  sunLight.shadow.needsUpdate=true;
+ }
+ status.textContent=level===1?'LEVE • FPS':level===2?'GRÁFICOS ULTRA':'MUNDO PRONTO';
+});
 
 window.addEventListener('resize',()=>{if(!renderer)return;let w=view.clientWidth,h=view.clientHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h)});
 
