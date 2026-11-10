@@ -545,7 +545,7 @@ const arrow=Math.abs(difference)<.45?'⬆':difference>0?'➡':'⬅';
 $('direction').textContent='🧭 '+arrow+' Cristal a '+Math.round(dist)+' m · '+Math.floor(elapsed/60)+':'+String(Math.floor(elapsed%60)).padStart(2,'0');
 }
 
-window.__forgeStats=()=>({world:worldType,score,goal:spec.collectibles,position:player?{x:player.position.x,y:player.position.y,z:player.position.z}:null,remaining:crystals.filter(c=>!c.found).map(c=>({x:c.mesh.position.x,z:c.mesh.position.z}))});
+window.__forgeStats=()=>({world:worldType,score,objects:spec.objects.length,gameMode:spec.gameMode,selectedId,goal:spec.collectibles,position:player?{x:player.position.x,y:player.position.y,z:player.position.z}:null,remaining:crystals.filter(c=>!c.found).map(c=>({x:c.mesh.position.x,z:c.mesh.position.z}))});
 function togglePause(){paused=!paused;$('pause-banner').classList.toggle('visible',paused);pressed.clear()}
 function restartMission(){generate();message('assistant','Missão reiniciada. O cenário foi preservado.')}
 function animate(){requestAnimationFrame(animate);if(!renderer||!player)return;
@@ -580,15 +580,57 @@ $('jump').addEventListener('pointerdown',e=>{e.preventDefault();jump()});$('rest
 
 window.addEventListener('resize',()=>{if(!renderer)return;let w=view.clientWidth,h=view.clientHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h)});
 
+
+/* Comandos do editor de objetos */
+$('add-object').addEventListener('click',()=>addEditorObject($('add-type').value));
+$('edit-mode').addEventListener('click',()=>{
+ editMode=!editMode;draggingEntity=null;pressed.clear();
+ $('edit-mode').textContent=editMode?'🖱 Editar: ligado':'🖱 Editar: desligado';
+ $('edit-mode').classList.toggle('active',editMode);$('edit-mode').setAttribute('aria-pressed',String(editMode));
+ message('assistant',editMode?'Modo edição ligado. Clique e arraste um objeto no cenário para mudar sua posição.':'Modo jogo ligado. Use WASD para jogar.');
+});
+$('delete-object').addEventListener('click',deleteEditorObject);
+$('duplicate-object').addEventListener('click',duplicateEditorObject);
+$('redo').addEventListener('click',redoProject);
+for(const [id,key] of [['obj-x','x'],['obj-z','z'],['obj-scale','scale'],['obj-color','color']]){
+ $(id).addEventListener('change',()=>updateEditorField(key,$(id).value))
+}
+document.querySelectorAll('[data-preset]').forEach(b=>b.addEventListener('click',()=>presetWorld(b.dataset.preset)));
+$('export-project').addEventListener('click',()=>{
+ const data={format:'forge-ia-3d-v5',createdAt:new Date().toISOString(),spec:snapshot()};
+ const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='projeto-forge-3d.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),3000);
+ message('assistant','Projeto JSON exportado com seus objetos, cenário e configurações.')
+});
+$('import-project').addEventListener('click',()=>$('import-file').click());
+$('import-file').addEventListener('change',async()=>{
+ const file=$('import-file').files?.[0];if(!file)return;
+ try{
+  if(file.size>200000)throw Error('arquivo muito grande');
+  const content=JSON.parse(await file.text());
+  if(!content.spec||!Array.isArray(content.spec.objects))throw Error('o arquivo não contém um projeto FORGE válido');
+  saveCheckpoint();spec=normalizeSpec({...baseSpec(),...content.spec});selectedId=null;generate();
+  message('assistant','Projeto importado com '+spec.objects.length+' objetos.');
+ }catch(e){message('assistant','Não consegui importar: '+e.message)}
+ $('import-file').value='';
+});
+window.addEventListener('keydown',e=>{
+ const active=document.activeElement;
+ if(['INPUT','TEXTAREA','SELECT'].includes(active?.tagName))return;
+ if((e.ctrlKey||e.metaKey)&&e.code==='KeyZ'){e.preventDefault();undoProject()}
+ if((e.ctrlKey||e.metaKey)&&e.code==='KeyY'){e.preventDefault();redoProject()}
+ if(editMode&&e.key==='Delete'){e.preventDefault();deleteEditorObject()}
+});
+
 $('build').addEventListener('click',()=>applyPrompt($('prompt').value));
 $('prompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();applyPrompt($('prompt').value)}});
 document.querySelectorAll('[data-example]').forEach(b=>b.addEventListener('click',()=>applyPrompt(b.dataset.example)));
-$('world').addEventListener('change',()=>{if($('world').value==='auto')return;changes.push(snapshot());spec.world=$('world').value;generate();message('assistant','Cenário alterado. Você pode continuar dando comandos por mensagem.')});
-$('camera-mode').addEventListener('change',()=>{changes.push(snapshot());spec.camera=$('camera-mode').value;generate();message('assistant','Câmera ajustada para '+({third:'terceira pessoa',first:'primeira pessoa',iso:'visão isométrica'})[spec.camera]+'.')});
+$('world').addEventListener('change',()=>{if($('world').value==='auto')return;saveCheckpoint();spec.world=$('world').value;generate();message('assistant','Cenário alterado. Você pode continuar dando comandos por mensagem.')});
+$('camera-mode').addEventListener('change',()=>{saveCheckpoint();spec.camera=$('camera-mode').value;generate();message('assistant','Câmera ajustada para '+({third:'terceira pessoa',first:'primeira pessoa',iso:'visão isométrica'})[spec.camera]+'.')});
 $('undo').addEventListener('click',()=>{undoProject()});
-$('save').addEventListener('click',()=>{persist();message('assistant','Projeto salvo neste navegador!')});
-$('load').addEventListener('click',()=>{try{const o=JSON.parse(localStorage.getItem('forge3d_project')||'null');if(!o?.spec)throw Error();changes.push(snapshot());spec=normalizeSpec(o.spec);generate();message('assistant','Projeto salvo carregado!')}catch{message('assistant','Não encontrei um projeto salvo neste navegador.')}})
-$('new').addEventListener('click',()=>{changes.push(snapshot());spec=baseSpec();conversation=[];generate();message('assistant','Novo projeto criado. Vamos desenvolver um jogo 3D!')});
+$('save').addEventListener('click',()=>{persist();try{localStorage.setItem('forge3d_saved_project',JSON.stringify({spec,conversation}))}catch{}message('assistant','Projeto salvo! Ele fica separado do rascunho automático.')});
+$('load').addEventListener('click',()=>{try{const o=JSON.parse(localStorage.getItem('forge3d_saved_project')||localStorage.getItem('forge3d_project')||'null');if(!o?.spec)throw Error();saveCheckpoint();spec=normalizeSpec(o.spec);generate();message('assistant','Projeto salvo carregado!')}catch{message('assistant','Não encontrei um projeto salvo neste navegador.')}})
+$('new').addEventListener('click',()=>{saveCheckpoint();spec=baseSpec();selectedId=null;conversation=[];generate();message('assistant','Novo projeto criado. Vamos desenvolver um jogo 3D!')});
 $('reset-camera').addEventListener('click',()=>{yaw=.4;pitch=.34;zoom=8;msg.style.display='none';message('assistant','Câmera centralizada.')});
 $('settings').addEventListener('click',()=>{$('advanced').hidden=!$('advanced').hidden});
 $('endpoint').value=apiEndpoint;$('access-token').value=accessToken;
@@ -608,7 +650,7 @@ const gameMessage=clone.querySelector('#msg');gameMessage.textContent='Carregand
 const a=document.createElement('a');const blob=new Blob(['<!doctype html>'+clone.outerHTML],{type:'text/html;charset=utf-8'});a.href=URL.createObjectURL(blob);a.download='jogo-3d-forge.html';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);
 message('assistant','Jogo exportado para HTML. O arquivo precisa de internet para carregar o motor 3D.')
 });
-if(!standalone&&savedSpec?.spec){spec=normalizeSpec(savedSpec.spec);message('assistant','Encontrei um projeto salvo neste navegador. Ele foi carregado automaticamente.')}
+if(!standalone&&savedSpec?.spec){spec=normalizeSpec({...baseSpec(),...savedSpec.spec});message('assistant','Encontrei um projeto salvo neste navegador. Ele foi carregado automaticamente.')}
 refreshBadge();if(standalone){$('prompt').value=document.body.dataset.exportIdea||$('prompt').textContent}
 start();
 
