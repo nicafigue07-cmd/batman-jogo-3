@@ -1019,6 +1019,20 @@ function updateObjective(){
 }
 
 window.__forgeStats=()=>({world:worldType,score,inputs:[...pressed],objects:spec.objects.length,gameMode:spec.gameMode,selectedId,goal:['collect','time'].includes(spec.gameMode)?spec.collectibles:spec.missionGoal,missionProgress,missionCarry,missionFinished,missionTargets:missionTargets.map(t=>({x:t.x,z:t.z,done:t.done,visible:t.root.visible})),facing:player?player.rotation.y:0,movementDirection,position:player?{x:player.position.x,y:player.position.y,z:player.position.z}:null,remaining:crystals.filter(c=>!c.found).map(c=>({x:c.mesh.position.x,z:c.mesh.position.z}))});
+
+/* Testes de missão em servidor local. Não disponível no GitHub Pages público. */
+if(location.hostname==='127.0.0.1'||location.hostname==='localhost'){
+ window.__forgeTestReach=()=>{
+  const t=nextMissionTarget();if(!t||!player)return null;
+  player.position.set(t.x,0,t.z);
+  if(spec.gameMode==='delivery'||spec.gameMode==='rescue')missionInteract();
+  else missionTick(.016);
+  updateObjective();
+  return {mode:spec.gameMode,progress:missionProgress,carry:missionCarry,finished:missionFinished,
+    goal:spec.missionGoal,visible:missionTargets.map(m=>m.root.visible)};
+ };
+}
+
 function togglePause(){paused=!paused;$('pause-banner').textContent='⏸ PAUSADO';$('pause-banner').classList.toggle('visible',paused);stopMovement()}
 function restartMission(){stopMovement();generate();message('assistant','Missão reiniciada. O cenário foi preservado.')}
 function animate(){requestAnimationFrame(animate);if(!renderer||!player)return;
