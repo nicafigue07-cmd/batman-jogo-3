@@ -732,7 +732,7 @@ function missionWaypoint(i,n){
  if(worldType==='beach'){
   return {x:i%3===0?0:i%2===0?-3.2:3.2,z:11+(i+1)*(33/(n+1))};
  }
- return {x:i===0?-4.3:(i%3===0?0:i%2===0?-2.9:2.9),z:8-(i+1)*(48/(n+1))};
+ return {x:i===0?-1.7:(i%3===0?0:i%2===0?-2.9:2.9),z:i===0?7:7-i*(48/Math.max(1,n-1))};
 }
 function missionBeacon(x,z,color,shape='ring'){
  const root=new THREE.Group();root.position.set(x,0,z);
