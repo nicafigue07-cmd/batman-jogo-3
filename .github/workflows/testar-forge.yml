@@ -12,6 +12,8 @@ permissions:
 jobs:
   browser-test:
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.56.1-noble
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
@@ -20,7 +22,6 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
       - run: node tests/forge-smoke.mjs
       - if: always()
         uses: actions/upload-artifact@v4
