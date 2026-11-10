@@ -546,10 +546,10 @@ function makeContactShadow(x,z,radius=1){
  contactShadows.push(mesh);return mesh;
 }
 function atmospherePoints(world,time,r){
- const count=Number($('quality')?.value||1.5)<=1?34:world==='forest'?145:world==='beach'?65:84;
+ const count=Number($('quality')?.value||1.5)<=1?100:world==='forest'?380:world==='beach'?180:220;
  const vertices=[],colors=[],c=new THREE.Color();
  for(let i=0;i<count;i++){
-  vertices.push(-49+r()*98,.6+r()*9,-49+r()*98);
+  vertices.push(-135+r()*270,.6+r()*9,-135+r()*270);
   c.setHex(world==='space'?0x75dfff:time==='night'?0xffe7a2:world==='beach'?0xc8f9ec:0xe5f7d9);
   c.multiplyScalar(.7+r()*.45);
   colors.push(c.r,c.g,c.b);
@@ -594,8 +594,8 @@ function skyWorld(world,time,r){
   const pts=new THREE.Points(geo,new THREE.PointsMaterial({color:0xe9f7ff,size:1.2,sizeAttenuation:false,depthWrite:false,fog:false}));
   scene.add(pts);
  }else{
-  for(let i=0;i<13;i++){
-   const x=-78+r()*156,y=23+r()*16,z=-76+r()*150;
+  for(let i=0;i<20;i++){
+   const x=-150+r()*300,y=30+r()*18,z=-150+r()*300;
    const group=new THREE.Group();group.position.set(x,y,z);group.userData.cloudOrigin=x;clouds.push(group);
    const cm=new THREE.MeshBasicMaterial({color:time==='sunset'?0xffd2bc:0xf7fdff,transparent:true,opacity:.78,depthWrite:false});
    for(let j=0;j<4;j++){
@@ -607,15 +607,15 @@ function skyWorld(world,time,r){
 }
 function foliageInstanced(world,r){
  if(world==='space')return;
- const qty=world==='forest'?300:world==='beach'?110:world==='city'?155:0;
+ const qty=world==='forest'?800:world==='beach'?280:world==='city'?300:0;
  const geom=new THREE.ConeGeometry(.16,.53,3),material=new THREE.MeshLambertMaterial({color:0xffffff,side:THREE.DoubleSide});
  const mesh=new THREE.InstancedMesh(geom,material,Math.floor(qty*Math.min(spec.density,1.6)));
  const dummy=new THREE.Object3D();const c=new THREE.Color();
  for(let i=0;i<mesh.count;i++){
-  let x=-51+r()*102,z=-51+r()*102;
+  let x=-136+r()*272,z=-136+r()*272;
   if(world==='city'&&Math.abs(x)<9)x=x<0?-10-r()*5:10+r()*5;
-  if(world==='beach'&&z<2)z=2+r()*40;
-  if(Math.abs(x)<4&&Math.abs(z-12)<7)z-=10;
+  if(world==='beach'&&z<3)z=3+r()*129;
+  if(Math.abs(x)<7)x=x<0?-9-r()*5:9+r()*5;
   dummy.position.set(x,.24,z);dummy.rotation.y=r()*6.283;
   dummy.scale.setScalar(.6+r()*1.2);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);
   c.setHex(world==='beach'?0x8aa471:world==='forest'?0x387948:0x4a967e);
@@ -659,8 +659,8 @@ function beachUmbrella(x,z,color){
  cube(1.65,.17,.72,0xf8f1d9,x+2,.38,z+1.5);
 }
 function mountainousBackground(r){
- for(let i=0;i<15;i++){
-  const x=-67+i*9,z=-58-r()*13,h=12+r()*25;
+ for(let i=0;i<25;i++){
+  const x=-148+i*12,z=-152-r()*20,h=22+r()*37;
   const cone=new THREE.Mesh(new THREE.ConeGeometry(10+r()*5,h,7),
   new THREE.MeshStandardMaterial({color:i%3===0?0x5b7d73:0x4c7565,roughness:1,flatShading:true}));
   cone.position.set(x,h/2-1,z);cone.receiveShadow=true;scene.add(cone);
@@ -1064,6 +1064,23 @@ function missionTick(dt){
 let portalCooldown=0,dialogueTimer=0;
 
 /* Grandes bairros extras, usando malhas instanciadas para reduzir chamadas de desenho. */
+
+function facadeTexture(){
+ const cv=document.createElement('canvas');cv.width=128;cv.height=256;
+ const ctx=cv.getContext('2d'),random=rand(9080);
+ ctx.fillStyle='#b0c7ce';ctx.fillRect(0,0,128,256);
+ for(let y=7;y<250;y+=33)for(let x=9;x<121;x+=27){
+  ctx.fillStyle='#52697a';ctx.fillRect(x-2,y-3,21,27);
+  const lit=spec.time==='night'&&random()>.36;
+  ctx.fillStyle=lit?'#ffdaa2':random()>.5?'#93b7c8':'#6c92a8';ctx.fillRect(x,y,17,21);
+  ctx.fillStyle=lit?'#fff0c7':'#c3d8dc';ctx.globalAlpha=.48;ctx.fillRect(x+1,y+1,2,19);ctx.globalAlpha=1;
+  ctx.fillStyle='#405567';ctx.fillRect(x+7,y,2,21);
+  ctx.fillStyle='#8b9fa5';ctx.fillRect(x-3,y+22,22,2);
+ }
+ const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;
+ t.repeat.set(1,1);t.anisotropy=Math.min(renderer?.capabilities?.getMaxAnisotropy?.()||1,4);return t;
+}
+
 function expandDistricts(r){
  if(worldType==='city'){
   for(const street of [-94,94]){
@@ -1076,7 +1093,7 @@ function expandDistricts(r){
   }
   const count=Math.min(220,Math.max(80,Math.round(120*spec.density)));
   const buildings=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),
-    new THREE.MeshStandardMaterial({color:0xffffff,roughness:.89}),count);
+    new THREE.MeshStandardMaterial({color:0xffffff,map:facadeTexture(),roughness:.85,metalness:.05}),count);
   const dummy=new THREE.Object3D(),c=new THREE.Color();
   for(let i=0;i<count;i++){
    let x=0,z=0;
@@ -1137,7 +1154,7 @@ function generate(){
 stopMovement();
 if(scene){scene.traverse(o=>{if(o.isMesh||o.isPoints){o.geometry?.dispose();const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>{m?.map?.dispose?.();m?.dispose?.()})}})}ambientWaves=[];clouds=[];contactShadows=[];atmosphere=null;oceanMaterial=null;waterMesh=null;worldType=spec.world||chooseType();const p=palettes[worldType],rnd=rand(43);scene=new THREE.Scene();const sky=spec.time==='night'?0x101d39:spec.time==='sunset'?0xee9a87:p.sky;scene.background=new THREE.Color(sky);scene.fog=new THREE.Fog(sky,95,340);solids=[];crystals=[];npcs=[];score=0;$('score').textContent='0/'+spec.collectibles;
 scene.add(new THREE.HemisphereLight(0xffffff,0x56606a,spec.time==='night'?.65:2.4));if(renderer)renderer.toneMappingExposure=spec.time==='night'?.97:spec.time==='sunset'?1.15:1.35;
-let sun=new THREE.DirectionalLight(spec.time==='sunset'?0xffb280:0xffffff,spec.time==='night'?.38:2.1);sun.position.set(-12,20,14);sun.castShadow=Number($('quality').value)>1;const shadowRes=Number($('quality').value)>=2?2048:1024;sun.shadow.mapSize.set(shadowRes,shadowRes);sun.shadow.camera.left=-55;sun.shadow.camera.right=55;sun.shadow.camera.top=55;sun.shadow.camera.bottom=-55;sun.shadow.normalBias=.017;scene.add(sun);sunLight=sun;if(spec.time==='night'){const moon=ball(3.2,0xe2efff,-34,23,-46);moon.material=new THREE.MeshBasicMaterial({color:0xe4efff})}
+let sun=new THREE.DirectionalLight(spec.time==='sunset'?0xffb280:0xffffff,spec.time==='night'?.38:2.1);sun.position.set(-12,20,14);sun.castShadow=Number($('quality').value)>1;const shadowRes=Number($('quality').value)>=2?2048:1024;sun.shadow.mapSize.set(shadowRes,shadowRes);sun.shadow.camera.left=-55;sun.shadow.camera.right=55;sun.shadow.camera.top=55;sun.shadow.camera.bottom=-55;sun.shadow.normalBias=.017;scene.add(sun);scene.add(sun.target);sunLight=sun;if(spec.time==='night'){const moon=ball(3.2,0xe2efff,-34,23,-46);moon.material=new THREE.MeshBasicMaterial({color:0xe4efff})}
 skyWorld(worldType,spec.time,rnd);
 ground=cube(MAP_SIZE+4,.5,MAP_SIZE+4,p.ground,0,-.34,0);
 ground.material.color.setHex(0xffffff);
@@ -1408,6 +1425,13 @@ if(atmosphere)atmosphere.position.y=Math.sin(elapsed*.6)*.15;
 if(player.userData.groundShadow){
  player.userData.groundShadow.position.set(player.position.x,.10,player.position.z);
  player.userData.groundShadow.material.opacity=Math.max(.25,.75-player.position.y*.13);
+}
+if(sunLight&&sunLight.castShadow&&player&&
+ (Math.abs(player.position.x-sunLight.target.position.x)>11||Math.abs(player.position.z-sunLight.target.position.z)>11)){
+ const x=player.position.x,z=player.position.z;
+ sunLight.target.position.set(x,0,z);
+ sunLight.position.set(x-12,20,z+14);
+ sunLight.target.updateMatrixWorld();
 }
 for(const npc of npcs)if(npc.userData.groundShadow){
  npc.userData.groundShadow.position.set(npc.position.x,.099,npc.position.z)
