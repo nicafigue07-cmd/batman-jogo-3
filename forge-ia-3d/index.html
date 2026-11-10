@@ -730,7 +730,7 @@ function missionWaypoint(i,n){
  if(worldType==='beach'){
   return {x:i%3===0?0:i%2===0?-3.2:3.2,z:11+(i+1)*(33/(n+1))};
  }
- return {x:i%3===0?0:i%2===0?-2.9:2.9,z:8-(i+1)*(48/(n+1))};
+ return {x:i===0?-4.3:(i%3===0?0:i%2===0?-2.9:2.9),z:8-(i+1)*(48/(n+1))};
 }
 function missionBeacon(x,z,color,shape='ring'){
  const root=new THREE.Group();root.position.set(x,0,z);
@@ -778,8 +778,9 @@ function setupMission(){
    for(let i=0;i<spec.missionGoal;i++){const {x,z}=missionWaypoint(i,spec.missionGoal);
     missionTargets.push(missionBeacon(x,z,i%2?0xffcf68:0x63eed5))}
  }else if(mode==='delivery'){
-   missionTargets.push(missionBeacon(0,4,0xf1bc73,'package'));
+   missionTargets.push(missionBeacon(-2.8,4,0xf1bc73,'package'));
    missionTargets.push(missionBeacon(worldType==='beach'?4:0,worldType==='beach'?40:-34,0x6ad7ff,'package'));
+   missionTargets[1].root.visible=false;
  }else if(mode==='rescue'||mode==='explore'){
    for(let i=0;i<spec.missionGoal;i++){const {x,z}=missionWaypoint(i,spec.missionGoal);
     missionTargets.push(missionBeacon(x,z,mode==='rescue'?0xffba75:0x7ee6ff,mode==='rescue'?'npc':'ring'))}
