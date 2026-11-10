@@ -24,7 +24,10 @@ try {
  if(!initial||initial.remaining.length!==7)throw Error('Estado de jogo indisponível');
  await page.locator('#viewport canvas').first().click({position:{x:520,y:360}});
  await page.keyboard.down('KeyW');
- await page.waitForTimeout(1800);
+ for(let i=0;i<14;i++){
+   await page.waitForTimeout(1000);
+   if((await page.evaluate(()=>window.__forgeStats?.().score))>=1)break;
+ }
  await page.keyboard.up('KeyW');
  const moved=await page.evaluate(()=>window.__forgeStats());
  console.log('PLAY',JSON.stringify({before:initial.position,after:moved.position,score:moved.score,nearest:moved.remaining.length}));
@@ -64,6 +67,42 @@ try {
  const exported=readFileSync(await download.path(),'utf8');
  if(!exported.includes('data-game-mode="true"')||!exported.includes('type="module"'))throw Error('Jogo HTML exportado sem código jogável');
  console.log('EXPORT_OK',download.suggestedFilename(),exported.length);
+
+ // Editor 3D: adicionar, mudar coordenadas, desfazer/refazer, excluir, importar/exportar.
+ await page.locator('#object-editor summary').click();
+ await page.locator('#add-type').selectOption('house');
+ await page.locator('#add-object').click();
+ let objects=await page.evaluate(()=>window.__forgeStats().objects);
+ if(objects!==1)throw Error('Editor não adicionou casa: '+objects);
+ if(!(await page.locator('#inspector').isVisible()))throw Error('Inspector não apareceu');
+ await page.locator('#obj-x').fill('16');
+ await page.locator('#obj-x').press('Tab');
+ await page.waitForTimeout(400);
+ const selected=await page.evaluate(()=>window.__forgeStats());
+ if(selected.objects!==1||!selected.selectedId)throw Error('Objeto selecionado não persistiu');
+ await page.locator('#undo').click();
+ if((await page.evaluate(()=>window.__forgeStats().objects))!==1)throw Error('Undo da posição removeu objeto');
+ await page.locator('#redo').click();
+ if((await page.evaluate(()=>window.__forgeStats().objects))!==1)throw Error('Redo não preservou objeto');
+ await page.locator('#duplicate-object').click();
+ if((await page.evaluate(()=>window.__forgeStats().objects))!==2)throw Error('Duplicar falhou');
+ await page.locator('#delete-object').click();
+ if((await page.evaluate(()=>window.__forgeStats().objects))!==1)throw Error('Excluir falhou');
+ const exportProject=page.waitForEvent('download',{timeout:15000});
+ await page.locator('#export-project').click();
+ const jsonDownload=await exportProject;
+ const project=JSON.parse(readFileSync(await jsonDownload.path(),'utf8'));
+ if(project.spec.objects.length!==1)throw Error('Projeto JSON incompleto');
+ await page.locator('[data-preset=parkour]').click();
+ const park=await page.evaluate(()=>window.__forgeStats());
+ if(park.objects!==12||park.gameMode!=='time')throw Error('Modelo parkour não funcionou');
+ const fileBuffer=Buffer.from(JSON.stringify(project));
+ await page.locator('#import-file').setInputFiles({name:'projeto-forge.json',mimeType:'application/json',buffer:fileBuffer});
+ await page.waitForTimeout(500);
+ if((await page.evaluate(()=>window.__forgeStats().objects))!==1)throw Error('Importação de projeto JSON falhou');
+ console.log('EDITOR_OK',JSON.stringify({objects:1,mode:park.gameMode,import:true,export:true}));
+ await page.screenshot({path:'artifacts/forge-editor.png'});
+
  const narrow=await browser.newPage({viewport:{width:390,height:830},isMobile:true,hasTouch:true});
  await narrow.goto('http://127.0.0.1:'+port,{waitUntil:'domcontentloaded'});
  await narrow.waitForTimeout(1800);
