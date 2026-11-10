@@ -28,6 +28,8 @@ jobs:
       # Caminhos relativos permitem servir o jogo dentro de /batman-jogo-3/.
       - run: npm run build -- --base=./
       - run: node scripts/package-portable.mjs
+      - name: Incluir o estúdio FORGE IA 3D no site publicado
+        run: cp -R forge-ia-3d dist/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
