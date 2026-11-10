@@ -126,6 +126,22 @@ try {
  if(await page.locator('#generated-panel').isVisible())throw Error('Falha em voltar ao editor após ver prévia de IA');
  console.log('AI_CODE_PREVIEW_OK',JSON.stringify({mocked:true,sandboxed:true,download:true}));
 
+ await page.locator('#disconnect').click();
+ await page.locator('#prompt').fill('Coloque 5 casas');
+ await page.locator('#build').click();
+ await page.waitForTimeout(250);
+ const countAfterChat=await page.evaluate(()=>window.__forgeStats().objects);
+ if(countAfterChat!==6)throw Error('Comando de chat para adicionar objetos não funcionou: '+countAfterChat);
+ console.log('LOCAL_BUILD_OK',countAfterChat);
+ // Exportar jogo após conectar/desconectar não pode vazar senha privada.
+ const safeDl=page.waitForEvent('download',{timeout:15000});
+ await page.locator('#export').click();
+ const safeFile=await safeDl;
+ const safeHtml=readFileSync(await safeFile.path(),'utf8');
+ if(safeHtml.includes('falso-apenas-para-teste'))throw Error('Exportação incluiu senha de acesso');
+ console.log('PRIVACY_EXPORT_OK',safeHtml.length);
+
+
  await page.screenshot({path:'artifacts/forge-editor.png'});
 
  const narrow=await browser.newPage({viewport:{width:390,height:830},isMobile:true,hasTouch:true});
