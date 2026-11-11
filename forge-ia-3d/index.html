@@ -564,7 +564,7 @@ function upgradeWorld(){
 function simpleText(value){return String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim()}
 function contextualPrompt(request){
  const v=simpleText(request);
- const prev=conversation.filter(c=>c.role==='user').slice(-2,-1)[0]?.content||'';
+ const prev=conversation.filter(c=>c.role==='user').at(-1)?.content||'';
  const pn=simpleText(prev);
  const short=v.match(/^(?:(?:agora|entao|e)\s+)?(?:(?:coloque|adicione|crie)\s+)?(?:mais\s+)?(\d{1,2})(?:\s+(?:deles|delas|desses|dessas))?[.!?]?$/);
  if(short){
