@@ -1,79 +1,53 @@
-# FORGE IA 3D PRO — versão 10
+# FORGE IA 3D PRO — versão 11
 
 **Site:** https://nicafigue07-cmd.github.io/batman-jogo-3/forge-ia-3d/
 
-A FORGE é um editor de protótipos 3D com Three.js. A versão 10 ampliou o terreno para **640 × 640 unidades** (mais de 4,8 vezes a área anterior de 290 × 290), com regiões adicionais e navegação rápida. A parte gratuita funciona diretamente no navegador. O modo de geração por IA real exige um servidor e chave de API, que não são fornecidos pelo GitHub Pages.
+A FORGE é um estúdio de criação de jogos 3D em Three.js, no navegador. Tem um modo local gratuito com comandos em português e um servidor opcional de IA generativa. O modo local não é equivalente ao ChatGPT e não escreve livremente código de jogos inéditos.
 
-## Protagonista — Guardião Ruivo
+## Melhorias da versão 11
 
-O protagonista jogável agora é o herói élfico ruivo da imagem enviada para este projeto. Seu modelo 3D é construído no navegador com Three.js, incluindo cabelo vermelho espetado, orelhas pontudas, olhos azul-violeta, túnica verde, calças claras, botas e pulseiras de couro, capa vermelha, cinto, bolsa, amuletos e uma pequena fada brilhante. A fada acompanha o protagonista e a capa se movimenta enquanto ele anda. O personagem é mantido ao trocar de cenário, completar missões, iniciar campanhas ou carregar o projeto.
+- **Conversa persistente:** ao recarregar o projeto, os últimos pedidos e respostas podem ser retomados.
+- **Continuidade:** depois de 'adicione 2 casas', o pedido 'mais 3' acrescenta outras três casas.
+- **Comandos que executam ações:** desfazer, refazer, salvar, carregar, reiniciar missão, ir para regiões do mapa.
+- **Aprimorar mundo:** acrescenta alguns objetos e NPCs e detalhes visuais sem trocar o tipo de missão.
+- **Diagnosticar jogo:** apresenta objetivos, personagens, mapa e recomendações específicas do estado atual.
+- **Preservar progresso:** ao editar objetos ou fazer outras mudanças compatíveis no mesmo cenário e missão, o personagem não volta ao início e o progresso permanece.
+- **Resgates com consequências:** os personagens resgatados são registrados como aliados e podem aparecer perto da base nas fases seguintes.
+- **Herói jogável:** o Guardião Ruivo inspirado na imagem do usuário, com túnica verde, cabelos ruivos, capa vermelha, orelhas élficas e fada animada.
+- **Diferenciação clara:** o modo de comandos local não é IA generativa; a geração de código exige um servidor configurado.
 
-**Limitação visual:** esta é uma interpretação 3D feita com primitivas do Three.js para funcionar sem arquivos externos; não é um modelo 3D esculpido idêntico à ilustração original. Um modelo GLB feito em Blender poderia aproximar ainda mais o desenho da imagem.
+## Recursos de jogo já disponíveis
 
-## Ferramentas gratuitas
+- Mapa de **640 × 640 unidades** com cidade, praia, floresta e base espacial, além de viagens rápidas.
+- Campanha de **20 capítulos** com história e diário de missões.
+- Seis objetivos: coleta de cristais, coleta contra o tempo, corrida por checkpoints, entregas, resgate de personagens e exploração.
+- Água animada, sombras, vegetação, partículas, iluminação de dia/noite/pôr do sol, opções Leve, Equilibrado e Ultra.
+- Editor 3D com casas, árvores, rochas, caixas, muros, torres, postes, portais e plataformas; seleção, arraste, redimensionamento, cores, duplicação e exclusão.
+- Salvamento no navegador e exportação/importação de projeto JSON e de jogo HTML. O HTML ainda depende de internet para carregar Three.js.
+- Controles: WASD/setas para andar, Espaço para pular, Shift para correr, E para interagir, P para pausar, R para reiniciar.
 
-- Cenários de cidade, praia, floresta e base espacial; iluminação de dia, noite e pôr do sol.
-- **Mapa ampliado:** 290 × 290 unidades, 6,25 vezes a área anterior (116 × 116). Bairros exteriores e estradas, trilhas de floresta, praias estendidas e postos espaciais construídos com instancing para preservar desempenho.
-- **campanha de 20 capítulos:** missões com objetivos e lore diferentes (coleta, corrida, entregas, resgates e exploração), botão “Próxima missão” e progresso salvo no navegador.
-- O botão “📖 Criar campanha com 10 missões” reinicia a história. Para criar uma missão isolada, selecione um objetivo; isso desativa o modo campanha.
-- **Chat local mais útil:** responde dúvidas sobre a missão, o mapa e os capítulos, sugere possibilidades e aceita pedidos como “crie uma campanha com 10 missões”. Continua sendo um interpretador de comandos, não uma IA generativa equivalente ao ChatGPT.
-- **Visual v8:** água com ondas e variações de cor produzidas por shader, textura procedural de asfalto, nuvens em movimento, partículas ambientais, sombras suaves sob os personagens e avatar 3D mais arredondado com roupas e articulações.
-- Qualidade gráfica ajustável: **Leve** (sem sombras dinâmicas), **Equilibrado** ou **Ultra** (maior resolução de sombras e pixels). Gráficos mais altos exigem mais da placa de vídeo.
-- Os efeitos são gerados com Three.js; o site ainda não possui modelos 3D de qualidade AAA nem materiais fotográficos profissionais.
-- Jogabilidade 3D com câmera, personagem que gira corretamente para a direção do deslocamento, sombras, minimapa, plataformas, portais e NPCs que respondem à tecla E.
-- Corrida, salto, pausa e reinício de missão; as teclas ficam liberadas quando o navegador perde o foco.
-- **Seis tipos de objetivo:** coletar cristais, coletar contra o tempo, passar por checkpoints na ordem, buscar/entregar encomendas, resgatar pessoas com a tecla E e descobrir lugares.
-- Cada tipo possui marcador, progresso, descrição e condição própria de vitória. Os modos de resgate e entrega incluem interação, e os outros exigem alcançar objetivos.
-- **Campanha com 20 capítulos:** fases de coleta, corrida, entrega, resgate e exploração conectadas por uma história, com diário dos capítulos e progressão salva no navegador.
-- **Mapa aberto de 640 × 640:** cidade com bairros externos, floresta expandida, praia estendida e instalações espaciais distantes.
-- **Viagem rápida:** opções de Centro, Norte, Sul, Leste, Oeste ou perto do próximo objetivo.
-- **Ajuda contextual:** no chat local, “Planeje meu jogo” descreve o jogo atual, sua missão e sugestões concretas. Ainda é um interpretador por regras, não IA generativa como o ChatGPT.
-- **Editor de objetos 3D**: árvores, casas, rochas, caixas, muros, torres, postes, portais e plataformas.
-- Clique para adicionar, ligar o modo editar e arrastar os objetos; alterar posição, cor e tamanho, duplicar e excluir.
-- Modelos de aventura urbana, parkour e exploração na praia.
-- Desfazer/refazer; salvar e carregar; exportar e importar o projeto JSON.
-- Exportar seu jogo HTML e jogar no navegador (internet necessária para carregar Three.js).
-- Comandos locais em português, por exemplo: "adicione 5 casas", "crie uma corrida de 3 checkpoints", "faça um jogo de entregas", "resgate 3 pessoas na floresta", "descubra locais".
-- No editor, escolha **Objetivo do jogo** e **Quantidade de objetivos** ou use os atalhos de Corrida, Entregas, Resgate e Exploração.
+## Exemplos de comandos
 
-**Importante:** os comandos locais são regras, não um modelo generativo equivalente ao ChatGPT.
+- 'Crie um jogo de resgatar 5 pessoas na floresta.'
+- 'Adicione 2 casas.' Depois, 'Mais 3.'
+- 'Melhore tudo mantendo meu personagem e minhas missões.'
+- 'Diagnosticar o jogo.'
+- 'Salve o projeto.' / 'Desfazer.' / 'Refazer.'
+- 'Crie uma campanha com 20 missões.'
 
-## Ativar modelo de IA real (opcional)
+## Ativar IA generativa real (opcional)
 
-O backend Node.js 22+ está no arquivo forge-ia-3d/backend/server.mjs. Ele chama a OpenAI Responses API quando configurado.
+O servidor Node.js 22+ está em forge-ia-3d/backend/server.mjs e utiliza a OpenAI Responses API. GitHub Pages executa apenas a página estática, portanto o backend **não é automaticamente ativado**.
 
-1. Publique o backend em hospedagem Node.js HTTPS (não use apenas GitHub Pages).
-2. Configure variáveis de ambiente privadas na hospedagem:
-   - OPENAI_API_KEY: chave da API OpenAI. Nunca coloque no HTML ou no repositório.
-   - FORGE_ACCESS_TOKEN: senha longa, diferente da chave da API.
-   - OPENAI_MODEL: opcional, padrão gpt-6.1-sol.
-   - PORT: opcional, padrão 8787.
-3. Comando a executar a partir da raiz do repositório: node forge-ia-3d/backend/server.mjs
-4. No estúdio, clique em **⚙ IA real** e informe a URL HTTPS terminada em /api/forge e a senha de acesso.
-5. Use o chat para pedir mudanças de cenário, câmera, personagens e novos objetos.
-6. Para pedir um minijogo HTML independente, clique em **🚀 Gerar um jogo novo com código de IA**. A prévia é exibida em iframe isolado, e o arquivo HTML pode ser baixado após teste.
+1. Um responsável ou administrador hospeda o backend em HTTPS.
+2. Configure de forma privada no servidor as variáveis OPENAI_API_KEY, FORGE_ACCESS_TOKEN e, opcionalmente, OPENAI_MODEL (padrão gpt-6.1-sol) e PORT.
+3. Execute, a partir da raiz do repositório: node forge-ia-3d/backend/server.mjs
+4. No estúdio, abra ⚙ IA real e informe a URL HTTPS do servidor terminada em /api/forge e a senha de acesso. **Nunca coloque a chave privada no código público do site.**
 
-A prévia utiliza iframe com sandbox e CSP restrita. Mesmo assim, confira todo código gerado pela IA antes de executá-lo fora do editor. Não compartilhe sua senha. O servidor inclui limite básico de requisições; para uso público também são necessários controle de custos e autenticação aprimorada.
+A API pode gerar custos. Se você for menor de idade, peça a um responsável para configurar qualquer serviço pago. É necessário limitar custos, autenticar usuários e testar a qualidade dos jogos antes de publicar para outras pessoas.
 
-**Custos:** a API pode gerar cobranças. Para menores de idade, qualquer configuração de serviços pagos deve ser feita com um responsável.
+## Testes automáticos
 
-## Controles
+O workflow .github/workflows/testar-forge.yml executa testes de navegador com Chromium/Playwright e WebGL para controles, missões, 20 capítulos, desempenho visual, resgates e aliados, chat contextual, preservação de progresso, JSON e HTML. O servidor de IA é testado com uma resposta simulada para não gastar créditos.
 
-| Controle | Função |
-| --- | --- |
-| W/A/S/D ou setas | Andar |
-| Espaço | Pular |
-| Shift | Correr |
-| Arrastar mouse | Girar câmera |
-| Rodinha do mouse | Zoom |
-| E | Conversar com NPC próximo |
-| P | Pausar ou continuar |
-| R | Reiniciar missão |
-| Ctrl+Z / Ctrl+Y | Desfazer/refazer no editor |
-| Modo Editar | Selecionar e arrastar objetos |
-
-## Testes automatizados
-
-O fluxo de trabalho .github/workflows/testar-forge.yml verifica o backend com uma API OpenAI simulada e roda o estúdio em Chromium/Playwright com WebGL. O teste `tests/forge-campaign.mjs` percorre os dez capítulos e confere mapa, progresso, salvamento, reinício e comportamento do chat local. O teste `tests/forge-graphics.mjs` confere oceanos animados, materiais do solo, partículas, nuvens, sombras e perfis gráficos, gerando capturas por cenário. O teste de objetivos verifica a direção do rosto e vitórias em corrida, entregas, resgates e exploração. O teste da campanha verifica as 20 fases, viagens rápidas e progresso restaurado depois de recarregar. Abrange controles, cristal coletado, pausa, minimapa, edição de objetos, modelos de mundo, importar/exportar JSON e HTML, prévia de código gerado com servidor simulado e viewport mobile.
-
-A FORGE não é um motor AAA nem substitui Unity ou Unreal. O modelo conectado ajuda a criar protótipos, mas a qualidade, os testes e a correção do código gerado ainda exigem revisão.
+**Limitações:** a FORGE não substitui Unity ou Unreal; o modelo 3D do herói é uma recriação estilizada e não uma cópia da ilustração; IA sem servidor não gera qualquer código 3D novo nem jogos AAA automaticamente.
