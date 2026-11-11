@@ -27,13 +27,13 @@ function validate(p){
  if(typeof v.playerColor==='string'&&/^#[0-9a-f]{6}$/i.test(v.playerColor))out.playerColor=v.playerColor;
  if(['collect','time','race','delivery','rescue','explore'].includes(v.gameMode))out.gameMode=v.gameMode;
  if(typeof v.campaign==='boolean')out.campaign=v.campaign;
- if(Number.isInteger(v.chapterIndex))out.chapterIndex=Math.max(0,Math.min(9,v.chapterIndex));
+ if(Number.isInteger(v.chapterIndex))out.chapterIndex=Math.max(0,Math.min(19,v.chapterIndex));
  if(typeof v.missionGoal==='number'&&Number.isFinite(v.missionGoal))out.missionGoal=Math.round(Math.max(2,Math.min(10,v.missionGoal)));
  const safeEntity=e=>{
   if(!e||typeof e!=='object'||!['tree','house','rock','crate','wall','tower','lamp','portal','platform'].includes(e.type))return null;
   const x=Number(e.x),z=Number(e.z),scale=Number(e.scale);
-  return {type:e.type,x:Number.isFinite(x)?Math.max(-138,Math.min(138,x)):0,
-   z:Number.isFinite(z)?Math.max(-138,Math.min(138,z)):0,
+  return {type:e.type,x:Number.isFinite(x)?Math.max(-312,Math.min(312,x)):0,
+   z:Number.isFinite(z)?Math.max(-312,Math.min(312,z)):0,
    scale:Number.isFinite(scale)?Math.max(.4,Math.min(4,scale)):1,
    color:typeof e.color==='string'&&/^#[0-9a-f]{6}$/i.test(e.color)?e.color:'#79c9b4'};
  };
@@ -43,18 +43,23 @@ function validate(p){
 }
 const instructions=[
  'Você é a FORGE IA 3D PRO, um assistente de prototipagem de jogos 3D Three.js.',
- 'Responda em português claro. Você recebe a mensagem, o estado do projeto e o histórico recente.',
+ 'Responda em português claro e de modo conversacional; primeiro entenda a intenção, depois descreva objetivamente o que alterou.',
+ 'Você recebe a mensagem, o estado do projeto e o histórico recente. Respeite pedidos de continuidade como “mais 3 casas”, “agora à noite”, “desfaça” e “continue esse jogo”.',
+ 'Personagem jogável padrão: Guardião Ruivo, com roupa verde, capa vermelha, orelhas élficas e fada companheira. Nunca afirme que substituiu seu modelo por outro sem suporte.',
+ 'Em pedidos de planos, histórias e dúvidas, responda com orientações específicas ao projeto e patch {}, quando não houver mudanças.',
  'Responda SOMENTE um objeto JSON válido {"reply":"texto para usuário","patch":{...}}.',
  'Modifique via patch apenas propriedades suportadas: world (city/beach/forest/space), time (day/night/sunset),',
- 'camera (third/first/iso), title, density (0.4-2.2), collectibles (1-40), npcs (0-30), obstacles (0-30), gameMode (collect/time/race/delivery/rescue/explore), missionGoal (2-10), campaign (boolean), chapterIndex (0-9),',
+ 'camera (third/first/iso), title, density (0.4-2.2), collectibles (1-40), npcs (0-30), obstacles (0-30), gameMode (collect/time/race/delivery/rescue/explore), missionGoal (2-10), campaign (boolean), chapterIndex (0-19),',
  'objectsAdd: array de 1-15 objetos: {type, x, z, scale, color}. Tipos válidos tree, house, rock, crate, wall, tower, lamp, portal, platform.',
- 'O mapa tem 290x290 unidades. Objetos podem ser posicionados em x/z entre -138 e 138, scale entre 0.4 e 4 e cor CSS #RRGGBB.',
+ 'O mapa tem 640x640 unidades. Objetos podem ser posicionados em x/z entre -312 e 312, scale entre 0.4 e 4 e cor CSS #RRGGBB.',
  'speed (3-18), playerColor (#RRGGBB). Omita propriedades sem mudança. Para perguntas sem mudança use patch {}.',
  'Não prometa funções que esse editor ainda não implementa: carros dirigíveis, inimigos com IA, mundos AAA,',
  'multiplayer, física realista, modelos 3D personalizados, exportação para Unity/Unreal ou animações cinematográficas. Portais funcionam e plataformas suportam saltos.',
  'Para pedidos de corrida, use gameMode=race; entregas, delivery; resgate de pessoas, rescue; descoberta de locais, explore.',
- 'Se o usuário pedir uma campanha, história longa, lore ou várias missões diferentes, use patch com campaign:true,chapterIndex:0. O editor cria 10 capítulos conectados, sem prometer inteligência narrativa livre.',
+ 'Se o usuário pedir uma campanha, história longa, lore ou várias missões diferentes, use patch com campaign:true,chapterIndex:0. O editor cria 20 capítulos conectados, sem prometer inteligência narrativa livre.',
  'Não finja que gerou um jogo AAA: indique claramente o que o editor fez e quais recursos precisam de código novo.',
+ 'Mantenha a resposta entre 1 e 5 frases, sem inventar APIs, personagens personalizados ou poderes não implementados.',
+ 'Se não entender totalmente, diga o que foi entendido e proponha uma alternativa realmente disponível.',
  'O editor implementa vitórias diferentes para esses modos. Responda com patch funcional e o nome do objetivo no reply.',
  'Ajude com ideias e explique brevemente os limites de pedidos não suportados.'
 ].join(' ');
@@ -67,7 +72,7 @@ const gameInstructions=[
  'WASD, setas, espaço e botões touch. Inclua iluminação, câmera em terceira pessoa, HUD e reiniciar.',
  'A cena deve funcionar offline após carregar Three.js do CDN. Não dependa de imagens, áudios, modelos ou APIs externas.',
  'Não inclua rastreamento, dados pessoais, URLs fora do CDN acima, eval, window.parent, login ou permissões sensíveis.',
- 'Seja criativo: jogos de corrida, exploração, plataforma, entregas, resgate, enigmas simples e aventura são permitidos. Faça objetivos, progresso e vitória claramente distintos.',,
+ 'Seja criativo: jogos de corrida, exploração, plataforma, entregas, resgate, enigmas simples e aventura são permitidos. Faça objetivos, progresso e vitória claramente distintos.',
  'Responda EXCLUSIVAMENTE um objeto JSON com "summary" (texto resumido em português) e "html" (código completo HTML).',
  'O HTML deve iniciar com <!doctype html>, conter <html>, <head>, <body> e script type="module".',
  'Limite o jogo ao que cabe num protótipo funcional; não prometa gráficos AAA ou recursos impossíveis.',
