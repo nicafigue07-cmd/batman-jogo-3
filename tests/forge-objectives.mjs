@@ -21,7 +21,7 @@ async function selectMode(mode,goal=3){
  await page.locator('#mission-count').selectOption(String(goal));
  await page.locator('#mission-mode').selectOption(mode);
  await page.waitForTimeout(450);
- let st=await state();assert.equal(st.gameMode,mode);
+ let st=await state();assert.equal(st.gameMode,mode);assert.equal(st.hero,'red-haired-elf');assert.equal(st.fairy,true);
  assert.equal(st.goal,goal);
  assert.equal(st.missionProgress,0);
  return st;
@@ -30,6 +30,9 @@ try{
  await page.goto('http://127.0.0.1:8123',{waitUntil:'domcontentloaded'});
  await page.waitForFunction(()=>window.__forgeStats && document.getElementById('status').textContent==='MUNDO PRONTO',{timeout:45000});
  const first=await state();
+ assert.equal(first.hero,'red-haired-elf','O protagonista deve ser o herói ruivo da referência');
+ assert.equal(first.fairy,true,'A fada deve acompanhar o protagonista');
+ assert.ok(first.heroParts>=30,'O herói precisa de um modelo 3D com detalhes reais');
  assert.equal(first.gameMode,'collect');
  assert.equal(first.missionTargets.length,0);
  await page.locator('#viewport canvas').first().click({position:{x:540,y:320}});
@@ -40,6 +43,7 @@ try{
  const dot=h.x*facing.movementDirection.x+h.z*facing.movementDirection.z;
  assert.ok(dot>.98,'Direção do rosto não acompanha o movimento: '+dot);
  console.log('FACE_FORWARD_OK',JSON.stringify({dot,heading:facing.facing,move:facing.movementDirection}));
+ console.log('ELF_HERO_OK',JSON.stringify({hero:first.hero,parts:first.heroParts,fairy:first.fairy}));
  await page.locator('#new').click();
  await page.locator('#viewport canvas').first().click({position:{x:540,y:320}});
  await page.locator('#mission-count').selectOption('3');
