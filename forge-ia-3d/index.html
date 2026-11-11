@@ -196,6 +196,13 @@ background:linear-gradient(135deg,#324f38bb,#533642bb);border:1px solid #a6ca948
 #chatlog .message.user{border-right:2px solid #6abfff}
 @media(max-width:450px){.chat-actions{grid-template-columns:1fr}.chat-actions button{padding:11px}}
 
+
+#ally-roster{position:absolute;top:85px;left:15px;z-index:2;background:#102b3de8;
+color:#d8fff1;border:1px solid #60c5a759;border-radius:9px;padding:6px 10px;
+font-size:11px;pointer-events:none}
+#ally-count{color:#a4ffe5}
+@media(max-width:900px){#ally-roster{top:80px;left:12px;font-size:10px}}
+
 </style>
 </head>
 <body>
@@ -297,6 +304,7 @@ background:linear-gradient(135deg,#324f38bb,#533642bb);border:1px solid #a6ca948
 </aside>
 <section><div class="toolbar"><strong>🎮 Editor e prévia 3D</strong><div class="top-actions"><select id="quality" aria-label="Qualidade gráfica"><option value="1">Leve (FPS)</option><option value="1.5" selected>Equilibrado</option><option value="2">Ultra (2×)</option></select><button id="stop-player" title="Parar qualquer movimento do personagem">■ Parar</button><button id="restart-level">↻ Missão</button><button id="reset-camera">⟳ Câmera</button><span class="pill" id="status">CARREGANDO 3D</span></div></div>
 <div id="viewport"><div id="hud"><strong id="title">Meu jogo 3D</strong><span id="goal-name">💎 Cristais</span>: <span id="score">0/7</span></div>
+<div id="ally-roster">🤝 Aliados salvos: <strong id="ally-count">0</strong></div>
 <div id="campaign-status" class="chapter-status">📖 Capítulo 1/10 — A Luz Perdida</div>
 <div id="chapter-story" class="chapter-story">Reúna cristais para restaurar a cidade.</div>
 <div id="game-details"><b id="mode-label">EXPLORAÇÃO 3D</b><span id="scene-details">Mundo criado pela FORGE</span></div><div id="direction"><strong>🧭 Missão:</strong> encontre os cristais</div><div id="dialogue" hidden></div><div id="minimap-wrap"><canvas id="minimap" width="308" height="308" aria-label="Minimapa do cenário"></canvas><span id="minimap-name">MAPA</span></div><div id="pause-banner">⏸ PAUSADO</div>
@@ -325,7 +333,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)stopMovemen
 document.addEventListener('focusin',e=>{if(e.target.closest?.('aside, .toolbar'))stopMovement()});
 
 
-const baseSpec=()=>({world:'city',time:'day',density:1,collectibles:7,npcs:2,obstacles:0,camera:'third',speed:8,playerColor:'#3e7547',title:'Meu mundo 3D',gameMode:'collect',missionGoal:5,campaign:true,chapterIndex:0,objects:[]});
+const baseSpec=()=>({world:'city',time:'day',density:1,collectibles:7,npcs:2,obstacles:0,camera:'third',speed:8,playerColor:'#3e7547',title:'Meu mundo 3D',gameMode:'collect',missionGoal:5,campaign:true,chapterIndex:0,rescued:[],objects:[]});
 let spec=(()=>{try{return {...baseSpec(),...JSON.parse(decodeURIComponent(document.body.dataset.exportSpec||''))}}catch{return baseSpec()}})();
 let changes=[],redos=[],conversation=[],apiEndpoint='',accessToken='',npcs=[],npcClock=0;
 let editMode=false,selectedId=null,customGroups=[],selectedHelper=null,draggingEntity=null;
@@ -364,6 +372,7 @@ if(Number.isFinite(Number(input.speed)))o.speed=clamp(input.speed,3,18);
 if(typeof input.playerColor==='string'&&/^#[a-f0-9]{6}$/i.test(input.playerColor))o.playerColor=input.playerColor;
 if(['collect','time','race','delivery','rescue','explore'].includes(input.gameMode))o.gameMode=input.gameMode;
 if(typeof input.campaign==='boolean')o.campaign=input.campaign;
+if(Array.isArray(input.rescued))o.rescued=[...new Set(input.rescued.filter(v=>typeof v==='string'&&/^[a-z0-9_-]{1,48}$/.test(v)))].slice(0,70);
 if(Number.isInteger(input.chapterIndex))o.chapterIndex=THREE.MathUtils.clamp(input.chapterIndex,0,CHAPTERS.length-1);
 if(Number.isFinite(Number(input.missionGoal)))o.missionGoal=Math.round(clamp(input.missionGoal,2,10));
 if(Array.isArray(input.objects))o.objects=input.objects.slice(0,80).map(cleanEntity).filter(Boolean);
@@ -379,7 +388,7 @@ const localPlan=()=>{
  const mode=({collect:'Caça aos Cristais',time:'Coleta Contra o Tempo',race:'Corrida 3D',delivery:'Entregas',rescue:'Resgate',explore:'Exploração'})[spec.gameMode]||'Aventura';
  const world=({city:'cidade',beach:'praia',forest:'floresta',space:'base espacial'})[spec.world]||'mundo';
  const goal=['collect','time'].includes(spec.gameMode)?spec.collectibles:spec.missionGoal;
- return 'Plano atual para “'+spec.title+'”: '+mode+' em uma '+world+', com '+goal+' objetivos, '+spec.npcs+' NPCs e '+spec.objects.length+' objetos editáveis. '+
+ return 'Plano atual para “'+spec.title+'”: '+mode+' em uma '+world+', com '+goal+' objetivos, '+spec.npcs+' NPCs e '+spec.objects.length+' objetos editáveis e '+(spec.rescued?.length||0)+' aliados resgatados. '+
  'A experiência deve ter 1) introdução da missão, 2) exploração e obstáculos, 3) objetivo principal, 4) vitória e próxima missão. '+
  'Você pode pedir “adicione 5 casas”, “coloque à noite”, “crie 8 checkpoints”, “faça uma campanha com 20 capítulos”. '+
  'Para criar mecânicas e código 3D inéditos, conecte o servidor de IA generativa.';
@@ -519,7 +528,7 @@ function diagnoseProject(){
  return 'Diagnóstico do projeto “'+spec.title+'”:\n'+
   '• Cenário: '+world+' | objetivo: '+mode+' | '+goals+' etapas\n'+
   '• '+spec.npcs+' NPCs, '+spec.objects.length+' objetos editáveis, mapa '+MAP_SIZE+'×'+MAP_SIZE+
-  ', herói élfico com fada.\n'+
+  ', herói élfico com fada e '+(spec.rescued?.length||0)+' aliados resgatados.\n'+
   'Melhorias prioritárias:\n'+warnings.slice(0,3).map((w,i)=>(i+1)+'. '+w).join('\n')+
   '\nO modo local não cria mecânicas de código inéditas. Para isso é necessário o servidor opcional de IA generativa.';
 }
@@ -1117,6 +1126,7 @@ function missionBeacon(x,z,color,shape='ring'){
  return {x,z,root,ring,center,light,done:false,kind:shape};
 }
 function updateMissionHUD(){
+ $('ally-count').textContent=String(spec.rescued?.length||0);
  const m=spec.gameMode,collecting=m==='collect'||m==='time';
  $('goal-name').textContent=modeNames[m]||modeNames.collect;
  $('score').textContent=(collecting?score:missionProgress)+'/'+(collecting?spec.collectibles:spec.missionGoal);
@@ -1231,13 +1241,21 @@ function missionVictory(){
  updateMissionHUD();
 }
 function finishMissionTarget(target){
+ if(spec.gameMode==='rescue'){
+  const allyKey=(spec.campaign?'story-'+spec.chapterIndex:'free-'+spec.world)+'-'+missionTargets.indexOf(target);
+  if(!Array.isArray(spec.rescued))spec.rescued=[];
+  if(!spec.rescued.includes(allyKey)&&spec.rescued.length<70){
+   spec.rescued.push(allyKey);
+   persist();
+  }
+ }
  target.done=true;target.root.visible=false;
  missionProgress++;
  updateMissionHUD();
  if(missionProgress>=spec.missionGoal){missionVictory();return}
  const phrase={
    race:'Checkpoint '+missionProgress+' concluído! Procure o próximo.',
-   rescue:'Resgate concluído! Encontre outro personagem.',
+   rescue:'Resgate concluído! O personagem agora é seu aliado e ficará na base.',
    explore:'Lugar descoberto! Continue explorando.'
  };
  $('dialogue').textContent='✅ '+(phrase[spec.gameMode]||'Objetivo concluído!');
@@ -1281,6 +1299,18 @@ function missionTick(dt){
  }
 }
 
+function spawnRescuedAllies(){
+ const total=Math.min(6,spec.rescued?.length||0);
+ for(let i=0;i<total;i++){
+  const ally=new THREE.Group();ally.name='Aliado resgatado';
+  const shirt=[0x86baa7,0xc4a375,0x8fadd2,0x9dbf8c,0xd5a3ac,0xa7a6d7][i%6];
+  cube(.57,.94,.43,shirt,0,1.24,0,ally);
+  ball(.36,0xe9bc98,0,2.04,0,ally);
+  cube(.25,.7,.29,0x495971,-.16,.48,0,ally);cube(.25,.7,.29,0x495971,.16,.48,0,ally);
+  const x=(i%3-1)*2.9,z=20+Math.floor(i/3)*3;
+  ally.position.set(x,0,z);scene.add(ally);
+ }
+}
 let portalCooldown=0,dialogueTimer=0;
 
 /* Grandes bairros extras, usando malhas instanciadas para reduzir chamadas de desenho. */
@@ -1690,6 +1720,7 @@ cube(.7,1.15,.5,[0xe39172,0x87a7ed,0xeac568,0x8cca88][i%4],0,1.1,0,npc);
 ball(.39,0xeac7a3,0,2,0,npc);cube(.25,.7,.3,0x2a3556,-.19,.35,0,npc);cube(.25,.7,.3,0x2a3556,.19,.35,0,npc);
 npc.position.set(x,0,z);npc.userData.groundShadow=makeContactShadow(x,z,.8);npc.userData.offset=i;npc.userData.homeX=x;npc.userData.homeZ=z;scene.add(npc);npcs.push(npc)
 }
+spawnRescuedAllies();
 for(let i=0;i<spec.obstacles;i++){
 const z=-35+(i%10)*7,x=(i%2?1:-1)*(7+(i%3)*3);
 cube(1.6,1.2,1.6,0xe5a85f,x,.6,z);
