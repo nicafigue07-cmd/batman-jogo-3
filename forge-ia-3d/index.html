@@ -178,6 +178,13 @@ font-weight:750;font-size:13px;pointer-events:none;max-width:70%;text-align:cent
 #next-chapter[hidden],#campaign-status[hidden],#chapter-story[hidden]{display:none}
 @media(max-width:750px){.chapter-status{top:68px;font-size:10px;max-width:54%;padding:5px}.chapter-story{max-width:60%;font-size:9px;bottom:20px}#next-chapter{bottom:110px;font-size:11px;padding:12px 14px}}
 
+
+.hero-profile{display:flex;align-items:center;gap:10px;padding:10px 12px;margin:-12px 0 16px;
+background:linear-gradient(135deg,#324f38bb,#533642bb);border:1px solid #a6ca9480;border-radius:12px}
+.hero-profile>span{font-size:24px}
+.hero-profile strong{font-size:12px;color:#ffe8b6;display:block}
+.hero-profile small{font-size:10px;color:#d6dfbd;line-height:1.4;display:block;margin-top:4px}
+
 </style>
 </head>
 <body>
@@ -186,6 +193,7 @@ font-weight:750;font-size:13px;pointer-events:none;max-width:70%;text-align:cent
 <aside>
 <h1>✨ Crie jogos conversando</h1>
 <p class="sub">Diga o que quer e melhore o jogo em etapas. O modo gratuito entende comandos de construção; conecte um servidor para usar um modelo de IA real.</p>
+<div class="hero-profile"><span>🧝</span><div><strong>Protagonista: Guardião Ruivo</strong><small>Cabelo vermelho • orelhas pontudas • roupa verde • capa e fada</small></div></div>
 <div id="online-mode">● Modo criativo local</div>
 <div id="chatlog" class="chatlog" role="log" aria-live="polite">
 <div class="message assistant"><span class="role">FORGE · ASSISTENTE</span>Descreva um jogo com um objetivo: “Crie uma corrida por 5 checkpoints”, “Faça um jogo de entregas na cidade” ou “Quero resgatar personagens na floresta”. O modo local monta a missão; IA generativa real exige o servidor conectado.</div>
@@ -300,7 +308,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)stopMovemen
 document.addEventListener('focusin',e=>{if(e.target.closest?.('aside, .toolbar'))stopMovement()});
 
 
-const baseSpec=()=>({world:'city',time:'day',density:1,collectibles:7,npcs:2,obstacles:0,camera:'third',speed:8,playerColor:'#27a8c1',title:'Meu mundo 3D',gameMode:'collect',missionGoal:5,campaign:true,chapterIndex:0,objects:[]});
+const baseSpec=()=>({world:'city',time:'day',density:1,collectibles:7,npcs:2,obstacles:0,camera:'third',speed:8,playerColor:'#3e7547',title:'Meu mundo 3D',gameMode:'collect',missionGoal:5,campaign:true,chapterIndex:0,objects:[]});
 let spec=(()=>{try{return {...baseSpec(),...JSON.parse(decodeURIComponent(document.body.dataset.exportSpec||''))}}catch{return baseSpec()}})();
 let changes=[],redos=[],conversation=[],apiEndpoint='',accessToken='',npcs=[],npcClock=0;
 let editMode=false,selectedId=null,customGroups=[],selectedHelper=null,draggingEntity=null;
@@ -1318,6 +1326,118 @@ function newOceanSegment(x,z){
  scene.add(plane);return plane;
 }
 
+
+/* AVATAR JOGÁVEL DO HERÓI RUÍVO DA IMAGEM DO USUÁRIO. */
+let heroFairy=null,heroCape=null,heroIdleTime=0;
+function createElfProtagonist(){
+ const root=new THREE.Group();root.name='Guardião Ruivo — protagonista';root.userData.heroType='red-haired-elf';
+ const material=(color,metalness=0)=>new THREE.MeshStandardMaterial({color,roughness:.79,metalness,flatShading:true});
+ const skin=material(0xf2c395),cream=material(0xebdfba),green=material(0x45774b),red=material(0x8a3040),
+ gold=material(0xe3b852,.38),brown=material(0x74452c),dark=material(0x412a24),orange=material(0xc34819),
+ copper=material(0xe16a25),purple=material(0x62418f);
+ const add=(p,g,m,x=0,y=0,z=0)=>{
+  const mesh=new THREE.Mesh(g,m);mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;p.add(mesh);return mesh;
+ };
+ const sphere=(p,r,m,x,y,z,detail=1)=>add(p,new THREE.IcosahedronGeometry(r,detail),m,x,y,z);
+ const box=(p,w,h,d,m,x,y,z)=>add(p,new THREE.BoxGeometry(w,h,d),m,x,y,z);
+ const cylinder=(p,rt,rb,h,m,x,y,z,n=8)=>add(p,new THREE.CylinderGeometry(rt,rb,h,n),m,x,y,z);
+ const cone=(p,r,h,m,x,y,z,n=4)=>add(p,new THREE.ConeGeometry(r,h,n),m,x,y,z);
+ const meshTri=(p,verts,m)=>{
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));g.computeVertexNormals();
+  m.side=THREE.DoubleSide;return add(p,g,m);
+ };
+ // Capa vermelha com bordas douradas, atrás dos ombros.
+ heroCape=new THREE.Group();heroCape.position.set(0,1.91,.21);heroCape.name='cape';root.add(heroCape);
+ meshTri(heroCape,[-.62,0,0,.62,0,0,-.81,-1.27,.57,.62,0,0,.81,-1.29,.59,-.81,-1.27,.57],red);
+ for(const sign of [-1,1]){
+  const border=cylinder(heroCape,.022,.022,1.32,gold,sign*.8,-.66,.57,6);border.rotation.z=sign*.15;
+ }
+ // Camisa clara, túnica verde e acabamento geométrico.
+ cylinder(root,.41,.52,.93,cream,0,1.34,0);
+ const tunic=cylinder(root,.48,.59,1.06,green,0,1.46,0,8);tunic.scale.z=.83;
+ const skirt=cylinder(root,.55,.68,.44,green,0,.91,0,8);skirt.scale.z=.78;
+ const trim=cylinder(root,.58,.67,.055,gold,0,.73,0,8);trim.scale.z=.8;
+ box(root,.09,.49,.06,gold,0,1.04,-.47);
+ // Manto triangular sobre o peito.
+ meshTri(root,[-.63,1.96,-.12,.63,1.96,-.12,-.42,1.5,-.49,.63,1.96,-.12,.36,1.5,-.49,-.42,1.5,-.49],red);
+ sphere(root,.135,gold,0,1.91,-.57,2);
+ for(const sign of [-1,1]){const ornament=box(root,.29,.038,.065,gold,sign*.34,1.64,-.48);ornament.rotation.z=sign*.26}
+ // Braços, mãos e pulseiras de couro; pernas, calças e botas.
+ const pivot=(x,y)=>{const joint=new THREE.Group();joint.position.set(x,y,0);root.add(joint);return joint};
+ const leg=(sign)=>{
+  const p=pivot(sign*.29,1.01);
+  cylinder(p,.22,.27,.67,cream,0,-.31,0,7);
+  cylinder(p,.25,.30,.48,dark,0,-.84,0,7);
+  cylinder(p,.29,.31,.19,brown,0,-.64,0,7);
+  box(p,.52,.2,.68,brown,0,-1.07,-.18);
+  box(p,.48,.05,.49,gold,0,-.68,-.13);
+  return p;
+ };
+ const arm=(sign)=>{
+  const p=pivot(sign*.7,1.82);
+  const sleeve=sphere(p,.26,cream,0,-.23,0,1);sleeve.scale.y=1.35;
+  cylinder(p,.17,.18,.36,skin,0,-.49,0,7);
+  cylinder(p,.19,.22,.36,brown,0,-.73,0,8);
+  box(p,.26,.055,.05,gold,0,-.7,-.22);
+  sphere(p,.165,skin,0,-1.01,0,1);
+  return p;
+ };
+ const leftLeg=leg(-1),rightLeg=leg(1),leftArm=arm(-1),rightArm=arm(1);
+ // Rosto, sardas, grandes orelhas pontudas.
+ cylinder(root,.17,.18,.22,skin,0,2.07,0);
+ const face=sphere(root,.5,skin,0,2.43,-.015,2);face.scale.set(.96,1.06,.83);
+ const nose=sphere(root,.09,skin,0,2.34,-.42,1);nose.scale.z=.7;
+ const white=material(0xf9f3e7),iris=material(0x6059b7),black=material(0x28213b),freckle=material(0xb57754);
+ for(const sign of [-1,1]){
+  const eye=sphere(root,.107,white,sign*.17,2.465,-.404,1);eye.scale.z=.5;
+  const pupil=sphere(root,.063,iris,sign*.17,2.47,-.459,1);pupil.scale.z=.55;
+  sphere(root,.033,black,sign*.17,2.468,-.495,1);
+  const brow=box(root,.21,.045,.05,dark,sign*.17,2.59,-.37);brow.rotation.z=sign*.2;
+  for(let i=0;i<3;i++)sphere(root,.018,freckle,sign*(.24+i*.04),2.32+(i%2)*.026,-.365+i*.015,0);
+  const ear=cone(root,.23,.67,skin,sign*.60,2.46,0,3);ear.rotation.z=-sign*1.25;
+  const inner=cone(root,.12,.32,material(0xd69c82),sign*.74,2.45,-.08,3);inner.rotation.z=-sign*1.25;
+ }
+ const smile=add(root,new THREE.TorusGeometry(.10,.012,4,10,Math.PI),dark,0,2.26,-.43);smile.rotation.z=Math.PI;
+ // Cabelo ruivo espetado, franja e rabo-de-cavalo, similar à referência.
+ const hair=sphere(root,.50,orange,0,2.77,.05,1);hair.scale.set(1.1,.63,.98);
+ for(const [i,v] of [
+  [-.4,2.91,-.23,-.7],[-.2,3.06,-.21,-.22],[.05,3.11,-.15,.07],
+  [.29,3.01,-.13,.34],[.47,2.88,-.01,.65],[-.44,2.7,-.19,-.8],
+  [.2,2.82,-.38,.38],[-.13,2.86,-.37,-.22]
+ ].entries()){
+  const [x,y,z,angle]=v;const spike=cone(root,.22,.63+(i%3)*.05,i%2?copper:orange,x,y,z,4);
+  spike.rotation.z=angle;spike.rotation.x=-.12;
+ }
+ for(let i=0;i<3;i++){const braid=sphere(root,.21-i*.03,i%2?copper:orange,-.25-i*.085,2.62-i*.19,.45+i*.1,1);braid.scale.y=1.13}
+ cylinder(root,.12,.12,.09,material(0x568e53),-.45,2.29,.65);
+ // Cintos cruzados, fivela, bolsa de couro e pingentes púrpura.
+ box(root,1.16,.18,.72,brown,0,1.26,0);
+ box(root,.25,.24,.11,gold,0,1.26,-.44);
+ box(root,.16,.15,.05,dark,0,1.26,-.5);
+ const strap=box(root,.14,1.24,.11,brown,-.24,1.65,-.41);strap.rotation.z=.44;
+ box(root,.47,.51,.29,brown,-.59,1.01,-.29);
+ box(root,.48,.15,.32,dark,-.59,1.22,-.3);
+ box(root,.14,.07,.08,gold,-.59,1.12,-.49);
+ const medallion=sphere(root,.2,purple,.55,1.17,-.3,1);medallion.scale.y=.7;
+ for(let i=0;i<5;i++)cylinder(root,.05,.05,.30+i*.05,gold,.4+i*.083,.84-i*.025,-.34,6);
+ // Fada flutuante com quatro asas translúcidas e brilho real.
+ heroFairy=new THREE.Group();heroFairy.name='Fairy companion';heroFairy.position.set(1.23,3.14,-.15);root.add(heroFairy);
+ const auraMat=new THREE.MeshBasicMaterial({color:0xc2bcff,transparent:true,opacity:.28,depthWrite:false});
+ const glowMat=new THREE.MeshBasicMaterial({color:0xffffff});
+ sphere(heroFairy,.27,auraMat,0,0,0,2);sphere(heroFairy,.14,glowMat,0,0,0,2);
+ const wingMat=new THREE.MeshBasicMaterial({color:0xb6aeff,transparent:true,opacity:.76,side:THREE.DoubleSide,depthWrite:false});
+ for(const side of [-1,1])for(const up of [-1,1]){
+  const wing=cone(heroFairy,.12,.57,wingMat,side*.26,up*.19,0,4);
+  wing.rotation.z=side*(up>0?-.85:-2.12);wing.scale.z=.26;
+ }
+ const starlight=new THREE.MeshBasicMaterial({color:0xaad5ff});
+ for(let i=0;i<6;i++)sphere(heroFairy,.023,starlight,Math.cos(i)*.42,Math.sin(i)*.37,Math.sin(i*2)*.1,0);
+ heroFairy.add(new THREE.PointLight(0xa39dff,1.9,5,2));
+ walkParts=[leftLeg,rightLeg,leftArm,rightArm];walkPhase=0;heroIdleTime=0;
+ root.userData.partCount=root.children.length;root.userData.fairy=heroFairy;
+ return root;
+}
+
 function generate(){
 stopMovement();
 if(scene){scene.traverse(o=>{if(o.isMesh||o.isPoints){o.geometry?.dispose();const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>{m?.map?.dispose?.();m?.dispose?.()})}})}ambientWaves=[];clouds=[];contactShadows=[];atmosphere=null;oceanMaterial=null;waterMesh=null;worldType=spec.world||chooseType();const p=palettes[worldType],rnd=rand(43);scene=new THREE.Scene();const sky=spec.time==='night'?0x101d39:spec.time==='sunset'?0xee9a87:p.sky;scene.background=new THREE.Color(sky);scene.fog=new THREE.Fog(sky,160,720);solids=[];crystals=[];npcs=[];score=0;$('score').textContent='0/'+spec.collectibles;
@@ -1408,47 +1528,7 @@ for(let i=0;i<5;i++){
 }
 
 }
-player=new THREE.Group();
-const outfit=new THREE.MeshStandardMaterial({color:spec.playerColor,roughness:.73,metalness:.035});
-const torso=new THREE.Mesh(new THREE.CapsuleGeometry(.415,.61,6,12),outfit);
-torso.position.y=1.36;torso.scale.z=.77;torso.castShadow=true;player.add(torso);
-const neck=new THREE.Mesh(new THREE.CylinderGeometry(.18,.19,.22,9),mat(0xe8b38e));
-neck.position.y=2.01;player.add(neck);
-const head=ball(.44,0xf1c19b,0,2.28,0,player);
-head.scale.set(.95,1.04,.88);
-const hair=ball(.45,0x2e3040,0,2.56,.045,player);
-hair.scale.set(1.04,.64,.96);
-for(const side of [-1,1]){
- const bang=ball(.16,0x2a2e40,.22*side,2.56,-.31,player);
- bang.scale.set(1.25,.75,.6);
- const ear=ball(.105,0xe2a980,.405*side,2.23,0,player);
- const eye=ball(.048,0x293846,.14*side,2.32,-.397,player);
- eye.scale.set(.78,1.03,.5);
- const eyebrow=cube(.12,.035,.02,0x59483c,.14*side,2.42,-.399,player);
-}
-const smile=new THREE.Mesh(new THREE.TorusGeometry(.09,.017,4,9,Math.PI),
- new THREE.MeshStandardMaterial({color:0x955c55,roughness:.9}));
-smile.rotation.z=Math.PI;smile.position.set(0,2.18,-.413);player.add(smile);
-const collar=new THREE.Mesh(new THREE.TorusGeometry(.31,.068,6,16),
- new THREE.MeshStandardMaterial({color:0xe8f0ed,roughness:.83}));
-collar.rotation.x=Math.PI/2;collar.position.set(0,1.92,0);player.add(collar);
-const sleeveColor=new THREE.MeshStandardMaterial({color:spec.playerColor,roughness:.76});
-function avatarJoint(x,y,z,radius,length,color){
- const joint=new THREE.Group();joint.position.set(x,y,z);player.add(joint);
- const mesh=new THREE.Mesh(new THREE.CapsuleGeometry(radius,length,5,9),color);
- mesh.position.y=-(length+radius*2)*.49;mesh.castShadow=true;joint.add(mesh);
- return joint;
-}
-const leftLeg=avatarJoint(-.23,.91,0,.175,.49,mat(0x2c3e55));
-const rightLeg=avatarJoint(.23,.91,0,.175,.49,mat(0x2c3e55));
-const leftArm=avatarJoint(-.5,1.77,0,.145,.57,sleeveColor);
-const rightArm=avatarJoint(.5,1.77,0,.145,.57,sleeveColor);
-for(const leg of [leftLeg,rightLeg])cube(.36,.18,.62,0xe8f0ed,0,-.75,-.17,leg);
-for(const arm of [leftArm,rightArm])ball(.155,0xe4ac85,0,-.77,0,arm);
-walkParts=[leftLeg,rightLeg,leftArm,rightArm];walkPhase=0;
-cube(.52,.34,.10,0x316177,0,1.38,-.32,player);
-cube(.28,.55,.12,0x435f79,0,1.33,.37,player);
-for(const side of [-1,1])cube(.09,.45,.08,0xd3dfdf,side*.29,1.49,-.27,player);
+player=createElfProtagonist();
 carriedPackage=cube(.62,.66,.55,0xe2aa6d,0,1.25,-.6,player);carriedPackage.visible=false;
 scene.add(player);player.position.set(0,.1,12);player.userData.groundShadow=makeContactShadow(0,12,1.12);vertical=0;onGround=true;elapsed=0;paused=false;portalCooldown=0;dialogueTimer=0;
 for(let i=0;i<(['collect','time'].includes(spec.gameMode)?spec.collectibles:0);i++){let z=worldType==='beach'?3+(i%10)*4.7:-40+(i%11)*7.5,x=(Math.floor(i/11)%2===0?-1:1)*(2.5+(i%3)*2);if(worldType==='beach')x=(i%2===0?-1:1)*(4+(i%4)*1.8);const c=new THREE.Mesh(new THREE.OctahedronGeometry(.7),new THREE.MeshStandardMaterial({color:0x5bffdf,emissive:0x2ab9ae,emissiveIntensity:.5}));c.position.set(x,1.5,z);const aura=new THREE.Mesh(new THREE.TorusGeometry(.83,.055,5,16),new THREE.MeshBasicMaterial({color:0x73ffe8,transparent:true,opacity:.53,depthWrite:false}));
@@ -1523,7 +1603,7 @@ function updateObjective(){
  $('direction').textContent='🧭 '+arrow+' '+labels[mode]+' a '+Math.round(dist)+' m'+interaction+deadline;
 }
 
-window.__forgeStats=()=>({mapSize:MAP_SIZE,campaign:spec.campaign,chapterIndex:spec.chapterIndex,chapterCount:CHAPTERS.length,world:worldType,score,inputs:[...pressed],objects:spec.objects.length,gameMode:spec.gameMode,selectedId,goal:['collect','time'].includes(spec.gameMode)?spec.collectibles:spec.missionGoal,missionProgress,missionCarry,missionFinished,missionTargets:missionTargets.map(t=>({x:t.x,z:t.z,done:t.done,visible:t.root.visible})),facing:player?player.rotation.y:0,movementDirection,position:player?{x:player.position.x,y:player.position.y,z:player.position.z}:null,remaining:crystals.filter(c=>!c.found).map(c=>({x:c.mesh.position.x,z:c.mesh.position.z}))});
+window.__forgeStats=()=>({mapSize:MAP_SIZE,campaign:spec.campaign,chapterIndex:spec.chapterIndex,chapterCount:CHAPTERS.length,world:worldType,hero:player?.userData?.heroType,heroParts:player?.userData?.partCount,fairy:!!heroFairy,score,inputs:[...pressed],objects:spec.objects.length,gameMode:spec.gameMode,selectedId,goal:['collect','time'].includes(spec.gameMode)?spec.collectibles:spec.missionGoal,missionProgress,missionCarry,missionFinished,missionTargets:missionTargets.map(t=>({x:t.x,z:t.z,done:t.done,visible:t.root.visible})),facing:player?player.rotation.y:0,movementDirection,position:player?{x:player.position.x,y:player.position.y,z:player.position.z}:null,remaining:crystals.filter(c=>!c.found).map(c=>({x:c.mesh.position.x,z:c.mesh.position.z}))});
 
 /* Testes de missão em servidor local. Não disponível no GitHub Pages público. */
 if(location.hostname==='127.0.0.1'||location.hostname==='localhost'){
@@ -1568,6 +1648,16 @@ let forward=(!editMode && !document.hidden && (pressed.has('KeyW')||pressed.has(
 let sideways=(!editMode && !document.hidden && (pressed.has('KeyD')||pressed.has('ArrowRight'))?1:0)-(!editMode && !document.hidden && (pressed.has('KeyA')||pressed.has('ArrowLeft'))?1:0);
 let vx=sideways*Math.cos(yaw)-forward*Math.sin(yaw),vz=-sideways*Math.sin(yaw)-forward*Math.cos(yaw);
 let len=Math.hypot(vx,vz);movementDirection={x:0,z:0};if(len>0){vx/=len;vz/=len;movementDirection={x:vx,z:vz};player.rotation.y=Math.atan2(-vx,-vz);walkPhase+=dt*(pressed.has('ShiftLeft')||pressed.has('ShiftRight')?15:10);let sprint=pressed.has('ShiftLeft')||pressed.has('ShiftRight');let speed=spec.speed*(sprint?1.6:1)*(worldType==='beach'&&player.position.z<-13?.6:1);let px=player.position.x+vx*dt*speed,pz=player.position.z+vz*dt*speed;let blocked=solids.some(b=>Math.hypot(px-b.x,pz-b.z)<b.r+0.45);if(!blocked){player.position.x=THREE.MathUtils.clamp(px,-MAP_HALF+2,MAP_HALF-2);player.position.z=THREE.MathUtils.clamp(pz,-MAP_HALF+2,MAP_HALF-2)}}
+heroIdleTime+=dt;
+if(heroFairy){
+ heroFairy.position.y=3.14+Math.sin(heroIdleTime*2.8)*.13;
+ heroFairy.position.x=1.23+Math.sin(heroIdleTime*1.5)*.10;
+ heroFairy.rotation.y=Math.sin(heroIdleTime*1.3)*.28;
+}
+if(heroCape){
+ heroCape.rotation.z=Math.sin(heroIdleTime*2.5)*(len>.1?.06:.02);
+ heroCape.rotation.x=Math.sin(heroIdleTime*2.1)*(len>.1?.07:.025);
+}
 const swing=Math.sin(walkPhase)*.45*(len>0?1:0);
 if(walkParts.length===4){
  const pose=[swing,-swing,-swing*.8,swing*.8];
