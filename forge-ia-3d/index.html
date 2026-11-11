@@ -185,6 +185,17 @@ background:linear-gradient(135deg,#324f38bb,#533642bb);border:1px solid #a6ca948
 .hero-profile strong{font-size:12px;color:#ffe8b6;display:block}
 .hero-profile small{font-size:10px;color:#d6dfbd;line-height:1.4;display:block;margin-top:4px}
 
+
+.chat-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}
+.chat-actions button{background:#183c4e;border:1px solid #459e9c;color:#c8fff2;border-radius:10px;
+ font:inherit;font-size:11px;font-weight:800;padding:10px 6px;cursor:pointer;transition:background .15s ease}
+.chat-actions button:hover{background:#24647a}
+.chat-actions button:focus-visible{outline:2px solid #bbfff0;outline-offset:2px}
+#chatlog .message{box-shadow:0 4px 14px #01091321}
+#chatlog .message.assistant{border-left:2px solid #51d4b7}
+#chatlog .message.user{border-right:2px solid #6abfff}
+@media(max-width:450px){.chat-actions{grid-template-columns:1fr}.chat-actions button{padding:11px}}
+
 </style>
 </head>
 <body>
@@ -206,11 +217,17 @@ background:linear-gradient(135deg,#324f38bb,#533642bb);border:1px solid #a6ca948
 <button class="chip" data-example="Crie uma campanha com 20 missões e uma história">📖 20 missões</button>
 <button class="chip" data-example="Quero um jogo de resgate com 8 personagens na floresta">🛟 Resgate</button>
 <button class="chip" data-example="Planeje meu jogo e explique o que melhorar">🧠 Planejar jogo</button>
+<button class="chip" data-example="Melhore tudo mantendo meu personagem e minhas missões">✨ Aprimorar</button>
+<button class="chip" data-example="Salve o projeto">💾 Salvar</button>
 </div>
 <div class="chatbox">
 <label for="prompt">Mensagem para a FORGE</label>
 <textarea id="prompt" placeholder="Ex.: adicione 8 personagens, coloque o cenário de noite e aumente a velocidade" maxlength="1500"></textarea>
 <button class="primary" id="build">✦ Enviar e atualizar jogo</button>
+<div class="chat-actions">
+ <button id="upgrade-world" type="button" title="Melhora alguns elementos do cenário real, sem mudar sua missão">✨ Aprimorar mundo</button>
+ <button id="diagnose-world" type="button" title="Analisa o projeto e sugere próximos passos">🔎 Diagnosticar jogo</button>
+</div>
 </div>
 <div class="studio-options">
 <div><label for="world">Cenário</label><select id="world"><option value="auto">Automático</option><option value="city">Cidade</option><option value="beach">Praia</option><option value="forest">Floresta</option><option value="space">Espaço</option></select></div>
@@ -488,6 +505,51 @@ if(mentions&&Object.keys(patch).length===0){
 return {patch,reply:details.length?'Pronto! Atualizei: '+details.join(', ')+'. Você pode pedir mais mudanças sem perder as anteriores.': 'Entendi sua ideia! Ainda não consigo gerar essa mecânica específica no modo criativo local. Posso criar cidades, praias, florestas, mapas espaciais, NPCs decorativos, cristais, obstáculos e mudanças de câmera e iluminação. Para pedidos mais complexos, conecte uma IA real em “⚙ IA real”.'};
 }
 
+
+function diagnoseProject(){
+ const mode=({collect:'coleta',time:'coleta contra o tempo',race:'corrida',delivery:'entregas',rescue:'resgates',explore:'exploração'})[spec.gameMode];
+ const world=({city:'cidade',beach:'praia',forest:'floresta',space:'base espacial'})[spec.world];
+ const goals=['collect','time'].includes(spec.gameMode)?spec.collectibles:spec.missionGoal;
+ const warnings=[];
+ if(spec.npcs<3)warnings.push('Adicionar 3 ou mais NPCs para dar vida às regiões.');
+ if(spec.objects.length<4)warnings.push('Criar objetos personalizados no mapa usando o editor ou “adicione 5 árvores”.');
+ if(spec.campaign)warnings.push('Explorar os '+CHAPTERS.length+' capítulos e verificar se cada missão tem começo, desafio e vitória.');
+ else warnings.push('Transformar este modo de jogo em uma campanha de 20 missões diferentes.');
+ if(Number($('quality').value)>1.5)warnings.push('Testar o modo Ultra em um aparelho mais fraco; selecione Leve se houver travamentos.');
+ return 'Diagnóstico do projeto “'+spec.title+'”:\n'+
+  '• Cenário: '+world+' | objetivo: '+mode+' | '+goals+' etapas\n'+
+  '• '+spec.npcs+' NPCs, '+spec.objects.length+' objetos editáveis, mapa '+MAP_SIZE+'×'+MAP_SIZE+
+  ', herói élfico com fada.\n'+
+  'Melhorias prioritárias:\n'+warnings.slice(0,3).map((w,i)=>(i+1)+'. '+w).join('\n')+
+  '\nO modo local não cria mecânicas de código inéditas. Para isso é necessário o servidor opcional de IA generativa.';
+}
+function upgradeWorld(){
+ if(!scene||!renderer)return 'O mundo 3D ainda não está pronto. Tente novamente quando o cenário carregar.';
+ const world=spec.world||'city';
+ const palettes={
+  city:[['house','#9ab8c1'],['tree','#428d69'],['lamp','#ffdf99'],['portal','#5fe8d0'],['tower','#b19ab3']],
+  beach:[['tree','#46ae82'],['house','#e6bc89'],['lamp','#ffe3a5'],['rock','#d6bfa3'],['portal','#7ee6e0']],
+  forest:[['tree','#397c55'],['rock','#8b9a85'],['tree','#62a26e'],['portal','#6decb4'],['platform','#adbf84']],
+  space:[['tower','#b9d2e1'],['lamp','#81f1ed'],['platform','#6f9fb9'],['portal','#87ccf7'],['rock','#9aa5b0']]
+ };
+ const colors=palettes[world]||palettes.city;
+ saveCheckpoint();
+ const before=spec.objects.length,capacity=Math.max(0,Math.min(5,80-before));
+ const step=colors.slice(0,capacity).map(([type,color],i)=>({
+  type,color,x:(player?.position.x||0)+((i%2?1:-1)*(11+i*5)),
+  z:(player?.position.z||12)-13-i*8,scale:1
+ }));
+ spec=normalizeSpec({
+  density:Math.min(1.7,spec.density+.15),
+  npcs:Math.min(12,Math.max(spec.npcs,4)),
+  objectsAdd:step
+ });
+ generate();
+ return 'Melhorei o mundo de verdade: '+capacity+' novos objetos, mais detalhes no cenário e até '+spec.npcs+
+  ' NPCs. Mantive o Guardião Ruivo, o tipo de missão e os '+(spec.campaign?20:spec.missionGoal)+' objetivos/capítulos configurados. '+
+  'Use “Diagnosticar jogo” para descobrir o que ainda falta.';
+}
+
 /* Chat do estúdio: histórico persistente, continuidade e comandos que executam ações reais.
    Sem servidor conectado, não se apresenta como IA generativa. */
 function simpleText(value){return String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim()}
@@ -514,6 +576,12 @@ function contextualPrompt(request){
 }
 function localChatAction(request){
  const v=simpleText(request);
+ if(/(?:melhore tudo|melhora tudo|aprimor(?:ar|e) (?:o )?(?:jogo|mundo|cen[aá]rio)|deixe (?:o )?jogo melhor|melhorar todos os graficos)/.test(v)){
+  return upgradeWorld();
+ }
+ if(/(?:diagnosticar (?:o )?jogo|analise (?:o )?jogo|avalie (?:o )?jogo|verifique (?:o )?projeto|como (?:posso )?melhorar (?:o )?jogo)/.test(v)){
+  return diagnoseProject();
+ }
  if(/^(?:desfaz|desfaca|desfazer|voltar ultima alteracao|volta a ultima alteracao)[.!?]*$/.test(v)){
   if(!changes.length)return 'Não há alterações para desfazer.';
   redos.push(snapshot());spec=changes.pop();generate();return 'Desfiz a última alteração. Seu projeto anterior voltou.';
@@ -1952,6 +2020,8 @@ $('download-generated').addEventListener('click',()=>{
 });
 
 $('build').addEventListener('click',()=>applyPrompt($('prompt').value));
+$('upgrade-world').addEventListener('click',()=>applyPrompt('Melhore tudo mantendo meu personagem e minhas missões'));
+$('diagnose-world').addEventListener('click',()=>applyPrompt('Diagnosticar o jogo'));
 $('prompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();applyPrompt($('prompt').value)}});
 document.querySelectorAll('[data-example]').forEach(b=>b.addEventListener('click',()=>applyPrompt(b.dataset.example)));
 
