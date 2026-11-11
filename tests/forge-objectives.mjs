@@ -36,7 +36,8 @@ try{
  assert.equal(first.gameMode,'collect');
  assert.equal(first.missionTargets.length,0);
  await page.locator('#viewport canvas').first().click({position:{x:540,y:320}});
- await page.keyboard.down('KeyW');await page.waitForTimeout(800);
+ await page.keyboard.down('KeyW');
+ await page.waitForFunction(()=>{const d=window.__forgeStats?.()?.movementDirection;return d&&Math.hypot(d.x,d.z)>.9},null,{timeout:6000});
  const facing=await state();
  await page.keyboard.up('KeyW');
  const h={x:-Math.sin(facing.facing),z:-Math.cos(facing.facing)};
