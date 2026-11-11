@@ -418,8 +418,8 @@ if(has(/(?:quais sao os capitulos|quantas missoes|resumo da historia|lore do jog
 if(has(/(?:qual tamanho do mapa|como chegar longe|o mapa e grande|quero mapa maior|viagem rapida|como ir para outra regiao)/))
  return {patch:{},reply:help('map')};
 if(has(/(nova|novo|crie|criar|quero|faz|faca|mude|troque|coloque|cen[aá]rio|ambiente|mundo|mapa)/)){mentions=true}
-if(has(/praia|oceano|mar\b|surf|ilha|coqueiro/)){patch.world='beach';details.push('praia com mar e coqueiros')}
-else if(has(/floresta|selva|mata|arvore|bosque|natureza/)){patch.world='forest';details.push('floresta explorável')}
+if(has(/praia|oceano|mar\b|surf|ilha/)){patch.world='beach';details.push('praia com mar e coqueiros')}
+else if(has(/floresta|selva|mata|bosque|natureza/)){patch.world='forest';details.push('floresta explorável')}
 else if(has(/espac[o]|planeta|lua|astronauta|base espacial|alienigena/)){patch.world='space';details.push('base espacial')}
 else if(has(/cidade|predio|rua|urbano|metropole|japao|japonesa|toquio/)){patch.world='city';details.push('cidade com prédios')}
 if(has(/a noite|noturno|noite|escuro/)){patch.time='night';details.push('iluminação noturna')}
@@ -460,7 +460,7 @@ else if(has(/sem personagens|remova personagens/)){patch.npcs=0;details.push('se
 const gems=numberNear(/\b(\d{1,2})\s*(cristais|moedas|itens|colecionaveis|estrelas)/);
 if(gems!==null){patch.collectibles=gems;details.push(gems+' cristais colecionáveis')}
 else if(has(/mais cristais|mais moedas/)){patch.collectibles=Math.min(40,spec.collectibles+5);details.push('mais cristais')}
-const obs=numberNear(/\b(\d{1,2})\s*(obstaculos|plataformas|barreiras)/);
+const obs=numberNear(/\b(\d{1,2})\s*(obstaculos|barreiras)/);
 if(obs!==null){patch.obstacles=obs;details.push(obs+' obstáculos')}
 else if(has(/obstaculo|plataforma|barreira/)){patch.obstacles=Math.min(30,spec.obstacles+6);details.push('novos obstáculos')}
 if(has(/mais arvores|mais predios|mais detalh|mais objetos|maior|grande/)){patch.density=Math.min(2.2,spec.density+.4);details.push('cenário mais preenchido')}
