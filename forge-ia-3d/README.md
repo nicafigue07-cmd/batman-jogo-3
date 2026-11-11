@@ -4,6 +4,12 @@
 
 A FORGE é um editor de protótipos 3D com Three.js. A versão 10 ampliou o terreno para **640 × 640 unidades** (mais de 4,8 vezes a área anterior de 290 × 290), com regiões adicionais e navegação rápida. A parte gratuita funciona diretamente no navegador. O modo de geração por IA real exige um servidor e chave de API, que não são fornecidos pelo GitHub Pages.
 
+## Protagonista — Guardião Ruivo
+
+O protagonista jogável agora é o herói élfico ruivo da imagem enviada para este projeto. Seu modelo 3D é construído no navegador com Three.js, incluindo cabelo vermelho espetado, orelhas pontudas, olhos azul-violeta, túnica verde, calças claras, botas e pulseiras de couro, capa vermelha, cinto, bolsa, amuletos e uma pequena fada brilhante. A fada acompanha o protagonista e a capa se movimenta enquanto ele anda. O personagem é mantido ao trocar de cenário, completar missões, iniciar campanhas ou carregar o projeto.
+
+**Limitação visual:** esta é uma interpretação 3D feita com primitivas do Three.js para funcionar sem arquivos externos; não é um modelo 3D esculpido idêntico à ilustração original. Um modelo GLB feito em Blender poderia aproximar ainda mais o desenho da imagem.
+
 ## Ferramentas gratuitas
 
 - Cenários de cidade, praia, floresta e base espacial; iluminação de dia, noite e pôr do sol.
