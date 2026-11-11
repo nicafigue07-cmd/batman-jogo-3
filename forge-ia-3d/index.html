@@ -487,33 +487,115 @@ if(mentions&&Object.keys(patch).length===0){
 }
 return {patch,reply:details.length?'Pronto! Atualizei: '+details.join(', ')+'. Você pode pedir mais mudanças sem perder as anteriores.': 'Entendi sua ideia! Ainda não consigo gerar essa mecânica específica no modo criativo local. Posso criar cidades, praias, florestas, mapas espaciais, NPCs decorativos, cristais, obstáculos e mudanças de câmera e iluminação. Para pedidos mais complexos, conecte uma IA real em “⚙ IA real”.'};
 }
+
+/* Chat do estúdio: histórico persistente, continuidade e comandos que executam ações reais.
+   Sem servidor conectado, não se apresenta como IA generativa. */
+function simpleText(value){return String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim()}
+function contextualPrompt(request){
+ const v=simpleText(request);
+ const prev=conversation.filter(c=>c.role==='user').slice(-2,-1)[0]?.content||'';
+ const pn=simpleText(prev);
+ const short=v.match(/^(?:(?:agora|entao|e)\s+)?(?:(?:coloque|adicione|crie)\s+)?(?:mais\s+)?(\d{1,2})(?:\s+(?:deles|delas|desses|dessas))?[.!?]?$/);
+ if(short){
+  for(const [word,patt] of [
+   ['casas',/\bcasas?\b/],['árvores',/\barvores?\b/],['torres',/\btorres?\b/],
+   ['plataformas',/\bplataformas?\b/],['caixas',/\bcaixas?\b/],
+   ['rochas',/\brochas?\b/],['portais',/\bportais?\b/],
+   ['personagens',/\b(personagens?|npcs?|pessoas?)\b/],
+   ['cristais',/\b(cristais|moedas)\b/],
+   ['checkpoints',/\b(checkpoints?|corrida)\b/],
+   ['entregas',/\b(entregas?|encomendas?)\b/],
+   ['resgates',/\b(resgates?|resgatar)\b/]
+  ]){
+   if(patt.test(pn))return {request:'Adicione '+short[1]+' '+word,fromContext:true};
+  }
+ }
+ return {request,fromContext:false};
+}
+function localChatAction(request){
+ const v=simpleText(request);
+ if(/^(?:desfaz|desfaca|desfazer|voltar ultima alteracao|volta a ultima alteracao)[.!?]*$/.test(v)){
+  if(!changes.length)return 'Não há alterações para desfazer.';
+  redos.push(snapshot());spec=changes.pop();generate();return 'Desfiz a última alteração. Seu projeto anterior voltou.';
+ }
+ if(/^(?:refaz|refaca|refazer|reaplicar alteracao)[.!?]*$/.test(v)){
+  if(!redos.length)return 'Não há mudanças para refazer.';
+  changes.push(snapshot());spec=redos.pop();generate();return 'Refiz a alteração. Pode continuar criando.';
+ }
+ if(/^(?:salve|salvar|salva|salve (?:o )?projeto|guarde (?:o )?projeto)[.!?]*$/.test(v)){
+  try{localStorage.setItem('forge3d_saved_project',JSON.stringify({spec,conversation}));return 'Projeto salvo neste navegador. Você também pode exportar um arquivo JSON para ter uma cópia.'}
+  catch{return 'O navegador não conseguiu salvar o projeto. Use a opção de exportar JSON.'}
+ }
+ if(/^(?:carregue|carregar|abra|abrir) (?:o )?(?:ultimo )?projeto(?: salvo)?[.!?]*$/.test(v)){
+  try{
+   const data=JSON.parse(localStorage.getItem('forge3d_saved_project')||'null');
+   if(!data?.spec)return 'Não encontrei nenhum projeto salvo manualmente.';
+   saveCheckpoint();spec=normalizeSpec(data.spec);generate();return 'Carreguei o projeto salvo. O mundo e os objetos foram restaurados.';
+  }catch{return 'Não consegui carregar o projeto salvo.'}
+ }
+ if(/^(?:reinicie|reiniciar|recomecar|recomece) (?:a )?(?:missao|fase)[.!?]*$/.test(v)){
+  restartMission();return 'Reiniciei a missão atual. Seus capítulos e projeto continuam salvos.';
+ }
+ if(/^(?:va|viaje|teleporte|ir) (?:para |ate |ao |a )?(?:o )?(norte|sul|leste|oeste|centro|objetivo)[.!?]*$/.test(v)){
+  const dir=v.match(/(?:norte|sul|leste|oeste|centro|objetivo)/)?.[0];
+  const code=({norte:'north',sul:'south',leste:'east',oeste:'west',centro:'center',objetivo:'target'})[dir];
+  if(code){travelToRegion(code);return 'Viajei para a região '+dir+'. Continue explorando o mapa!'}
+ }
+ if(/^(?:continuar|continuar campanha|proxima missao|proximo capitulo|avancar capitulo)[.!?]*$/.test(v)){
+  if(!spec.campaign)return 'Para jogar uma história completa, clique em “Criar campanha com 20 missões”.';
+  if(!missionFinished)return 'Conclua primeiro os objetivos desta fase. Posso explicar a missão se você perguntar.';
+  nextCampaignChapter();return 'Avancei para o capítulo '+(spec.chapterIndex+1)+' de '+CHAPTERS.length+'.';
+ }
+ return null;
+}
+
 async function applyPrompt(request){
-if(!request.trim())return;
-message('user',request);conversation.push({role:'user',content:request.slice(0,1500)});conversation=conversation.slice(-12);
+if(!request.trim()||$('build').disabled)return;
+const typed=request.trim().slice(0,1500);
+const prevHistory=conversation.slice(-10);
+const resolved=contextualPrompt(typed);
+message('user',typed);conversation.push({role:'user',content:typed});conversation=conversation.slice(-16);
 $('prompt').value='';
-const button=$('build');button.disabled=true;button.textContent='✦ Criando...';
+const button=$('build');button.disabled=true;button.textContent='✦ Pensando no projeto...';
 try{
-let patch,reply;
-if(apiEndpoint){
-const controller=new AbortController();const to=setTimeout(()=>controller.abort(),25000);
-let result;
-try{
-const res=await fetch(apiEndpoint,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+accessToken},body:JSON.stringify({message:request,project:snapshot(),history:conversation.slice(-10)}),signal:controller.signal});
-if(!res.ok)throw Error('O servidor respondeu '+res.status);
-result=await res.json();
-}finally{clearTimeout(to)}
-if(!result||typeof result!=='object'||typeof result.reply!=='string'||!result.patch||typeof result.patch!=='object'||Array.isArray(result.patch))throw Error('Formato inesperado do servidor');
-patch=result.patch;reply=result.reply.slice(0,1400);
-}else{const output=detectOffline(request);patch=output.patch;reply=output.reply}
+let patch={},reply;
+if(!apiEndpoint){
+ const action=localChatAction(typed);
+ if(action!==null){reply=action}
+ else{
+  const output=detectOffline(resolved.request);
+  patch=output.patch;
+  reply=output.reply;
+  if(resolved.fromContext&&Object.keys(patch).length)reply='Continuei seu pedido anterior: '+reply;
+ }
+}else{
+ const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),45000);
+ let result;
+ try{
+  const res=await fetch(apiEndpoint,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+accessToken},
+   body:JSON.stringify({message:typed,project:snapshot(),history:prevHistory}),signal:controller.signal});
+  result=await res.json().catch(()=>({}));
+  if(!res.ok)throw Error(result.error||'O servidor respondeu '+res.status);
+ }finally{clearTimeout(timeout)}
+ if(!result||typeof result.reply!=='string'||!result.patch||typeof result.patch!=='object'||Array.isArray(result.patch))
+  throw Error('Formato inesperado do servidor');
+ patch=result.patch;reply=result.reply.slice(0,1400);
+}
 if(Object.keys(patch).length){
  saveCheckpoint();spec=normalizeSpec(patch);
  if(patch.campaign===true)loadChapter(0);
  else if(Object.prototype.hasOwnProperty.call(patch,'gameMode'))spec.campaign=false;
  generate();
 }
-message('assistant',reply);conversation.push({role:'assistant',content:reply});conversation=conversation.slice(-12);
-}catch(e){message('assistant','Não consegui conectar ao servidor de IA: '+e.message+'. Verifique a URL, a publicação do servidor e as permissões de acesso. Seu jogo anterior foi preservado.')}
-finally{button.disabled=false;button.textContent='✦ Enviar e atualizar jogo'}
+message('assistant',reply);
+conversation.push({role:'assistant',content:reply});conversation=conversation.slice(-16);
+}catch(e){
+ const explanation=apiEndpoint?'Falha na conexão com a IA: '+e.message+'. Seu jogo foi preservado.':'Não consegui executar esse pedido: '+e.message+'. Seu jogo foi preservado.';
+ message('assistant',explanation);conversation.push({role:'assistant',content:explanation});conversation=conversation.slice(-16);
+}finally{
+ button.disabled=false;button.textContent='✦ Enviar e atualizar jogo';
+ persist();
+}
 }
 function persist(){try{if(!standalone)localStorage.setItem('forge3d_project',JSON.stringify({spec,conversation}))}catch{}}
 
@@ -1935,8 +2017,11 @@ $('world').addEventListener('change',()=>{if($('world').value==='auto')return;sa
 $('camera-mode').addEventListener('change',()=>{saveCheckpoint();spec.camera=$('camera-mode').value;generate();message('assistant','Câmera ajustada para '+({third:'terceira pessoa',first:'primeira pessoa',iso:'visão isométrica'})[spec.camera]+'.')});
 $('undo').addEventListener('click',()=>{undoProject()});
 $('save').addEventListener('click',()=>{persist();try{localStorage.setItem('forge3d_saved_project',JSON.stringify({spec,conversation}))}catch{}message('assistant','Projeto salvo! Ele fica separado do rascunho automático.')});
-$('load').addEventListener('click',()=>{try{const o=JSON.parse(localStorage.getItem('forge3d_saved_project')||localStorage.getItem('forge3d_project')||'null');if(!o?.spec)throw Error();saveCheckpoint();spec=normalizeSpec(o.spec);generate();message('assistant','Projeto salvo carregado!')}catch{message('assistant','Não encontrei um projeto salvo neste navegador.')}})
-$('new').addEventListener('click',()=>{saveCheckpoint();spec=baseSpec();selectedId=null;conversation=[];generate();message('assistant','Novo projeto criado. Vamos desenvolver um jogo 3D!')});
+$('load').addEventListener('click',()=>{try{const o=JSON.parse(localStorage.getItem('forge3d_saved_project')||localStorage.getItem('forge3d_project')||'null');if(!o?.spec)throw Error();saveCheckpoint();spec=normalizeSpec(o.spec);generate();
+ conversation=Array.isArray(o.conversation)?o.conversation.filter(x=>['user','assistant'].includes(x?.role)&&typeof x.content==='string').slice(-16):[];
+ $('chatlog').replaceChildren();for(const item of conversation)message(item.role,item.content);
+ message('assistant','Projeto salvo carregado, incluindo a conversa de criação!')}catch{message('assistant','Não encontrei um projeto salvo neste navegador.')}})
+$('new').addEventListener('click',()=>{saveCheckpoint();spec=baseSpec();selectedId=null;conversation=[];$('chatlog').replaceChildren();generate();message('assistant','Novo projeto criado com o Guardião Ruivo. Descreva o primeiro objetivo!')});
 $('reset-camera').addEventListener('click',()=>{yaw=.4;pitch=.34;zoom=8;msg.style.display='none';message('assistant','Câmera centralizada.')});
 $('settings').addEventListener('click',()=>{$('advanced').hidden=!$('advanced').hidden});
 $('endpoint').value=apiEndpoint;$('access-token').value=accessToken;
@@ -1962,7 +2047,15 @@ const gameMessage=clone.querySelector('#msg');gameMessage.textContent='Carregand
 const a=document.createElement('a');const blob=new Blob(['<!doctype html>'+clone.outerHTML],{type:'text/html;charset=utf-8'});a.href=URL.createObjectURL(blob);a.download='jogo-3d-forge.html';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);
 message('assistant','Jogo exportado para HTML. O arquivo precisa de internet para carregar o motor 3D.')
 });
-if(!standalone&&savedSpec?.spec){spec=normalizeSpec({...baseSpec(),...savedSpec.spec});message('assistant','Encontrei um projeto salvo neste navegador. Ele foi carregado automaticamente.')}
+if(!standalone&&savedSpec?.spec){
+ spec=normalizeSpec({...baseSpec(),...savedSpec.spec});
+ if(Array.isArray(savedSpec.conversation)){
+  conversation=savedSpec.conversation.filter(x=>['user','assistant'].includes(x?.role)&&typeof x.content==='string')
+   .slice(-16).map(x=>({role:x.role,content:x.content.slice(0,1500)}));
+  for(const entry of conversation)message(entry.role,entry.content);
+ }
+ message('assistant','Projeto anterior restaurado. Você pode continuar a conversa e editar o mesmo jogo.');
+}
 refreshBadge();if(standalone){$('prompt').value=document.body.dataset.exportIdea||$('prompt').textContent}
 start();
 
