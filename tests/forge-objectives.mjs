@@ -82,8 +82,9 @@ try{
  assert.equal((await state()).allies,3,'Rescued story allies must be recorded');
  assert.equal((await page.locator('#ally-count').innerText()).trim(),'3');
  console.log('RESCUE_WIN_OK',JSON.stringify(rescue));
- // Exploração: aliados continuam no projeto mesmo depois de trocar de modo.
- await selectMode('explore');
+ // Exploração: aliados continuam no projeto quando o modo muda sem criar um novo projeto.
+ await page.locator('#mission-mode').selectOption('explore');
+ await page.waitForFunction(()=>window.__forgeStats?.()?.gameMode==='explore',{timeout:15000});
  assert.equal((await state()).allies,3,'Rescued allies must survive switching game modes');
  let explore=null;for(let i=0;i<3;i++)explore=await page.evaluate(()=>window.__forgeTestReach());
  assert.equal(explore.progress,3);assert.equal(explore.finished,true);
