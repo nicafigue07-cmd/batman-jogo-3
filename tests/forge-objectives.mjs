@@ -79,9 +79,12 @@ try{
  await selectMode('rescue');
  let rescue=null;for(let i=0;i<3;i++)rescue=await page.evaluate(()=>window.__forgeTestReach());
  assert.equal(rescue.progress,3);assert.equal(rescue.finished,true);
+ assert.equal((await state()).allies,3,'Rescued story allies must be recorded');
+ assert.equal((await page.locator('#ally-count').innerText()).trim(),'3');
  console.log('RESCUE_WIN_OK',JSON.stringify(rescue));
- // Exploração: pontos podem ser descobertos independentemente da ordem.
+ // Exploração: aliados continuam no projeto mesmo depois de trocar de modo.
  await selectMode('explore');
+ assert.equal((await state()).allies,3,'Rescued allies must survive switching game modes');
  let explore=null;for(let i=0;i<3;i++)explore=await page.evaluate(()=>window.__forgeTestReach());
  assert.equal(explore.progress,3);assert.equal(explore.finished,true);
  console.log('EXPLORE_WIN_OK',JSON.stringify(explore));
