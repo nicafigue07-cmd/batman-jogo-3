@@ -553,7 +553,7 @@ function upgradeWorld(){
   npcs:Math.min(12,Math.max(spec.npcs,4)),
   objectsAdd:step
  });
- generate();
+ generate(true);
  return 'Melhorei o mundo de verdade: '+capacity+' novos objetos, mais detalhes no cenário e até '+spec.npcs+
   ' NPCs. Mantive o Guardião Ruivo, o tipo de missão e os '+(spec.campaign?20:spec.missionGoal)+' objetivos/capítulos configurados. '+
   'Use “Diagnosticar jogo” para descobrir o que ainda falta.';
@@ -593,11 +593,11 @@ function localChatAction(request){
  }
  if(/^(?:desfaz|desfaca|desfazer|voltar ultima alteracao|volta a ultima alteracao)[.!?]*$/.test(v)){
   if(!changes.length)return 'Não há alterações para desfazer.';
-  redos.push(snapshot());spec=changes.pop();generate();return 'Desfiz a última alteração. Seu projeto anterior voltou.';
+  redos.push(snapshot());spec=changes.pop();generate(true);return 'Desfiz a última alteração. Seu projeto anterior voltou.';
  }
  if(/^(?:refaz|refaca|refazer|reaplicar alteracao)[.!?]*$/.test(v)){
   if(!redos.length)return 'Não há mudanças para refazer.';
-  changes.push(snapshot());spec=redos.pop();generate();return 'Refiz a alteração. Pode continuar criando.';
+  changes.push(snapshot());spec=redos.pop();generate(true);return 'Refiz a alteração. Pode continuar criando.';
  }
  if(/^(?:salve|salvar|salva|salve (?:o )?projeto|guarde (?:o )?projeto)[.!?]*$/.test(v)){
   try{localStorage.setItem('forge3d_saved_project',JSON.stringify({spec,conversation}));return 'Projeto salvo neste navegador. Você também pode exportar um arquivo JSON para ter uma cópia.'}
@@ -662,7 +662,7 @@ if(Object.keys(patch).length){
  saveCheckpoint();spec=normalizeSpec(patch);
  if(patch.campaign===true)loadChapter(0);
  else if(Object.prototype.hasOwnProperty.call(patch,'gameMode'))spec.campaign=false;
- generate();
+ generate(true);
 }
 message('assistant',reply);
 conversation.push({role:'assistant',content:reply});conversation=conversation.slice(-16);
@@ -996,7 +996,7 @@ function updateEditorField(key,val){
  saveCheckpoint();
  if(key==='color'){if(/^#[0-9a-f]{6}$/i.test(val))e.color=val}
  else e[key]=THREE.MathUtils.clamp(Number(val)||0,key==='scale'?.4:-MAP_HALF+8,key==='scale'?4:MAP_HALF-8);
- generate();
+ generate(true);
 }
 function addEditorObject(type,where){
  if(spec.objects.length>=80){message('assistant','Limite de 80 objetos por mundo para manter um bom desempenho.');return}
@@ -1005,24 +1005,24 @@ function addEditorObject(type,where){
  const p=where||{x:(player?.position.x||0)+3,z:(player?.position.z||10)-5};
  const entity=cleanEntity({id,type,x:p.x,z:p.z,scale:1,color:({tree:'#4aab75',house:'#d8b3a1',rock:'#a6a9b5',crate:'#bb9366',wall:'#acbbc5',tower:'#ac91af',lamp:'#ffe1a4',portal:'#63eccf',platform:'#67a7d7'})[type]});
  if(!entity)return;
- spec.objects.push(entity);selectedId=id;generate();message('assistant','Adicionei '+type+'! Clique em “Editar” para arrastar ou use os campos de posição e tamanho.')
+ spec.objects.push(entity);selectedId=id;generate(true);message('assistant','Adicionei '+type+'! Clique em “Editar” para arrastar ou use os campos de posição e tamanho.')
 }
 function deleteEditorObject(){
  if(!selectedId)return;saveCheckpoint();
- spec.objects=spec.objects.filter(x=>x.id!==selectedId);selectedId=null;generate();message('assistant','Objeto excluído.')
+ spec.objects=spec.objects.filter(x=>x.id!==selectedId);selectedId=null;generate(true);message('assistant','Objeto excluído.')
 }
 function duplicateEditorObject(){
  const e=spec.objects.find(o=>o.id===selectedId);if(!e||spec.objects.length>=80)return;
  saveCheckpoint();const c={...e,id:'obj-'+Date.now()+'-'+(++entityCounter),x:THREE.MathUtils.clamp(e.x+3,-138,138),z:THREE.MathUtils.clamp(e.z+2,-138,138)};
- spec.objects.push(c);selectedId=c.id;generate();
+ spec.objects.push(c);selectedId=c.id;generate(true);
 }
 function undoProject(){
  if(!changes.length){message('assistant','Não há mudanças para desfazer.');return}
- redos.push(snapshot());spec=changes.pop();generate();message('assistant','Última alteração desfeita.')
+ redos.push(snapshot());spec=changes.pop();generate(true);message('assistant','Última alteração desfeita.')
 }
 function redoProject(){
  if(!redos.length){message('assistant','Não há mudanças para refazer.');return}
- changes.push(snapshot());spec=redos.pop();generate();message('assistant','Alteração refeita.')
+ changes.push(snapshot());spec=redos.pop();generate(true);message('assistant','Alteração refeita.')
 }
 function presetWorld(kind){
  saveCheckpoint();selectedId=null;spec=baseSpec();
@@ -1618,8 +1618,20 @@ function createElfProtagonist(){
  return root;
 }
 
-function generate(){
-stopMovement();
+let lastRenderedMode=null,lastRenderedChapter=null,lastRenderedCampaign=null;
+function generate(keepProgress=false){
+ const canKeep=Boolean(keepProgress&&player&&scene&&worldType===spec.world&&
+  lastRenderedMode===spec.gameMode&&lastRenderedChapter===spec.chapterIndex&&
+  lastRenderedCampaign===spec.campaign);
+ const progress=canKeep?{
+  x:player.position.x,y:player.position.y,z:player.position.z,
+  direction:player.rotation.y,
+  score,found:crystals.map(c=>c.found),
+  missionProgress,missionCarry,missionFinished,
+  targetDone:missionTargets.map(t=>t.done),
+  elapsed
+ }:null;
+ stopMovement();
 if(scene){scene.traverse(o=>{if(o.isMesh||o.isPoints){o.geometry?.dispose();const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>{m?.map?.dispose?.();m?.dispose?.()})}})}ambientWaves=[];clouds=[];contactShadows=[];atmosphere=null;oceanMaterial=null;waterMesh=null;worldType=spec.world||chooseType();const p=palettes[worldType],rnd=rand(43);scene=new THREE.Scene();const sky=spec.time==='night'?0x101d39:spec.time==='sunset'?0xee9a87:p.sky;scene.background=new THREE.Color(sky);scene.fog=new THREE.Fog(sky,160,720);solids=[];crystals=[];npcs=[];score=0;$('score').textContent='0/'+spec.collectibles;
 scene.add(new THREE.HemisphereLight(0xffffff,0x56606a,spec.time==='night'?.65:2.4));if(renderer)renderer.toneMappingExposure=spec.time==='night'?.97:spec.time==='sunset'?1.15:1.35;
 let sun=new THREE.DirectionalLight(spec.time==='sunset'?0xffb280:0xffffff,spec.time==='night'?.38:2.1);sun.position.set(-12,20,14);sun.castShadow=Number($('quality').value)>1;const shadowRes=Number($('quality').value)>=2?2048:1024;sun.shadow.mapSize.set(shadowRes,shadowRes);sun.shadow.camera.left=-72;sun.shadow.camera.right=72;sun.shadow.camera.top=72;sun.shadow.camera.bottom=-72;sun.shadow.normalBias=.017;scene.add(sun);scene.add(sun.target);sunLight=sun;if(spec.time==='night'){const moon=ball(3.2,0xe2efff,-34,23,-46);moon.material=new THREE.MeshBasicMaterial({color:0xe4efff})}
@@ -1730,7 +1742,34 @@ expandDistricts(rnd);
 expandOuterRegion(rnd);
 renderEditorProps();
 if(camera)camera.position.set(0,6,20);
-let idea=spec.title||'Meu mundo 3D';$('title').textContent=idea.length>40?idea.slice(0,38)+'…':idea;$('scene-details').textContent=({city:'Cidade',beach:'Praia',forest:'Floresta',space:'Base espacial'})[worldType]+' · '+({day:'Dia',night:'Noite',sunset:'Pôr do sol'})[spec.time];$('mode-label').textContent=spec.camera==='first'?'PRIMEIRA PESSOA':spec.camera==='iso'?'CÂMERA ISOMÉTRICA':'TERCEIRA PESSOA';$('world').value=spec.world;$('camera-mode').value=spec.camera;$('mission-mode').value=spec.gameMode;$('mission-count').value=String(spec.missionGoal);setupMission();updateChapterUI();persist();
+let idea=spec.title||'Meu mundo 3D';$('title').textContent=idea.length>40?idea.slice(0,38)+'…':idea;$('scene-details').textContent=({city:'Cidade',beach:'Praia',forest:'Floresta',space:'Base espacial'})[worldType]+' · '+({day:'Dia',night:'Noite',sunset:'Pôr do sol'})[spec.time];$('mode-label').textContent=spec.camera==='first'?'PRIMEIRA PESSOA':spec.camera==='iso'?'CÂMERA ISOMÉTRICA':'TERCEIRA PESSOA';$('world').value=spec.world;$('camera-mode').value=spec.camera;$('mission-mode').value=spec.gameMode;$('mission-count').value=String(spec.missionGoal);setupMission();updateChapterUI();
+if(progress){
+ player.position.set(THREE.MathUtils.clamp(progress.x,-MAP_HALF+3,MAP_HALF-3),Math.max(0,progress.y),THREE.MathUtils.clamp(progress.z,-MAP_HALF+3,MAP_HALF-3));
+ player.rotation.y=progress.direction;elapsed=progress.elapsed;vertical=0;
+ score=Math.min(spec.collectibles,progress.score);
+ for(let i=0;i<crystals.length;i++)if(progress.found[i]){
+  crystals[i].found=true;scene.remove(crystals[i].mesh)
+ }
+ missionProgress=Math.min(spec.missionGoal,progress.missionProgress);
+ missionCarry=progress.missionCarry&&spec.gameMode==='delivery';
+ if(spec.gameMode==='delivery'&&missionTargets.length===2){
+  missionTargets[0].root.visible=!missionCarry;
+  missionTargets[1].root.visible=missionCarry;
+  if(carriedPackage)carriedPackage.visible=missionCarry;
+ }else{
+  for(let i=0;i<missionTargets.length;i++){
+   const done=spec.gameMode==='race'?i<missionProgress:Boolean(progress.targetDone[i]);
+   missionTargets[i].done=done;
+   missionTargets[i].root.visible=!done;
+  }
+ }
+ camera.position.set(player.position.x+7,7,player.position.z+11);
+ updateMissionHUD();
+ if(progress.missionFinished||
+   (['collect','time'].includes(spec.gameMode)?score>=spec.collectibles:missionProgress>=spec.missionGoal))missionVictory();
+}
+lastRenderedMode=spec.gameMode;lastRenderedChapter=spec.chapterIndex;lastRenderedCampaign=spec.campaign;
+persist();
 status.textContent='MUNDO PRONTO';$('pause-banner').classList.remove('visible');drawMinimap();updateObjective();
 }
 function start(){try{renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Number($('quality').value)===2?2:Math.min(devicePixelRatio,Number($('quality').value)));renderer.setSize(view.clientWidth,view.clientHeight);renderer.shadowMap.enabled=Number($('quality').value)>1;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.35;renderer.domElement.tabIndex=0;renderer.domElement.setAttribute('aria-label','Área de jogo 3D: clique aqui para usar WASD');view.insertBefore(renderer.domElement,view.firstChild);camera=new THREE.PerspectiveCamera(65,view.clientWidth/view.clientHeight,.1,550);generate();animate()}catch(e){msg.textContent='Não foi possível iniciar o 3D: '+e.message;status.textContent='ERRO WEBGL'}}
@@ -1784,7 +1823,7 @@ function updateObjective(){
  $('direction').textContent='🧭 '+arrow+' '+labels[mode]+' a '+Math.round(dist)+' m'+interaction+deadline;
 }
 
-window.__forgeStats=()=>({mapSize:MAP_SIZE,campaign:spec.campaign,chapterIndex:spec.chapterIndex,chapterCount:CHAPTERS.length,world:worldType,hero:player?.userData?.heroType,heroParts:player?.userData?.partCount,fairy:!!heroFairy,score,inputs:[...pressed],objects:spec.objects.length,gameMode:spec.gameMode,selectedId,goal:['collect','time'].includes(spec.gameMode)?spec.collectibles:spec.missionGoal,missionProgress,missionCarry,missionFinished,missionTargets:missionTargets.map(t=>({x:t.x,z:t.z,done:t.done,visible:t.root.visible})),facing:player?player.rotation.y:0,movementDirection,position:player?{x:player.position.x,y:player.position.y,z:player.position.z}:null,remaining:crystals.filter(c=>!c.found).map(c=>({x:c.mesh.position.x,z:c.mesh.position.z}))});
+window.__forgeStats=()=>({elapsed,allies:spec.rescued?.length||0,mapSize:MAP_SIZE,campaign:spec.campaign,chapterIndex:spec.chapterIndex,chapterCount:CHAPTERS.length,world:worldType,hero:player?.userData?.heroType,heroParts:player?.userData?.partCount,fairy:!!heroFairy,score,inputs:[...pressed],objects:spec.objects.length,gameMode:spec.gameMode,selectedId,goal:['collect','time'].includes(spec.gameMode)?spec.collectibles:spec.missionGoal,missionProgress,missionCarry,missionFinished,missionTargets:missionTargets.map(t=>({x:t.x,z:t.z,done:t.done,visible:t.root.visible})),facing:player?player.rotation.y:0,movementDirection,position:player?{x:player.position.x,y:player.position.y,z:player.position.z}:null,remaining:crystals.filter(c=>!c.found).map(c=>({x:c.mesh.position.x,z:c.mesh.position.z}))});
 
 /* Testes de missão em servidor local. Não disponível no GitHub Pages público. */
 if(location.hostname==='127.0.0.1'||location.hostname==='localhost'){
