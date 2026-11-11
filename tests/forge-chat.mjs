@@ -60,8 +60,15 @@ try{
  await page.keyboard.down('KeyW');
  await page.waitForFunction(()=>Math.hypot(window.__forgeStats?.()?.movementDirection?.x||0,window.__forgeStats?.()?.movementDirection?.z||0)>.8,{timeout:9000});
  await page.keyboard.up('KeyW');
- assert.equal((await state()).hero,'red-haired-elf');
- console.log('CHAT_GAMEPLAY_OK');
+ const moving=await state();
+ assert.equal(moving.hero,'red-haired-elf');
+ const beforeEdit=moving.position,elapsedBefore=moving.elapsed;
+ await say('adicione 1 árvore');
+ const afterEdit=await state();
+ assert.ok(Math.hypot(beforeEdit.x-afterEdit.position.x,beforeEdit.z-afterEdit.position.z)<.2,'Editing should not teleport the hero');
+ assert.ok(afterEdit.elapsed>=elapsedBefore-.2,'Editing should not restart the mission clock');
+ assert.equal(afterEdit.hero,'red-haired-elf');
+ console.log('CHAT_GAMEPLAY_OK',JSON.stringify({positionPreserved:true,elapsedPreserved:true}));
  mkdirSync('artifacts',{recursive:true});
  await page.screenshot({path:'artifacts/forge-chat.png'});
  assert.deepEqual(errors,[]);
